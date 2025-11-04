@@ -1,4 +1,5 @@
 import express from 'express';
+import authController from '../controllers/authController.js';
 
 const router = express.Router();
 
@@ -39,9 +40,9 @@ const router = express.Router();
  *             example:
  *               error: "Internal server error during authentication"
  */
-router.post('/', (req, res, next) => {
-  res.status(501).json({ error: 'Not implemented yet' });
-});
+router.post('/', (req, res, next) => 
+  authController.login(req, res, next)
+);
 
 /**
  * @swagger
@@ -76,9 +77,9 @@ router.post('/', (req, res, next) => {
  *             example:
  *               error: "Internal server error"
  */
-router.get('/current', (req, res) => {
-  res.status(501).json({ error: 'Not implemented yet' });
-});
+router.get('/current', (req, res) =>
+  authController.getCurrentUser(req, res)
+);
 
 /**
  * @swagger
@@ -110,8 +111,8 @@ router.get('/current', (req, res) => {
  *             example:
  *               error: "Internal server error during logout"
  */
-router.delete('/current', (req, res) => {
-  res.status(501).json({ error: 'Not implemented yet' });
-});
+router.delete('/current', (req, res) => 
+  authController.logout(req, res)
+);
 
 export default router;

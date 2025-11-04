@@ -1,4 +1,5 @@
 import express from 'express';
+import citizenController from '../controllers/citizenController.js';
 
 const router = express.Router();
 
@@ -39,8 +40,8 @@ const router = express.Router();
  *             example:
  *               error: "Username already exists"
  */
-router.post('/', (req, res, next) => {
-  res.status(501).json({ error: 'Not implemented yet' });
-});
+router.post('/', (req, res, next) => 
+  citizenController.register(req, res, next)
+);
 
 export default router;
