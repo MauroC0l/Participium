@@ -5,7 +5,9 @@ import session from "express-session";
 import { swaggerUi, swaggerSpec } from "../swagger.js";
 import { configurePassport } from "./config/passport.js";
 import authRoutes from "./routes/authRoutes.js";
-import customerRoutes from "./routes/customerRoutes.js";
+import citizenRoutes from "./routes/citizenRoutes.js";
+import municipalityUserRoutes from "./routes/municipalityUserRoutes.js";
+import roleRoutes from "./routes/roleRoutes.js";
 import errorHandler from "./middleware/errorHandler.js";
 
 const app = express();
@@ -38,8 +40,8 @@ app.use(passport.session());
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // API routes
-app.use("/api/auth", authRoutes);
-app.use("/api/customers", customerRoutes);
+app.use("/api/sessions", authRoutes);
+app.use("/api/users", citizenRoutes);
 
 // Check endpoint to verify server is running
 app.get("/health", (req, res) => {

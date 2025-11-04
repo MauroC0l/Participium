@@ -1,6 +1,6 @@
 import passport from 'passport';
 import LocalStrategy from 'passport-local';
-import customerRepository from '../repositories/customerRepository.js';
+import citizenRepository from '../repositories/citizenRepository.js';
 
 /**
  * Configures Passport authentication
@@ -11,7 +11,7 @@ export function configurePassport() {
     { usernameField: 'username' },
     async function verify(username, password, cb) {
       try {
-        const user = await customerRepository.verifyCredentials(username, password);
+        const user = await citizenRepository.verifyCredentials(username, password);
         if (!user) {
           return cb(null, false, { message: 'Invalid username or password' });
         }
@@ -30,7 +30,7 @@ export function configurePassport() {
   // Deserialize user from session
   passport.deserializeUser(async (sessionUser, cb) => {
     try {
-      const user = await customerRepository.findById(sessionUser.id);
+      const user = await citizenRepository.findById(sessionUser.id);
       if (!user) {
         return cb(null, false);
       }
