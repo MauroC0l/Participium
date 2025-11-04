@@ -6,8 +6,6 @@ import { swaggerUi, swaggerSpec } from "../swagger.js";
 import { configurePassport } from "./config/passport.js";
 import authRoutes from "./routes/authRoutes.js";
 import citizenRoutes from "./routes/citizenRoutes.js";
-import municipalityUserRoutes from "./routes/municipalityUserRoutes.js";
-import roleRoutes from "./routes/roleRoutes.js";
 import errorHandler from "./middleware/errorHandler.js";
 
 const app = express();
