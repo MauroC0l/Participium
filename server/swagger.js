@@ -61,6 +61,17 @@ const options = {
             temporary_password: { type: "string", example: "Init#2025" }
           }
         },
+        RoleAssignmentRequest: {
+          type: "object",
+          required: ["role"],
+          properties: {
+            role: {
+              type: "string",
+              example: "technical_office_green_areas",
+              description: "Role assigned to municipality user"
+            }
+          }
+        },
         ErrorResponse: {
           type: "object",
           properties: {
@@ -79,9 +90,11 @@ const options = {
     tags: [
       { name: "Authentication", description: "User authentication operations" },
       { name: "Citizens", description: "Citizen registration and access" },
-      { name: "Municipality Users", description: "Municipal internal user management" }
+      { name: "Municipality Users", description: "Municipal internal user management" },
+      { name: "Roles", description: "Role and permission assignment" }
     ],
     paths: {
+      // Authentication APIs
       "/api/sessions": {
         post: {
           tags: ["Authentication"],
@@ -90,54 +103,18 @@ const options = {
           requestBody: {
             required: true,
             content: {
-              "application/json": {
-                schema: { $ref: "#/components/schemas/LoginRequest" },
-                example: {
-                  username: "mariorossi",
-                  password: "password123"
-                }
-              }
+              "application/json": { schema: { $ref: "#/components/schemas/LoginRequest" } }
             }
           },
           responses: {
             200: {
-              description: "Login successful - returns user data",
+              description: "Login successful",
               content: {
-                "application/json": {
-                  schema: { $ref: "#/components/schemas/UserResponse" },
-                  example: {
-                    id: 1,
-                    username: "mariorossi",
-                    email: "mario.rossi@polito.it",
-                    first_name: "Mario",
-                    last_name: "Rossi",
-                    role: "municipality_user"
-                  }
-                }
+                "application/json": { schema: { $ref: "#/components/schemas/UserResponse" } }
               }
             },
-            401: {
-              description: "Unauthorized - invalid credentials",
-              content: {
-                "application/json": {
-                  schema: { $ref: "#/components/schemas/ErrorResponse" },
-                  example: {
-                    error: "Invalid credentials"
-                  }
-                }
-              }
-            },
-            500: {
-              description: "Internal Server Error",
-              content: {
-                "application/json": {
-                  schema: { $ref: "#/components/schemas/ErrorResponse" },
-                  example: {
-                    error: "Internal server error"
-                  }
-                }
-              }
-            }
+            401: { description: "Unauthorized" },
+            500: { description: "Internal Server Error" }
           }
         }
       },
@@ -145,79 +122,30 @@ const options = {
         get: {
           tags: ["Authentication"],
           summary: "Get current user",
-          description: "Get authenticated user information",
           security: [{ cookieAuth: [] }],
           responses: {
             200: {
-              description: "Success - returns authenticated user data",
+              description: "Returns authenticated user data",
               content: {
-                "application/json": {
-                  schema: { $ref: "#/components/schemas/UserResponse" },
-                  example: {
-                    id: 1,
-                    username: "mariorossi",
-                    email: "mario.rossi@polito.it",
-                    first_name: "Mario",
-                    last_name: "Rossi",
-                    role: "municipality_user"
-                  }
-                }
+                "application/json": { schema: { $ref: "#/components/schemas/UserResponse" } }
               }
             },
-            401: {
-              description: "Unauthorized - not authenticated",
-              content: {
-                "application/json": {
-                  schema: { $ref: "#/components/schemas/ErrorResponse" },
-                  example: {
-                    error: "Not authenticated"
-                  }
-                }
-              }
-            },
-            500: {
-              description: "Internal Server Error",
-              content: {
-                "application/json": {
-                  schema: { $ref: "#/components/schemas/ErrorResponse" },
-                  example: {
-                    error: "Internal server error"
-                  }
-                }
-              }
-            }
+            401: { description: "Unauthorized" },
+            500: { description: "Internal Server Error" }
           }
         },
         delete: {
           tags: ["Authentication"],
           summary: "Logout",
-          description: "Logout - destroy user session",
           security: [{ cookieAuth: [] }],
           responses: {
-            200: {
-              description: "Logout successful",
-              content: {
-                "application/json": {
-                  example: {}
-                }
-              }
-            },
-            500: {
-              description: "Internal Server Error",
-              content: {
-                "application/json": {
-                  schema: { $ref: "#/components/schemas/ErrorResponse" },
-                  example: {
-                    error: "Internal server error"
-                  }
-                }
-              }
-            }
+            200: { description: "Logout successful" },
+            500: { description: "Internal Server Error" }
           }
         }
       },
 
-      // 🧍 Citizen Registration
+      // Citizen Registration
       "/api/users": {
         post: {
           tags: ["Citizens"],
@@ -242,6 +170,7 @@ const options = {
         }
       },
 
+      // Municipality Users
       "/api/municipality-users": {
         post: {
           tags: ["Municipality Users"],
@@ -322,6 +251,56 @@ const options = {
           security: [{ cookieAuth: [] }],
           responses: {
             204: { description: "User deleted" },
+            404: { description: "User not found" }
+          }
+        }
+      },
+
+      // Roles management
+      "/api/roles": {
+        get: {
+          tags: ["Roles"],
+          summary: "List available roles",
+          description: "Returns all predefined roles (e.g., URP officer, admin, technical offices)",
+          security: [{ cookieAuth: [] }],
+          responses: {
+            200: {
+              description: "List of available roles",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "array",
+                    items: {
+                      type: "string",
+                      example: "technical_office_public_lighting"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/municipality-users/{id}/role": {
+        patch: {
+          tags: ["Roles"],
+          summary: "Assign or update role of a municipality user",
+          description: "Allows the admin to assign or modify a user's role",
+          parameters: [{ name: "id", in: "path", required: true, schema: { type: "integer" } }],
+          security: [{ cookieAuth: [] }],
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": { schema: { $ref: "#/components/schemas/RoleAssignmentRequest" } }
+            }
+          },
+          responses: {
+            200: {
+              description: "Role assigned successfully",
+              content: {
+                "application/json": { schema: { $ref: "#/components/schemas/UserResponse" } }
+              }
+            },
             404: { description: "User not found" }
           }
         }
