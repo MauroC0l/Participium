@@ -31,7 +31,6 @@ module.exports = {
     '^@services/(.*)$': '<rootDir>/src/services/$1',
     '^@utils/(.*)$': '<rootDir>/src/utils/$1',
   },
-  setupFilesAfterEnv: ['<rootDir>/test/setup.ts'],
   testTimeout: 10000,
   clearMocks: true,
   restoreMocks: true,
