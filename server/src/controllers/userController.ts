@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import { userService } from '@services/userService';
 import { BadRequest } from '@models/errors/BadRequestError';
+import { RegisterRequest } from '@models/dto/RegisterRequest';
+import { UserRole } from '@models/dto/UserRole';
 
 /**
  * Controller for User-related HTTP requests
@@ -18,13 +20,16 @@ class UserController {
         throw new BadRequest('All fields are required: username, email, password, first_name, last_name');
       }
 
-      const userResponse = await userService.registerCitizen({
+      const registerData: RegisterRequest = {
         username,
         email,
         password,
         first_name,
-        last_name
-      });
+        last_name,
+        role: UserRole.CITIZEN // Default role for citizens
+      };
+
+      const userResponse = await userService.registerCitizen(registerData);
 
       res.status(201).json(userResponse);
     } catch (error) {

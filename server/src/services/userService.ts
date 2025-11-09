@@ -6,7 +6,6 @@ import { ConflictError } from '@models/errors/ConflictError';
 import { logInfo } from '@services/loggingService';
 import { mapUserEntityToUserResponse } from '@services/mapperService';
 
-
 /**
  * Service for user-related business logic
  */
@@ -14,11 +13,12 @@ class UserService {
   /**
    * Registers a new citizen
    * Validates uniqueness of username and email
-   * @param registerData User registration data
+   * Role should be UserRole.CITIZEN (set by controller)
+   * @param registerData User registration data with role
    * @returns UserResponse DTO
    */
   async registerCitizen(registerData: RegisterRequest): Promise<UserResponse> {
-    const { username, email, password, first_name, last_name } = registerData;
+    const { username, email, password, first_name, last_name, role } = registerData;
 
     // Check if username already exists
     const existingUsername = await userRepository.existsUserByUsername(username);
@@ -33,18 +33,18 @@ class UserService {
     }
 
     // Create new user with hashed password
+    // Use role from registerData (should be CITIZEN, set by controller)
     const newUser = await userRepository.createUserWithPassword({
       username,
       email,
       password,
       firstName: first_name,
       lastName: last_name,
-      role: UserRole.CITIZEN,
+      role: role || UserRole.CITIZEN, // Fallback to CITIZEN if not set
       emailNotificationsEnabled: true
     });
 
     logInfo(`New citizen registered: ${username} (ID: ${newUser.id})`);
-
 
     return mapUserEntityToUserResponse(newUser);
   }
