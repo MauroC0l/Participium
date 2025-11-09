@@ -1,0 +1,54 @@
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: #fafafa;
+}
+
+.login-box {
+  width: 360px;
+  background: white;
+  border: 1px solid #dbdbdb;
+  padding: 40px;
+  text-align: center;
+  border-radius: 6px;
+}
+
+.login-logo {
+  font-family: "Montserrat", sans-serif;
+  font-size: 32px;
+  margin-bottom: 30px;
+}
+
+.login-form input {
+  width: 100%;
+  padding: 12px;
+  background: #fafafa;
+  border: 1px solid #dbdbdb;
+  border-radius: 4px;
+  margin-bottom: 10px;
+}
+
+.login-form button {
+  width: 100%;
+  padding: 12px;
+  background: #4c6ef5;
+  border: none;
+  color: white;
+  font-weight: 600;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.signup-link {
+  margin-top: 20px;
+  font-size: 14px;
+}
+
+.signup-link span {
+  font-weight: bold;
+  cursor: pointer;
+  color: #4c6ef5;
+}
