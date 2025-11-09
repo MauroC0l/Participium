@@ -12,7 +12,6 @@ export function createErrorDTO(
   }) as ErrorDTO;
 }
 
-
 function removeNullAttributes<T extends Record<string, any>>(
   dto: T
 ): Partial<T> {

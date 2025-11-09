@@ -1,6 +1,6 @@
 import express from 'express';
 import { isAdmin } from '@middleware/authMiddleware';
-import { RoleUtils } from '@utils/roleUtils';
+import municipalityUserController from '@controllers/municipalityUserController';
 
 const router = express.Router();
 
@@ -28,11 +28,9 @@ const router = express.Router();
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
- *             example:
- *               error: "Not authenticated"
+             example:
+               error: "Not authenticated"
  */
-router.get('/', isAdmin, (req, res) => {
-  res.status(501).json({ error: 'Not implemented yet' });
-});
+router.get('/', isAdmin, municipalityUserController.getAllRoles);
 
 export default router;

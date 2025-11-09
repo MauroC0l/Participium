@@ -1,8 +1,6 @@
 import { UserResponse } from '@models/dto/UserResponse';
 import { UserRole } from '@models/dto/UserRole';
 import { municipalityUserRepository } from '@repositories/municipalityUserRepository';
-import { userRepository } from '@repositories/userRepository';
-import { ConflictError } from '@models/errors/ConflictError';
 import { NotFoundError } from '@models/errors/NotFoundError';
 import { BadRequest } from '@models/errors/BadRequestError';
 import { logInfo } from '@services/loggingService';
@@ -13,7 +11,6 @@ import { mapUserEntityToUserResponse } from '@services/mapperService';
  */
 class MunicipalityUserService {
   
-
   /**
    * Assign role to municipality user
    * Story: As a system administrator, I want to assign roles to municipality users

@@ -1,8 +1,26 @@
 import { Request, Response, NextFunction } from 'express';
+import { BadRequest } from '@models/errors/BadRequestError';
+import { UserRole } from '@models/dto/UserRole';
+import { municipalityUserService } from '@services/municipalityUserService';
+import { RoleUtils } from '@utils/roleUtils';
 
 class MunicipalityUserController {
 
-    /**
+  /**
+   * Get all municipality roles
+   * GET /api/roles
+   * Story: List all available municipality roles (excluding Citizen and Administrator)
+   */
+  async getAllRoles(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const municipalityRoles = RoleUtils.getAllMunicipalityRoles();
+      res.status(200).json(municipalityRoles);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
    * Assign role to municipality user
    * PUT /api/municipality/users/:id/role
    * Story: As a system administrator, I want to assign roles to municipality users
