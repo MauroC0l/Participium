@@ -30,7 +30,7 @@ class UserRepository {
    * @returns The created user entity.
    */
   public async createUserWithPassword(
-    userData: Omit<userEntity, 'id' | 'createdAt' | 'passwordHash'> & { password: string }
+    userData: Omit<userEntity, 'id' | 'createdAt' | 'passwordHash' | 'emailNotificationsEnabled'> & { password: string; emailNotificationsEnabled?: boolean }
   ): Promise<userEntity> {
     const { password, ...userFields } = userData;
     const { salt, hash } = await generatePasswordData(password);
@@ -119,6 +119,53 @@ class UserRepository {
     }
 
     return user;
+  }
+
+  /**
+   * Updates user information.
+   * @param id The ID of the user to update.
+   * @param updateData Partial user data to update.
+   * @returns The updated user entity.
+   * @throws Error if user is not found.
+   */
+  public async updateUser(
+    id: number,
+    updateData: Partial<Omit<userEntity, 'id' | 'createdAt' | 'passwordHash'>>
+  ): Promise<userEntity> {
+    await this.repository.update(id, updateData);
+
+    const updatedUser = await this.findUserById(id);
+    if (!updatedUser) {
+      throw new Error('User not found after update');
+    }
+
+    return updatedUser;
+  }
+
+  /**
+   * Deletes a user by ID.
+   * @param id The ID of the user to delete.
+   * @returns void
+   * @throws Error if user is not found.
+   */
+  public async deleteUser(id: number): Promise<void> {
+    const result = await this.repository.delete(id);
+    
+    if (result.affected === 0) {
+      throw new Error('User not found');
+    }
+  }
+
+  /**
+   * Finds all users with optional filters.
+   * @param options Optional query options (where, order, etc.)
+   * @returns Array of user entities.
+   */
+  public async findAllUsers(options?: {
+    where?: any;
+    order?: any;
+  }): Promise<userEntity[]> {
+    return this.repository.find(options);
   }
 }
 
