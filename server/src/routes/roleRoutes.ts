@@ -1,5 +1,6 @@
 import express from 'express';
 import { isAdmin } from '@middleware/authMiddleware';
+import { RoleUtils } from '@utils/roleUtils';
 
 const router = express.Router();
 
@@ -9,7 +10,7 @@ const router = express.Router();
  *   get:
  *     tags: [Roles]
  *     summary: List municipality roles
- *     description: Returns all available municipality roles
+ *     description: Returns all available municipality roles (excluding Citizen and Administrator)
  *     security:
  *       - cookieAuth: []
  *     responses:
@@ -20,14 +21,7 @@ const router = express.Router();
  *             schema:
  *               type: array
  *               items:
- *                 type: object
- *                 properties:
- *                   id:
- *                     type: integer
- *                   name:
- *                     type: string
- *                   description:
- *                     type: string
+ *                 $ref: '#/components/schemas/UserRole'
  *       401:
  *         description: Unauthorized
  *         content:
