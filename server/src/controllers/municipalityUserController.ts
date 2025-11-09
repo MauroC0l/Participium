@@ -1,18 +1,36 @@
 import { Request, Response, NextFunction } from 'express';
+import { municipalityUserService } from '@services/municipalityUserService';
+import { BadRequest } from '@models/errors/BadRequestError';
+import { RegisterRequest } from '@models/dto/RegisterRequest';
 
 /**
  * Controller for Municipality User management
- * TODO: Implement all methods according to Swagger specification
  */
 class MunicipalityUserController {
   /**
    * POST /api/municipality/users
-   * Create new municipality user
+   * Create new municipality user (Admin only)
    */
   async createMunicipalityUser(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      // TODO: Implement according to Swagger spec
-      res.status(501).json({ error: 'Not implemented yet' });
+      const { username, email, password, first_name, last_name, role } = req.body;
+
+      if (!username || !email || !password || !first_name || !last_name || !role) {
+        throw new BadRequest('All fields are required: username, email, password, first_name, last_name, role');
+      }
+
+      const registerData: RegisterRequest = {
+        username,
+        email,
+        password,
+        first_name,
+        last_name,
+        role
+      };
+
+      const userResponse = await municipalityUserService.createMunicipalityUser(registerData);
+
+      res.status(201).json(userResponse);
     } catch (error) {
       next(error);
     }
@@ -20,12 +38,12 @@ class MunicipalityUserController {
 
   /**
    * GET /api/municipality/users
-   * List all municipality users
+   * List all municipality users (Admin only)
    */
   async getAllMunicipalityUsers(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      // TODO: Implement according to Swagger spec
-      res.status(501).json({ error: 'Not implemented yet' });
+      const users = await municipalityUserService.getAllMunicipalityUsers();
+      res.status(200).json(users);
     } catch (error) {
       next(error);
     }
@@ -33,12 +51,18 @@ class MunicipalityUserController {
 
   /**
    * GET /api/municipality/users/:id
-   * Get municipality user by ID
+   * Get municipality user by ID (Admin only)
    */
   async getMunicipalityUserById(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      // TODO: Implement according to Swagger spec
-      res.status(501).json({ error: 'Not implemented yet' });
+      const id = parseInt(req.params.id);
+
+      if (isNaN(id)) {
+        throw new BadRequest('Invalid user ID');
+      }
+
+      const user = await municipalityUserService.getMunicipalityUserById(id);
+      res.status(200).json(user);
     } catch (error) {
       next(error);
     }
@@ -46,12 +70,30 @@ class MunicipalityUserController {
 
   /**
    * PUT /api/municipality/users/:id
-   * Update municipality user
+   * Update municipality user (Admin only)
    */
   async updateMunicipalityUser(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      // TODO: Implement according to Swagger spec
-      res.status(501).json({ error: 'Not implemented yet' });
+      const id = parseInt(req.params.id);
+
+      if (isNaN(id)) {
+        throw new BadRequest('Invalid user ID');
+      }
+
+      const { first_name, last_name, email, role } = req.body;
+      
+      const updateData: any = {};
+      if (first_name) updateData.firstName = first_name;
+      if (last_name) updateData.lastName = last_name;
+      if (email) updateData.email = email;
+      if (role) updateData.role = role;
+
+      if (Object.keys(updateData).length === 0) {
+        throw new BadRequest('At least one field must be provided for update');
+      }
+
+      const updatedUser = await municipalityUserService.updateMunicipalityUser(id, updateData);
+      res.status(200).json(updatedUser);
     } catch (error) {
       next(error);
     }
@@ -59,12 +101,18 @@ class MunicipalityUserController {
 
   /**
    * DELETE /api/municipality/users/:id
-   * Delete municipality user
+   * Delete municipality user (Admin only)
    */
   async deleteMunicipalityUser(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      // TODO: Implement according to Swagger spec
-      res.status(501).json({ error: 'Not implemented yet' });
+      const id = parseInt(req.params.id);
+
+      if (isNaN(id)) {
+        throw new BadRequest('Invalid user ID');
+      }
+
+      await municipalityUserService.deleteMunicipalityUser(id);
+      res.status(204).send();
     } catch (error) {
       next(error);
     }
