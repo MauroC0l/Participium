@@ -1,5 +1,6 @@
 import React , {useState} from "react";
 import "../css/register.css";
+import { registerCitizen } from "../api/citizenApi";
 import { useNavigate } from "react-router-dom";
 
 
@@ -14,10 +15,19 @@ const [username , setUsername] = useState('');
 const [password , setPassword] = useState('');
 
 
-const handleRegister = (e) => {
+const handleRegister = async (e) => {
     e.preventDefault()
 
-    navigate("/");
+    try {
+      const payload = { firstName, lastName, email, username, password };
+
+      await registerCitizen(payload);                  // << API CALL
+
+      navigate("/login");                              // go login after success
+
+    } catch(err){
+      setError(err.message);
+    }
 };
 
 return (
