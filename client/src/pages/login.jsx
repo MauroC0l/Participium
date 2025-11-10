@@ -1,5 +1,6 @@
 import React , {useState} from "react";
 import "../css/login.css";
+import { login } from "../api/authApi";
 import { useNavigate } from "react-router-dom";
 
 
@@ -11,10 +12,15 @@ const navigate = useNavigate();
 const [username , setUsername] = useState('');
 const [password , setPassword] = useState('');
 
-const handleLogin = (e) => {
+const handleLogin = async (e) => {
     e.preventDefault()
 
-    //navigate ("/home");
+    try {
+        await login(username, password);
+        navigate("/home");
+    } catch (error) {
+        console.error("Login failed:", error);
+    }
 };
 
 return (
@@ -23,16 +29,18 @@ return (
         <h1 className="login-logo">Login</h1>
 
         <form onSubmit={handleLogin} className="login-form">
+          <label className="login-label">Username</label>
           <input
             type="text"
-            placeholder="Username"
+            placeholder="Enter username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
           />
 
+          <label className="login-label">Password</label>
           <input
             type="password"
-            placeholder="Password"
+            placeholder="Enter password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
@@ -41,7 +49,7 @@ return (
         </form>
 
         <div className="signup-link">
-          Don't have an account? <span>Register</span>
+          Don't have an account? <span onClick={() => navigate("/register")}>Register</span>
         </div>
       </div>
     </div>

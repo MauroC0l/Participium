@@ -1,11 +1,26 @@
-import { useState } from 'react'
-import './App.css'
-import Login from './pages/login'
+import { Routes, Route , useLocation , Navigate } from "react-router-dom";
+import Login from "./pages/login.jsx";
+import Register from "./pages/register.jsx";
+import Home from "./pages/homepage.jsx";
+import Navbar from "./components/Navbar";
 
 function App() {
-  
+    const location = useLocation();
 
-  return <Login/>
-
+  // hide only on register page
+  // const hideNavbar = location.pathname === "/register";
+  return (
+    <>
+      {/* {!hideNavbar && <Navbar />} */}
+      <Navbar />
+      <Routes>
+        
+        <Route path="/" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/home" element={<Home />} />
+      </Routes>
+    </>
+  );
 }
-export default App
+
+export default App;
