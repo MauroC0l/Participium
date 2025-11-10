@@ -1,10 +1,10 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
-  roots: ['<rootDir>/test', '<rootDir>/src'],
+  roots: ['<rootDir>/src'],
   testMatch: [
     '**/test/**/*.test.ts',
-    '**/test/**/*.spec.ts'
+    '**/test/**/*.spec.ts',
   ],
   transform: {
     '^.+\\.ts$': 'ts-jest',
@@ -26,6 +26,7 @@ module.exports = {
     '^@database/(.*)$': '<rootDir>/src/database/$1',
     '^@middleware/(.*)$': '<rootDir>/src/middleware/$1',
     '^@models/(.*)$': '<rootDir>/src/models/$1',
+    '^@errors/(.*)$': '<rootDir>/src/models/errors/$1',
     '^@repositories/(.*)$': '<rootDir>/src/repositories/$1',
     '^@routes/(.*)$': '<rootDir>/src/routes/$1',
     '^@services/(.*)$': '<rootDir>/src/services/$1',
