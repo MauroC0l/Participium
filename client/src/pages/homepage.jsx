@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { getCurrentUser, logout } from "../api/authApi";
+import CitizenHome from "../components/citizenHome";
+import AdminHome from "../components/adminHome";
 
 export default function Home() {
 
@@ -24,6 +26,9 @@ export default function Home() {
           Welcome, <b>{user.username}</b>!
         </div>
       )}
+
+      {user && user.role === "citizen" && <CitizenHome user={user} />} {/*Change after implementing backend functions*/}
+      {user && user.role === "admin" && <AdminHome />}
 
     </div>
   )
