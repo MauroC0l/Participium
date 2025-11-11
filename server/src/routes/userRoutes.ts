@@ -23,6 +23,13 @@ const router = express.Router();
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/UserResponse'
+ *             example:
+ *               id: 1
+ *               username: "m.rossi"
+ *               email: "m.rossi@comune.torino.it"
+ *               first_name: "Mario"
+ *               last_name: "Rossi"
+ *               role: "Citizen"
  *       400:
  *         description: Validation error
  *         content:
@@ -39,6 +46,14 @@ const router = express.Router();
  *               $ref: '#/components/schemas/ErrorResponse'
  *             example:
  *               error: "Username already exists"
+ *       500:
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               error: "Internal server error"
  */
 router.post('/', UserController.register);
 

@@ -68,6 +68,22 @@ const router = express.Router();
  *               $ref: '#/components/schemas/ErrorResponse'
  *             example:
  *               error: "Insufficient rights"
+ *       500:
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               error: "Internal server error"
+ *       409:
+ *         description: Conflict error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               error: "Username or email already exists"
  */
 router.post('/', isAdmin, municipalityUserController.createMunicipalityUser);
 
@@ -106,6 +122,14 @@ router.post('/', isAdmin, municipalityUserController.createMunicipalityUser);
  *               $ref: '#/components/schemas/ErrorResponse'
  *             example:
  *               error: "Insufficient rights"
+ *       500:
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               error: "Internal server error"
  */
 router.get('/', isAdmin, municipalityUserController.getAllMunicipalityUsers);
 
@@ -149,6 +173,30 @@ router.get('/', isAdmin, municipalityUserController.getAllMunicipalityUsers);
  *               $ref: '#/components/schemas/ErrorResponse'
  *             example:
  *               error: "Not authenticated"
+ *       400:
+ *         description: Validation error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               error: "All fields are required"
+ *       403:
+ *         description: Forbidden (requires admin role)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               error: "Insufficient rights"
+ *       500:
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               error: "Internal server error"
  */
 router.get('/:id', isAdmin, municipalityUserController.getMunicipalityUserById);
 
@@ -204,6 +252,38 @@ router.get('/:id', isAdmin, municipalityUserController.getMunicipalityUserById);
  *               $ref: '#/components/schemas/ErrorResponse'
  *             example:
  *               error: "Not authenticated"
+ *       400:
+ *         description: Validation error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               error: "All fields are required"
+ *       403:
+ *         description: Forbidden (requires admin role)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               error: "Insufficient rights"
+ *       409:
+ *         description: Conflict error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               error: "Username or email already exists"
+ *       500:
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               error: "Internal server error"
  */
 router.put('/:id', isAdmin, municipalityUserController.updateMunicipalityUser);
 
@@ -243,6 +323,22 @@ router.put('/:id', isAdmin, municipalityUserController.updateMunicipalityUser);
  *               $ref: '#/components/schemas/ErrorResponse'
  *             example:
  *               error: "Not authenticated"
+ *       403:
+ *         description: Forbidden (requires admin role)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               error: "Insufficient rights"
+ *       500:
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               error: "Internal server error"
  */
 router.delete('/:id', isAdmin, municipalityUserController.deleteMunicipalityUser);
 
@@ -282,6 +378,14 @@ router.delete('/:id', isAdmin, municipalityUserController.deleteMunicipalityUser
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/UserResponse'
+ *       400:
+ *         description: Validation error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               error: "All fields are required"
  *       404:
  *         description: User or role not found
  *         content:
@@ -306,6 +410,14 @@ router.delete('/:id', isAdmin, municipalityUserController.deleteMunicipalityUser
  *               $ref: '#/components/schemas/ErrorResponse'
  *             example:
  *               error: "Insufficient rights"
+ *       500:
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               error: "Internal server error"
  */
 router.put('/:id/role', isAdmin, municipalityUserController.assignRole);
 

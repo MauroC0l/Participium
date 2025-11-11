@@ -28,8 +28,24 @@ const router = express.Router();
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
-             example:
-               error: "Not authenticated"
+ *             example:
+ *             error: "Not authenticated"
+ *       403:
+ *         description: Forbidden (requires admin role)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               error: "Insufficient rights" 
+ *       500:
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               error: "Internal server error"   
  */
 router.get('/', isAdmin, municipalityUserController.getAllRoles);
 

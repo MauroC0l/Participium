@@ -37,9 +37,9 @@ import { UserRole } from "./UserRole";
  *           example: "Rossi"
  *         role:
  *           type: string
- *           enum: [CITIZEN, ADMINISTRATOR, MUNICIPAL_PUBLIC_RELATIONS_OFFICER, TECHNICAL_OFFICE_STAFF_MEMBER, INFRASTRUCTURE_MANAGER, URBAN_PLANNING_OFFICER, SUSTAINABILITY_COORDINATOR, ADMINISTRATIVE_ASSISTANT, PROJECT_COORDINATOR, COMMUNITY_ENGAGEMENT_SPECIALIST]
+ *           enum: [Citizen, Administrator, Municipal_public_relations_officer, Technical_office_staff_member, Infrastructure_manager, Urban_planning_officer, Sustainability_coordinator, Administrative_assistant, Project_coordinator, Community_engagement_specialist]
  *           description: User role
- *           example: "CITIZEN"
+ *           example: "Citizen"
  *       description: User registration request with role
  */
 export interface RegisterRequest {

@@ -31,7 +31,7 @@ const router = express.Router();
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  *             example:
- *               error: "Invalid username or password"
+ *               error: "Invalid credentials"
  *       500:
  *         description: Internal Server Error
  *         content:
@@ -99,6 +99,14 @@ router.get('/current', isLoggedIn, AuthController.getCurrentUser);
  *                   type: string
  *             example:
  *               message: "Logged out successfully"
+ *       401:
+ *         description: Not authenticated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               error: "Not authenticated"
  *       500:
  *         description: Internal Server Error
  *         content:

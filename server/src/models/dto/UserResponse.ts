@@ -25,7 +25,7 @@ import { UserRole } from "./UserRole"
  *           description: Last name
  *         role:
  *           type: string
- *           enum: [citizen, organization_staff, technical_staff, administrator]
+ *           enum: [Organization_staff, Technical_staff, Administrator]
  *           description: User role
  *         created_at:
  *           type: string
