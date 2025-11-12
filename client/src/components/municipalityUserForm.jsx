@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Alert, Card } from "react-bootstrap";
+import { Alert, Card, Form, Button, Row, Col } from "react-bootstrap";
 import { createMunicipalityUser, getAllRoles } from "../api/municipalityUserApi";
-import "../css/MunicipalityUserForm.css";
 
 export default function MunicipalityUserForm({ onUserCreated, onCancel }) {
   const [formData, setFormData] = useState({
@@ -157,57 +156,80 @@ export default function MunicipalityUserForm({ onUserCreated, onCancel }) {
   };
 
   return (
-    <Card className="municipality-user-form-card">
-      
-      <Card.Body>
-        <h3 className="muf-title">Add New Municipality User</h3>
+    <Card 
+      className="shadow-lg" 
+      style={{ 
+        borderRadius: 'var(--radius-xl)',
+        border: 'none'
+      }}
+    >
+      <Card.Body className="p-5">
+        <h3 
+          style={{ 
+            color: 'var(--primary)',
+            fontWeight: 'var(--font-bold)',
+            fontSize: 'var(--font-xxl)',
+            marginBottom: 'var(--spacing-lg)'
+          }}
+        >
+          Add New Municipality User
+        </h3>
 
-        <div className="alert-container">
-          {error && (
-            <Alert variant="danger" onClose={() => setError("")} dismissible>
-              {error}
-            </Alert>
-          )}
+        {error && (
+          <Alert variant="danger" onClose={() => setError("")} dismissible className="mb-4">
+            {error}
+          </Alert>
+        )}
 
-          {success && (
-            <Alert variant="success" onClose={() => setSuccess("")} dismissible>
-              {success}
-            </Alert>
-          )}
-        </div>
+        {success && (
+          <Alert variant="success" onClose={() => setSuccess("")} dismissible className="mb-4">
+            {success}
+          </Alert>
+        )}
 
-        <form onSubmit={handleSubmit} className="muf-form">
+        <Form onSubmit={handleSubmit}>
+          <Row className="mb-4">
+            <Col md={6}>
+              <Form.Group>
+                <Form.Label style={{ fontWeight: 'var(--font-medium)' }}>
+                  First Name *
+                </Form.Label>
+                <Form.Control
+                  type="text"
+                  name="firstName"
+                  placeholder="First name"
+                  value={formData.firstName}
+                  onChange={handleChange}
+                  disabled={loading}
+                  required
+                  size="lg"
+                />
+              </Form.Group>
+            </Col>
+            <Col md={6}>
+              <Form.Group>
+                <Form.Label style={{ fontWeight: 'var(--font-medium)' }}>
+                  Last Name *
+                </Form.Label>
+                <Form.Control
+                  type="text"
+                  name="lastName"
+                  placeholder="Last name"
+                  value={formData.lastName}
+                  onChange={handleChange}
+                  disabled={loading}
+                  required
+                  size="lg"
+                />
+              </Form.Group>
+            </Col>
+          </Row>
 
-          <div className="name-row">
-            <div className="muf-field">
-              <label className="muf-label">First Name *</label>
-              <input
-                type="text"
-                name="firstName"
-                placeholder="First name"
-                value={formData.firstName}
-                onChange={handleChange}
-                disabled={loading}
-                required
-              />
-            </div>
-            <div className="muf-field">
-              <label className="muf-label">Last Name *</label>
-              <input
-                type="text"
-                name="lastName"
-                placeholder="Last name"
-                value={formData.lastName}
-                onChange={handleChange}
-                disabled={loading}
-                required
-              />
-            </div>
-          </div>
-
-          <div className="muf-field">
-            <label className="muf-label">Username *</label>
-            <input
+          <Form.Group className="mb-4">
+            <Form.Label style={{ fontWeight: 'var(--font-medium)' }}>
+              Username *
+            </Form.Label>
+            <Form.Control
               type="text"
               name="username"
               placeholder="Username (min. 3 characters)"
@@ -215,12 +237,15 @@ export default function MunicipalityUserForm({ onUserCreated, onCancel }) {
               onChange={handleChange}
               disabled={loading}
               required
+              size="lg"
             />
-          </div>
+          </Form.Group>
 
-          <div className="muf-field">
-            <label className="muf-label">Email *</label>
-            <input
+          <Form.Group className="mb-4">
+            <Form.Label style={{ fontWeight: 'var(--font-medium)' }}>
+              Email *
+            </Form.Label>
+            <Form.Control
               type="email"
               name="email"
               placeholder="user@example.com"
@@ -228,12 +253,15 @@ export default function MunicipalityUserForm({ onUserCreated, onCancel }) {
               onChange={handleChange}
               disabled={loading}
               required
+              size="lg"
             />
-          </div>
+          </Form.Group>
 
-          <div className="muf-field">
-            <label className="muf-label">Password *</label>
-            <input
+          <Form.Group className="mb-4">
+            <Form.Label style={{ fontWeight: 'var(--font-medium)' }}>
+              Password *
+            </Form.Label>
+            <Form.Control
               type="password"
               name="password"
               placeholder="Password (min. 6 characters)"
@@ -241,18 +269,21 @@ export default function MunicipalityUserForm({ onUserCreated, onCancel }) {
               onChange={handleChange}
               disabled={loading}
               required
+              size="lg"
             />
-          </div>
+          </Form.Group>
 
-          <div className="muf-field">
-            <label className="muf-label">Role *</label>
-            <select
+          <Form.Group className="mb-4">
+            <Form.Label style={{ fontWeight: 'var(--font-medium)' }}>
+              Role *
+            </Form.Label>
+            <Form.Select
               name="role"
               value={formData.role}
               onChange={handleChange}
               disabled={loading || loadingRoles}
               required
-              className="muf-select"
+              size="lg"
             >
               <option value="">
                 {loadingRoles ? "Loading roles..." : "Select a role"}
@@ -262,30 +293,38 @@ export default function MunicipalityUserForm({ onUserCreated, onCancel }) {
                   {role}
                 </option>
               ))}
-            </select>
-          </div>
+            </Form.Select>
+          </Form.Group>
 
-          <div className="muf-actions">
-            
-            <button
+          <div className="d-flex gap-3 justify-content-end mt-4">
+            <Button
               type="button" 
-              className="muf-cancel-btn"
+              variant="secondary"
+              size="lg"
               onClick={onCancel}
-              disabled={loading} 
+              disabled={loading}
+              style={{
+                fontWeight: 'var(--font-medium)',
+                padding: '0.75rem 2rem'
+              }}
             >
               Cancel
-            </button>
+            </Button>
             
-            <button 
+            <Button 
               type="submit" 
-              disabled={loading || loadingRoles} 
-              className="muf-submit-btn"
+              variant="primary"
+              size="lg"
+              disabled={loading || loadingRoles}
+              style={{
+                fontWeight: 'var(--font-semibold)',
+                padding: '0.75rem 2rem'
+              }}
             >
               {loading ? "Creating user..." : "Create User"}
-            </button>
-            
+            </Button>
           </div>
-        </form>
+        </Form>
       </Card.Body>
     </Card>
   );

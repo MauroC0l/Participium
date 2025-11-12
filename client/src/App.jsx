@@ -5,24 +5,19 @@ import Home from "./pages/homepage.jsx";
 import Navbar from "./components/navbar.jsx";
 
 function App() {
-    const location = useLocation();
+  const location = useLocation();
 
-  // hide only on register page
-  // const hideNavbar = location.pathname === "/register";
+  // Hide navbar on login and register pages
+  const hideNavbar = location.pathname === "/login" || location.pathname === "/register" || location.pathname === "/";
+  
   return (
     <>
-      {/* {!hideNavbar && <Navbar />} */}
-      <Navbar />
+      {!hideNavbar && <Navbar />}
       <Routes>
-        
         <Route path="/" element={<Login />} />
-        
         <Route path="/login" element={<Login />} />
-
         <Route path="/register" element={<Register />} />
-
         <Route path="/home" element={<Home />} />
-
       </Routes>
     </>
   );

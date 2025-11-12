@@ -1,6 +1,5 @@
 import React, { useState } from "react";
-import { Alert, Card } from "react-bootstrap";
-import "../css/login.css";
+import { Alert, Card, Form, Button, Container, Row, Col, InputGroup } from "react-bootstrap";
 import { login } from "../api/authApi";
 import { useNavigate } from "react-router-dom";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
@@ -55,72 +54,127 @@ export default function Login() {
   };
 
   return (
-    <div className="login-container">
-      <Card className="login-card">
-        <Card.Body>
-          <img
-            src="/participium-logo.png"
-            alt="Participium Logo"
-            className="login-logo-img"
-          />
-
-          <p className="login-subtitle">Sign in to your account</p>
-
-          {error && (
-            <div className="alert-container">
-              <Alert variant="danger" onClose={() => setError("")} dismissible>
-                {error}
-              </Alert>
-            </div>
-          )}
-
-          <form onSubmit={handleLogin} className="login-form" noValidate>
-            <div className="login-field">
-              <label className="login-label">Username</label>
-              <input
-                type="text"
-                placeholder="Enter username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                disabled={loading}
-              />
-            </div>
-
-            <div className="login-field">
-              <label className="login-label">Password</label>
-              <div className="password-wrapper">
-                <input
-                  type={showPassword ? "text" : "password"} 
-                  placeholder="Enter password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={loading}
-                />
-                <button
-                  type="button"
-                  className="password-toggle-btn"
-                  onClick={() => setShowPassword(!showPassword)}
-                  disabled={loading}
-                  aria-label={showPassword ? "Hide password" : "Show password"}
+    <Container 
+      fluid 
+      className="d-flex align-items-center justify-content-center min-vh-100" 
+      style={{ backgroundColor: 'var(--bg-lighter)' }}
+    >
+      <Row className="w-100 justify-content-center">
+        <Col xs={12} sm={10} md={6} lg={5} xl={4}>
+          <Card 
+            className="shadow-lg" 
+            style={{ 
+              borderRadius: 'var(--radius-xl)',
+              border: 'none'
+            }}
+          >
+            <Card.Body className="p-5">
+              <div className="text-center mb-5">
+                <h1 
+                  style={{ 
+                    color: 'var(--primary)',
+                    fontWeight: 'var(--font-bold)',
+                    fontSize: 'var(--font-xxxl)',
+                    marginBottom: 'var(--spacing-sm)',
+                    letterSpacing: '-0.025em'
+                  }}
                 >
-                  {showPassword ? <FaEyeSlash /> : <FaEye />}
-                </button>
+                  Participium
+                </h1>
+                <p 
+                  className="text-muted mb-0" 
+                  style={{ fontSize: 'var(--font-base)' }}
+                >
+                  Sign in to your account
+                </p>
               </div>
-            </div>
 
-            <button type="submit" disabled={loading}>
-              {loading ? "Signing in..." : "Sign in"}
-            </button>
-          </form>
+              {error && (
+                <Alert 
+                  variant="danger" 
+                  onClose={() => setError("")} 
+                  dismissible 
+                  className="mb-4"
+                >
+                  {error}
+                </Alert>
+              )}
 
-          <div className="signup-link">
-            Don't have an account?{" "}
-            <span onClick={() => !loading && navigate("/register")}>
-              Create one
-            </span>
-          </div>
-        </Card.Body>
-      </Card>
-    </div>
+              <Form onSubmit={handleLogin} noValidate>
+                <Form.Group className="mb-4">
+                  <Form.Label style={{ fontWeight: 'var(--font-medium)' }}>
+                    Username
+                  </Form.Label>
+                  <InputGroup size="lg">
+                    <Form.Control
+                      type="text"
+                      placeholder="Enter username"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      disabled={loading}
+                    />
+                  </InputGroup>
+                </Form.Group>
+
+                <Form.Group className="mb-4">
+                  <Form.Label style={{ fontWeight: 'var(--font-medium)' }}>
+                    Password
+                  </Form.Label>
+                  <InputGroup size="lg">
+                    <Form.Control
+                      type={showPassword ? "text" : "password"} 
+                      placeholder="Enter password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      disabled={loading}
+                    />
+                    <Button
+                      variant="outline-secondary"
+                      onClick={() => setShowPassword(!showPassword)}
+                      disabled={loading}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? <FaEyeSlash /> : <FaEye />}
+                    </Button>
+                  </InputGroup>
+                </Form.Group>
+
+                <Button 
+                  type="submit" 
+                  variant="primary" 
+                  className="w-100 mb-4" 
+                  size="lg"
+                  disabled={loading}
+                  style={{ fontWeight: 'var(--font-semibold)' }}
+                >
+                  {loading ? "Signing in..." : "Sign in"}
+                </Button>
+              </Form>
+
+              <div className="text-center">
+                <span 
+                  className="text-muted" 
+                  style={{ fontSize: 'var(--font-sm)' }}
+                >
+                  Don't have an account?{" "}
+                </span>
+                <Button 
+                  variant="link" 
+                  className="p-0" 
+                  onClick={() => !loading && navigate("/register")}
+                  disabled={loading}
+                  style={{ 
+                    fontSize: 'var(--font-sm)',
+                    fontWeight: 'var(--font-semibold)'
+                  }}
+                >
+                  Create one
+                </Button>
+              </div>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
+    </Container>
   );
 }

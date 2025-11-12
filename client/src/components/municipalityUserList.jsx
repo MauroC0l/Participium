@@ -180,9 +180,18 @@ export default function MunicipalityUserList({ refreshTrigger }) {
 
   if (loading) {
     return (
-      <Card className="municipality-user-list-card">
-        <Card.Body>
-          <div className="mul-loading">Loading users...</div>
+      <Card 
+        className="shadow-lg" 
+        style={{ 
+          borderRadius: 'var(--radius-xl)',
+          border: 'none'
+        }}
+      >
+        <Card.Body className="text-center py-5">
+          <Spinner animation="border" style={{ color: 'var(--primary)' }} />
+          <div className="mt-3" style={{ color: 'var(--text-secondary)' }}>
+            Loading users...
+          </div>
         </Card.Body>
       </Card>
     );
@@ -190,9 +199,24 @@ export default function MunicipalityUserList({ refreshTrigger }) {
 
   return (
     <>
-      <Card className="municipality-user-list-card">
-        <Card.Body>
-          <h3 className="mul-title">Municipality Users</h3>
+      <Card 
+        className="shadow-lg" 
+        style={{ 
+          borderRadius: 'var(--radius-xl)',
+          border: 'none'
+        }}
+      >
+        <Card.Body className="p-4">
+          <h3 
+            style={{ 
+              color: 'var(--primary)',
+              fontWeight: 'var(--font-bold)',
+              fontSize: 'var(--font-xl)',
+              marginBottom: 'var(--spacing-lg)'
+            }}
+          >
+            Users List
+          </h3>
 
           {error && (
             <Alert variant="danger" onClose={() => setError("")} dismissible>

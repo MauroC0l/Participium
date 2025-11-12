@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import "../css/navbar.css";
 import { useNavigate, useLocation } from "react-router-dom";
 import { getCurrentUser, logout } from "../api/authApi";
+import { Navbar as BSNavbar, Container, Nav, Button } from "react-bootstrap";
 
 export default function Navbar() {
   const [user, setUser] = useState(null);
@@ -34,21 +34,59 @@ export default function Navbar() {
   };
 
   return (
-    <div className="navbar">
-      <span className="brand" onClick={handleBrandClick}>
-        Participium
-      </span>
-
-      {showLogout && (
-        <div className="navbar-user-section">
-          <span className="navbar-username">
-            {user.username}
-          </span>
-          <button className="logout-btn" onClick={handleLogout}>
-            Logout
-          </button>
-        </div>
-      )}
-    </div>
+    <BSNavbar 
+      style={{ 
+        backgroundColor: 'var(--primary)', 
+        boxShadow: 'var(--shadow-md)',
+        padding: '1rem 0'
+      }} 
+      variant="dark" 
+      expand="lg" 
+      className="mb-4"
+    >
+      <Container fluid className="px-4">
+        <BSNavbar.Brand 
+          onClick={handleBrandClick}
+          style={{ 
+            fontSize: 'var(--font-xl)', 
+            fontWeight: 'var(--font-bold)',
+            letterSpacing: '-0.025em',
+            cursor: 'pointer'
+          }}
+        >
+          Participium
+        </BSNavbar.Brand>
+        <BSNavbar.Toggle aria-controls="basic-navbar-nav" />
+        <BSNavbar.Collapse id="basic-navbar-nav">
+          <Nav className="ms-auto align-items-center">
+            {showLogout && (
+              <>
+                <span 
+                  className="text-light me-3" 
+                  style={{ 
+                    fontWeight: 'var(--font-medium)',
+                    fontSize: 'var(--font-sm)'
+                  }}
+                >
+                  {user.username}
+                </span>
+                <Button
+                  variant="light"
+                  onClick={handleLogout}
+                  style={{
+                    fontWeight: 'var(--font-medium)',
+                    borderRadius: 'var(--radius-md)',
+                    padding: '0.5rem 1.5rem',
+                    minHeight: 'var(--btn-height-sm)'
+                  }}
+                >
+                  Logout
+                </Button>
+              </>
+            )}
+          </Nav>
+        </BSNavbar.Collapse>
+      </Container>
+    </BSNavbar>
   );
 }
