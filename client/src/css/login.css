@@ -1,0 +1,145 @@
+/* Professional minimal login page */
+.login-container {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: var(--bg);
+  padding: 24px;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  max-height: 90vh;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-md);
+}
+
+.login-card .card-body {
+  padding: 48px 40px;
+}
+
+.alert-container {
+  min-height: 70px;
+  margin-bottom: 8px;
+}
+
+.login-logo {
+  font-family: "Montserrat", sans-serif;
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--navy);
+  margin: 0 0 8px 0;
+  text-align: center;
+}
+
+.login-subtitle {
+  text-align: center;
+  color: var(--text-light);
+  font-size: 14px;
+  margin: 0 0 32px 0;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.login-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.login-label {
+  display: block;
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.login-form input {
+  width: 100%;
+  padding: 12px 14px;
+  background: var(--card);
+  color: var(--text);
+  caret-color: var(--blue);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 15px;
+  transition: border-color 0.2s, box-shadow 0.2s, opacity 0.2s;
+  box-sizing: border-box;
+}
+
+.login-form input:focus {
+  outline: none;
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(30, 103, 200, 0.1);
+}
+
+.login-form input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: #f6f8fa;
+}
+
+.login-form button[type="submit"] {
+  width: 100%;
+  padding: 12px;
+  background: var(--blue);
+  border: none;
+  color: white;
+  font-weight: 600;
+  font-size: 15px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s, opacity 0.2s;
+  margin-top: 8px;
+}
+
+.login-form button[type="submit"]:hover:not(:disabled) {
+  background: var(--blue-hover);
+}
+
+.login-form button[type="submit"]:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.login-back-btn:hover {
+  background: #f6f8fa;
+  border-color: var(--muted);
+}
+
+.signup-link {
+  margin-top: 24px;
+  padding-top: 24px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--text-light);
+  border-top: 1px solid var(--border);
+}
+
+.signup-link span {
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--blue);
+  transition: color 0.2s;
+}
+
+.signup-link span:hover {
+  color: var(--blue-hover);
+}
+
+/* Bootstrap alert spacing */
+.login-card .alert {
+  margin-bottom: 0;
+  text-align: left;
+  border-radius: 8px;
+}
+
