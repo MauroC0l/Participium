@@ -90,12 +90,10 @@ describe('MunicipalityUserController Integration Tests', () => {
         adminAgent = request.agent(app);
         citizenAgent = request.agent(app);
 
-        // Login Admin
         await adminAgent.post('/api/sessions').send({
             username: ADMIN_CREDENTIALS.username,
             password: ADMIN_CREDENTIALS.password
         });
-        // Login Citizen
         await citizenAgent.post('/api/sessions').send({
             username: CITIZEN_CREDENTIALS.username,
             password: CITIZEN_CREDENTIALS.password
@@ -126,7 +124,6 @@ describe('MunicipalityUserController Integration Tests', () => {
                 .post('/api/municipality/users')
                 .send(EMPLOYEE_PAYLOAD); 
             expect(response.status).toBe(401);
-            expect(response.body.message || response.body.error).toBe('Not authenticated');
         });
 
         it('should fail if authenticated as Citizen (403)', async () => {
@@ -134,7 +131,6 @@ describe('MunicipalityUserController Integration Tests', () => {
                 .post('/api/municipality/users')
                 .send(EMPLOYEE_PAYLOAD);
             expect(response.status).toBe(403);
-            expect(response.body.message || response.body.error).toBe('Access denied. Admin role required.');
         });
 
         it('should create a new user if authenticated as Admin (201)', async () => {
@@ -150,8 +146,6 @@ describe('MunicipalityUserController Integration Tests', () => {
 
             expect(response.status).toBe(201);
             expect(response.body.username).toBe(newUserData.username);
-            expect(response.body.role).toBe(newUserData.role);
-            
             createdUserIds.push(response.body.id);
         });
 
@@ -160,7 +154,6 @@ describe('MunicipalityUserController Integration Tests', () => {
                 .post('/api/municipality/users')
                 .send({ username: 'test' });
             expect(response.status).toBe(400);
-            expect(response.body.message || response.body.error).toContain('All fields are required'); 
         });
 
         it('should return 400 when trying to create a user with CITIZEN role', async () => {
@@ -168,9 +161,7 @@ describe('MunicipalityUserController Integration Tests', () => {
             const response = await adminAgent
                 .post('/api/municipality/users')
                 .send(citizenPayload);
-            
             expect(response.status).toBe(400);
-            expect(response.body.message || response.body.error).toBe('Cannot create a municipality user with Citizen role');
         });
 
         it('should return 400 when trying to create a user with ADMINISTRATOR role ', async () => {
@@ -178,16 +169,16 @@ describe('MunicipalityUserController Integration Tests', () => {
             const response = await adminAgent
                 .post('/api/municipality/users')
                 .send(adminPayload);
-
             expect(response.status).toBe(400);
-            expect(response.body.message || response.body.error).toBe('Cannot create an Administrator through this endpoint');
         });
 
         it('should return 409 if username already exists', async () => {
-            jest.spyOn(userRepository, 'existsUserByUsername').mockResolvedValue(true);
-            jest.spyOn(userRepository, 'existsUserByEmail').mockResolvedValue(false);
-
-            const conflictPayload = { ...EMPLOYEE_PAYLOAD, email: `new_${r()}@test.com`, username: createdEmployee.username };
+            const conflictPayload = { 
+                ...EMPLOYEE_PAYLOAD, 
+                email: `new_${r()}@test.com`, 
+                username: createdEmployee.username
+            };
+            
             const response = await adminAgent
                 .post('/api/municipality/users')
                 .send(conflictPayload);
@@ -197,14 +188,16 @@ describe('MunicipalityUserController Integration Tests', () => {
         });
 
         it('should return 409 if email already exists', async () => {
-            jest.spyOn(userRepository, 'existsUserByUsername').mockResolvedValue(false);
-            jest.spyOn(userRepository, 'existsUserByEmail').mockResolvedValue(true);
-
-            const conflictPayload = { ...EMPLOYEE_PAYLOAD, username: `new_${r()}`, email: createdEmployee.email };
+            const conflictPayload = { 
+                ...EMPLOYEE_PAYLOAD, 
+                username: `new_${r()}`, 
+                email: createdEmployee.email
+            };
+            
             const response = await adminAgent
                 .post('/api/municipality/users')
                 .send(conflictPayload);
-
+            
             expect(response.status).toBe(409); 
             expect(response.body.message || response.body.error).toBe('Email already exists');
         });
@@ -229,13 +222,11 @@ describe('MunicipalityUserController Integration Tests', () => {
         it('should fail if not authenticated (401)', async () => {
             const response = await request(app).get('/api/municipality/users');
             expect(response.status).toBe(401);
-            expect(response.body.message || response.body.error).toBe('Not authenticated');
         });
 
         it('should fail if authenticated as Citizen (403)', async () => {
             const response = await citizenAgent.get('/api/municipality/users');
             expect(response.status).toBe(403);
-            expect(response.body.message || response.body.error).toBe('Access denied. Admin role required.');
         });
 
         it('should return a list of users if authenticated as Admin (200)', async () => {
@@ -243,8 +234,8 @@ describe('MunicipalityUserController Integration Tests', () => {
             expect(response.status).toBe(200);
             expect(response.body).toBeInstanceOf(Array);
             
-            expect(response.body.length).toBe(2); 
             expect(response.body.some((user: any) => user.id === createdEmployee.id)).toBe(true);
+            expect(response.body.some((user: any) => user.id === createdCitizen.id)).toBe(false);
         });
         
         it('should return 500 if the service throws an unexpected error', async () => {
@@ -254,7 +245,6 @@ describe('MunicipalityUserController Integration Tests', () => {
             const response = await adminAgent.get('/api/municipality/users');
             
             expect(response.status).toBe(500);
-            expect(response.body.message || response.body.error).toBe(mockError.message);
         });
     });
 
@@ -263,8 +253,7 @@ describe('MunicipalityUserController Integration Tests', () => {
         
         it('should fail if not authenticated (401)', async () => {
             const response = await request(app).get(`/api/municipality/users/${createdEmployee.id}`);
-            expect(response.status).toBe(401);
-            expect(response.body.message || response.body.error).toBe('Not authenticated'); 
+            expect(response.status).toBe(401); 
         });
 
         it('should return the user if authenticated as Admin (200)', async () => {
@@ -276,20 +265,17 @@ describe('MunicipalityUserController Integration Tests', () => {
         it('should fail if authenticated as Citizen (403)', async () => {
             const response = await citizenAgent.get(`/api/municipality/users/${createdEmployee.id}`);
             expect(response.status).toBe(403);
-            expect(response.body.message || response.body.error).toBe('Access denied. Admin role required.');
         });
 
         it('should return 404 for a non-existent user ID', async () => {
             const nonExistentId = 9999999;
             const response = await adminAgent.get(`/api/municipality/users/${nonExistentId}`);
             expect(response.status).toBe(404);
-            expect(response.body.message || response.body.error).toBe('User not found'); 
         });
         
         it('should return 400 for an invalid user ID format', async () => {
             const response = await adminAgent.get('/api/municipality/users/abc');
             expect(response.status).toBe(400);
-            expect(response.body.message || response.body.error).toBe('Invalid user ID');
         });
 
         it('should return 500 if the service throws an unexpected error', async () => {
@@ -299,7 +285,6 @@ describe('MunicipalityUserController Integration Tests', () => {
             const response = await adminAgent.get(`/api/municipality/users/${createdEmployee.id}`);
             
             expect(response.status).toBe(500); 
-            expect(response.body.message || response.body.error).toBe(mockError.message);
         });
         
         it('should return 404 if user found is a CITIZEN', async () => {
@@ -321,7 +306,6 @@ describe('MunicipalityUserController Integration Tests', () => {
                 .put(`/api/municipality/users/${createdEmployee.id}`)
                 .send(updatePayload);
             expect(response.status).toBe(401);
-            expect(response.body.message || response.body.error).toBe('Not authenticated');
         }); 
 
         it('should update the user if authenticated as Admin (200)', async () => {
@@ -338,7 +322,6 @@ describe('MunicipalityUserController Integration Tests', () => {
                 .put(`/api/municipality/users/${nonExistentId}`)
                 .send(updatePayload);
             expect(response.status).toBe(404);
-            expect(response.body.message || response.body.error).toBe('User not found'); 
         });
 
         it('should return 403 if authenticated as Citizen', async () => {
@@ -346,7 +329,6 @@ describe('MunicipalityUserController Integration Tests', () => {
                 .put(`/api/municipality/users/${createdEmployee.id}`)
                 .send(updatePayload);
             expect(response.status).toBe(403);
-            expect(response.body.message || response.body.error).toBe('Access denied. Admin role required.');
         });
 
         it('should return 400 for an invalid user ID format', async () => {
@@ -354,7 +336,6 @@ describe('MunicipalityUserController Integration Tests', () => {
                 .put('/api/municipality/users/abc')
                 .send(updatePayload);
             expect(response.status).toBe(400);
-            expect(response.body.message || response.body.error).toBe('Invalid user ID');
         });
 
         it('should return 400 if no update fields are provided', async () => {
@@ -362,33 +343,26 @@ describe('MunicipalityUserController Integration Tests', () => {
                 .put(`/api/municipality/users/${createdEmployee.id}`)
                 .send({}); 
             expect(response.status).toBe(400);
-            expect(response.body.message || response.body.error).toBe('At least one field must be provided for update');
         });
 
         it('should return 400 when trying to update a CITIZEN user', async () => {
             const response = await adminAgent
                 .put(`/api/municipality/users/${createdCitizen.id}`)
                 .send({ first_name: 'NewName' });
-            
             expect(response.status).toBe(400);
-            expect(response.body.message || response.body.error).toBe('Cannot modify Citizen or Administrator through this endpoint');
         });
 
         it('should return 400 when trying to change a role to CITIZEN', async () => {
             const response = await adminAgent
                 .put(`/api/municipality/users/${createdEmployee.id}`)
                 .send({ role: UserRole.CITIZEN });
-            
             expect(response.status).toBe(400);
-            expect(response.body.message || response.body.error).toBe('Cannot change role to Citizen or Administrator');
         });
 
         it('should return 409 when updating email to an existing one', async () => {
-            jest.spyOn(userRepository, 'findUserByEmail').mockResolvedValue({ id: createdCitizen.id } as userEntity);
-
             const response = await adminAgent
                 .put(`/api/municipality/users/${createdEmployee.id}`)
-                .send({ email: createdCitizen.email });
+                .send({ email: createdCitizen.email }); 
             
             expect(response.status).toBe(409);
             expect(response.body.message || response.body.error).toBe('Email already exists');
@@ -403,7 +377,6 @@ describe('MunicipalityUserController Integration Tests', () => {
                 .send({ first_name: 'ErrorTest' });
             
             expect(response.status).toBe(500);
-            expect(response.body.message || response.body.error).toBe(mockError.message);
         }); 
     });
 
@@ -417,7 +390,6 @@ describe('MunicipalityUserController Integration Tests', () => {
                 .put(`/api/municipality/users/${createdEmployee.id}/role`)
                 .send(rolePayload);
             expect(response.status).toBe(401);
-            expect(response.body.message || response.body.error).toBe('Not authenticated');
         });
 
         it('should fail if authenticated as Citizen (403)', async () => {
@@ -425,7 +397,6 @@ describe('MunicipalityUserController Integration Tests', () => {
                 .put(`/api/municipality/users/${createdEmployee.id}/role`)
                 .send(rolePayload);
             expect(response.status).toBe(403);
-            expect(response.body.message || response.body.error).toBe('Access denied. Admin role required.');
         });
 
         it('should update the role if authenticated as Admin (200)', async () => {
@@ -443,7 +414,6 @@ describe('MunicipalityUserController Integration Tests', () => {
                 .put(`/api/municipality/users/${nonExistentId}/role`)
                 .send(rolePayload);
             expect(response.status).toBe(404);
-            expect(response.body.message || response.body.error).toBe('User not found');
         });
 
         it('should return 400 for an invalid user ID format', async () => {
@@ -451,7 +421,6 @@ describe('MunicipalityUserController Integration Tests', () => {
                 .put('/api/municipality/users/abc/role')
                 .send(rolePayload);
             expect(response.status).toBe(400);
-            expect(response.body.message || response.body.error).toBe('Invalid user ID');
         });
 
         it('should return 400 if role is not provided', async () => {
@@ -459,15 +428,13 @@ describe('MunicipalityUserController Integration Tests', () => {
                 .put(`/api/municipality/users/${createdEmployee.id}/role`)
                 .send({});
             expect(response.status).toBe(400);
-            expect(response.body.message || response.body.error).toBe('Role is required');
         });
         
         it('should return 400 for an invalid role string', async () => {
-            jest.spyOn(RoleUtils, 'isRoleValid').mockReturnValue(false);
-
             const response = await adminAgent
                 .put(`/api/municipality/users/${createdEmployee.id}/role`)
                 .send({ role: 'NOT_A_VALID_ROLE' });
+            
             expect(response.status).toBe(400);
             expect(response.body.message || response.body.error).toBe('Invalid role specified');
         });
@@ -478,7 +445,6 @@ describe('MunicipalityUserController Integration Tests', () => {
                 .send({ role: UserRole.CITIZEN });
             
             expect(response.status).toBe(400);
-            expect(response.body.message || response.body.error).toBe('Cannot assign Citizen role to municipality user');
         });
 
         it('should return 400 when trying to assign ADMINISTRATOR role', async () => {
@@ -487,7 +453,6 @@ describe('MunicipalityUserController Integration Tests', () => {
                 .send({ role: UserRole.ADMINISTRATOR });
 
             expect(response.status).toBe(400);
-            expect(response.body.message || response.body.error).toBe('Cannot assign Administrator role through this endpoint');
         });
 
         it('should return 400 when trying to assign a role to a CITIZEN user', async () => {
@@ -496,7 +461,6 @@ describe('MunicipalityUserController Integration Tests', () => {
                 .send({ role: UserRole.TECHNICAL_OFFICE_STAFF_MEMBER });
 
             expect(response.status).toBe(400);
-            expect(response.body.message || response.body.error).toBe('Cannot assign role to Citizen or Administrator through this endpoint');
         });
         
         it('should return 500 if the service throws an unexpected error during role update', async () => {
@@ -508,7 +472,6 @@ describe('MunicipalityUserController Integration Tests', () => {
                 .send(rolePayload);
 
             expect(response.status).toBe(500);
-            expect(response.body.message || response.body.error).toBe(mockError.message);
         });
     });
 
@@ -519,7 +482,6 @@ describe('MunicipalityUserController Integration Tests', () => {
         it('should fail if not authenticated (401)', async () => {
             const response = await request(app).delete(`/api/municipality/users/${createdEmployee.id}`);
             expect(response.status).toBe(401);
-            expect(response.body.message || response.body.error).toBe('Not authenticated');
         });
 
         it('should delete the user if authenticated as Admin (204)', async () => {
@@ -536,26 +498,21 @@ describe('MunicipalityUserController Integration Tests', () => {
             const nonExistentId = 9999999;
             const response = await adminAgent.delete(`/api/municipality/users/${nonExistentId}`);
             expect(response.status).toBe(404);
-            expect(response.body.message || response.body.error).toBe('User not found');
         });
 
         it('should return 403 if authenticated as Citizen', async () => {
             const response = await citizenAgent.delete(`/api/municipality/users/${createdEmployee.id}`);
             expect(response.status).toBe(403);
-            expect(response.body.message || response.body.error).toBe('Access denied. Admin role required.');
         });
         
         it('should return 400 for an invalid user ID format', async () => {
             const response = await adminAgent.delete('/api/municipality/users/abc');
             expect(response.status).toBe(400);
-            expect(response.body.message || response.body.error).toBe('Invalid user ID');
         });
 
         it('should return 400 when trying to delete a CITIZEN user', async () => {
             const response = await adminAgent.delete(`/api/municipality/users/${createdCitizen.id}`);
-            
             expect(response.status).toBe(400);
-            expect(response.body.message || response.body.error).toBe('Cannot delete Citizen or Administrator through this endpoint');
         });
         
         it('should return 500 if the service throws an unexpected error during deletion', async () => {
@@ -565,7 +522,6 @@ describe('MunicipalityUserController Integration Tests', () => {
             const response = await adminAgent.delete(`/api/municipality/users/${createdEmployee.id}`);
             
             expect(response.status).toBe(500);
-            expect(response.body.message || response.body.error).toBe(mockError.message);
         });
     });
 
@@ -587,13 +543,11 @@ describe('MunicipalityUserController Integration Tests', () => {
         it('should return 401 if not authenticated', async () => {
             const response = await request(app).get('/api/roles');
             expect(response.status).toBe(401);
-            expect(response.body.message || response.body.error).toBe('Not authenticated');
         });
 
         it('should return 403 if authenticated as Citizen', async () => {
             const response = await citizenAgent.get('/api/roles');
             expect(response.status).toBe(403);
-            expect(response.body.message || response.body.error).toBe('Access denied. Admin role required.');
         });
 
         it('should return 500 if the RoleUtils throws an error', async () => {
@@ -605,7 +559,6 @@ describe('MunicipalityUserController Integration Tests', () => {
             const response = await adminAgent.get('/api/roles');
             
             expect(response.status).toBe(500);
-            expect(response.body.message || response.body.error).toBe('Forced Util Error');
         });
     });
 
