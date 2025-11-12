@@ -48,8 +48,6 @@ export default function MunicipalityUserHome({ user }) {
             <ul style={{ color: 'var(--text-secondary)', marginBottom: 0, paddingLeft: '1.5rem' }}>
               <li className="mb-2">View and manage citizen reports</li>
               <li className="mb-2">Update report status and add comments</li>
-              <li className="mb-2">Communicate with citizens and team members</li>
-              <li>Track your work and team performance</li>
             </ul>
           </Card.Body>
         </Card>

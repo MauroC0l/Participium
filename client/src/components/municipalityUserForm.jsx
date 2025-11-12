@@ -327,11 +327,11 @@ export default function MunicipalityUserForm({ onUserCreated, onCancel }) {
             </Form.Select>
           </Form.Group>
 
-          <div className="d-flex gap-3 justify-content-end mt-4">
+          <div className="d-flex gap-3 justify-content-center mt-4">
             <Button
               type="button" 
               variant="danger"
-              size="lg"
+              size="sm"
               onClick={() => {
                 setFormData({
                   username: "",
@@ -349,10 +349,6 @@ export default function MunicipalityUserForm({ onUserCreated, onCancel }) {
                 }
               }}
               disabled={loading}
-              style={{
-                fontWeight: 'var(--font-medium)',
-                padding: '0.75rem 2rem'
-              }}
             >
               Cancel
             </Button>
@@ -360,12 +356,8 @@ export default function MunicipalityUserForm({ onUserCreated, onCancel }) {
             <Button 
               type="submit" 
               variant="primary"
-              size="lg"
+              size="sm"
               disabled={loading || loadingRoles}
-              style={{
-                fontWeight: 'var(--font-semibold)',
-                padding: '0.75rem 2rem'
-              }}
             >
               {loading ? "Creating user..." : "Create User"}
             </Button>

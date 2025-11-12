@@ -3,7 +3,8 @@ import { Alert, Card, Modal, Button, Spinner } from "react-bootstrap";
 import { 
   getAllMunicipalityUsers, 
   deleteMunicipalityUser,
-  updateMunicipalityUser
+  updateMunicipalityUser,
+  getAllRoles
 } from "../api/municipalityUserApi";
 import "../css/municipality-user-list.css";
 
@@ -12,6 +13,8 @@ export default function MunicipalityUserList({ refreshTrigger }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [roles, setRoles] = useState([]);
+  const [roleFilter, setRoleFilter] = useState("");
   
   // Edit modal state
   const [showEditModal, setShowEditModal] = useState(false);
@@ -30,10 +33,20 @@ export default function MunicipalityUserList({ refreshTrigger }) {
   const [deletingUser, setDeletingUser] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  // Fetch users
+  // Fetch users and roles
   useEffect(() => {
     fetchUsers();
+    fetchRoles();
   }, [refreshTrigger]);
+
+  const fetchRoles = async () => {
+    try {
+      const rolesList = await getAllRoles();
+      setRoles(rolesList);
+    } catch (err) {
+      console.error("Failed to fetch roles:", err);
+    }
+  };
 
   const fetchUsers = async () => {
     try {
@@ -101,7 +114,7 @@ export default function MunicipalityUserList({ refreshTrigger }) {
         email: editForm.email,
         first_name: editForm.firstName,
         last_name: editForm.lastName,
-        role: editForm.role, // Keep the original role
+        role: editForm.role,
       };
 
       console.log("Updating user with payload:", payload);
@@ -189,18 +202,40 @@ export default function MunicipalityUserList({ refreshTrigger }) {
     );
   }
 
+  const filteredUsers = roleFilter 
+    ? users.filter(user => user.role === roleFilter)
+    : users;
+
   return (
     <>
-      <h3 
-        style={{ 
-          color: 'var(--primary)',
-          fontWeight: 'var(--font-bold)',
-          fontSize: 'var(--font-xl)',
-          marginBottom: 'var(--spacing-lg)'
-        }}
-      >
-        Users List
-      </h3>
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h3 
+          style={{ 
+            color: 'var(--primary)',
+            fontWeight: 'var(--font-bold)',
+            fontSize: 'var(--font-xl)',
+            marginBottom: 0
+          }}
+        >
+          Users List
+        </h3>
+        
+        <div style={{ width: '250px' }}>
+          <select
+            className="form-select"
+            value={roleFilter}
+            onChange={(e) => setRoleFilter(e.target.value)}
+            style={{ fontSize: 'var(--font-sm)' }}
+          >
+            <option value="">All Roles</option>
+            {roles.map((role) => (
+              <option key={role} value={role}>
+                {role}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
 
       {error && (
         <Alert variant="danger" onClose={() => setError("")} dismissible>
@@ -214,9 +249,12 @@ export default function MunicipalityUserList({ refreshTrigger }) {
         </Alert>
       )}
 
-          {users.length === 0 ? (
+          {filteredUsers.length === 0 ? (
             <div className="mul-empty">
-              No municipality users found. Create one to get started.
+              {roleFilter 
+                ? `No users found with role "${roleFilter}".`
+                : "No municipality users found. Create one to get started."
+              }
             </div>
           ) : (
             <div className="mul-table-wrapper">
@@ -231,7 +269,7 @@ export default function MunicipalityUserList({ refreshTrigger }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {users.map((user) => (
+                  {filteredUsers.map((user) => (
                     <tr key={user.id}>
                       <td>{user.username}</td>
                       <td>{`${user.first_name || ""} ${user.last_name || ""}`.trim() || "N/A"}</td>
@@ -241,18 +279,20 @@ export default function MunicipalityUserList({ refreshTrigger }) {
                       </td>
                       <td>
                         <div className="mul-actions">
-                          <button
-                            className="mul-btn mul-btn-edit"
+                          <Button
+                            variant="primary"
+                            size="sm"
                             onClick={() => handleEdit(user)}
                           >
                             Edit
-                          </button>
-                          <button
-                            className="mul-btn mul-btn-delete"
+                          </Button>
+                          <Button
+                            variant="danger"
+                            size="sm"
                             onClick={() => handleDeleteClick(user)}
                           >
                             Delete
-                          </button>
+                          </Button>
                         </div>
                       </td>
                     </tr>
@@ -330,17 +370,14 @@ export default function MunicipalityUserList({ refreshTrigger }) {
                 disabled
                 className="mul-readonly"
               />
-              <small className="mul-help-text">
-                Role cannot be changed. Contact a system administrator if you need to change the role.
-              </small>
             </div>
           </form>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowEditModal(false)} disabled={editLoading}>
+          <Button variant="danger" size="sm" onClick={() => setShowEditModal(false)} disabled={editLoading}>
             Cancel
           </Button>
-          <Button variant="primary" onClick={handleEditSubmit} disabled={editLoading}>
+          <Button variant="primary" size="sm" onClick={handleEditSubmit} disabled={editLoading}>
             {editLoading ? "Saving..." : "Save Changes"}
           </Button>
         </Modal.Footer>
@@ -360,10 +397,10 @@ export default function MunicipalityUserList({ refreshTrigger }) {
           )}
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDeleteModal(false)} disabled={deleteLoading}>
+          <Button variant="primary" size="sm" onClick={() => setShowDeleteModal(false)} disabled={deleteLoading}>
             Cancel
           </Button>
-          <Button variant="danger" onClick={handleDeleteConfirm} disabled={deleteLoading}>
+          <Button variant="danger" size="sm" onClick={handleDeleteConfirm} disabled={deleteLoading}>
             {deleteLoading ? "Deleting..." : "Delete"}
           </Button>
         </Modal.Footer>

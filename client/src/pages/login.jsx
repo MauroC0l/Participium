@@ -70,17 +70,11 @@ export default function Login() {
           >
             <Card.Body className="p-5">
               <div className="text-center mb-5">
-                <h1 
-                  style={{ 
-                    color: 'var(--primary)',
-                    fontWeight: 'var(--font-bold)',
-                    fontSize: 'var(--font-xxxl)',
-                    marginBottom: 'var(--spacing-sm)',
-                    letterSpacing: '-0.025em'
-                  }}
-                >
-                  Participium
-                </h1>
+                <img 
+                  src="/participium-logo.png" 
+                  alt="Participium Logo" 
+                  style={{ height: '120px', width: 'auto', marginBottom: '1.5rem' }}
+                />
                 <p 
                   className="text-muted mb-0" 
                   style={{ fontSize: 'var(--font-base)' }}

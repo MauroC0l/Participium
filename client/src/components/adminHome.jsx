@@ -29,7 +29,7 @@ export default function AdminHome() {
     <Container 
       style={{ 
         maxWidth: '1400px',
-        padding: '3rem',
+        padding: '2rem 3rem',
         minHeight: '100vh'
       }}
     >

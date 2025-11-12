@@ -52,9 +52,17 @@ export default function Navbar() {
             fontSize: 'var(--font-xl)', 
             fontWeight: 'var(--font-bold)',
             letterSpacing: '-0.025em',
-            cursor: 'pointer'
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem'
           }}
         >
+          <img 
+            src="/participium-logo.png" 
+            alt="Participium Logo" 
+            style={{ height: '32px', width: 'auto' }}
+          />
           Participium
         </BSNavbar.Brand>
         <BSNavbar.Toggle aria-controls="basic-navbar-nav" />
