@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { Container, Row, Col, Button } from 'react-bootstrap';
+import { Container, Row, Col, Button, Alert, Tabs, Tab } from 'react-bootstrap';
+import { BsPersonFillGear, BsPersonFillAdd, BsGearFill } from 'react-icons/bs';
 import MunicipalityUserForm from './MunicipalityUserForm';
 import MunicipalityUserList from './MunicipalityUserList';
 
 export default function AdminHome() {
+  const [activeTab, setActiveTab] = useState('users');
   const [showForm, setShowForm] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
@@ -11,85 +13,101 @@ export default function AdminHome() {
     console.log("New user created:", newUser);
     setRefreshTrigger(prev => prev + 1);
     setShowForm(false);
+    setActiveTab('users');
   };
 
   const handleCancel = () => {
     setShowForm(false);
   };
 
+  const handleAddUser = () => {
+    setShowForm(true);
+    setActiveTab('add-user');
+  };
+
   return (
     <Container 
-      fluid 
-      className="py-5" 
       style={{ 
-        backgroundColor: 'var(--bg-lighter)', 
-        minHeight: 'calc(100vh - 120px)' 
+        maxWidth: '1400px',
+        padding: '3rem',
+        minHeight: '100vh'
       }}
     >
-      {showForm ? (
-        <Row className="justify-content-center">
-          <Col lg={10} xl={8}>
-            <MunicipalityUserForm
-              onUserCreated={handleUserCreated}
-              onCancel={handleCancel}
-            />
-          </Col>
-        </Row>
-      ) : (
-        <> 
-          <Row className="mb-5">
-            <Col>
-              <h2 
-                style={{ 
-                  color: 'var(--primary)',
-                  fontWeight: 'var(--font-bold)',
-                  fontSize: 'var(--font-xxxl)',
-                  marginBottom: 'var(--spacing-sm)'
-                }}
-              >
-                Administrator Dashboard
-              </h2>
-              <p 
-                className="text-muted mb-0" 
-                style={{ fontSize: 'var(--font-lg)' }}
-              >
-                Manage municipality users and their access to the platform.
-              </p>
-            </Col>
-          </Row>
+      <h2 
+          className="mb-2"
+          style={{ 
+            color: 'var(--primary)',
+            fontWeight: 'var(--font-bold)',
+            fontSize: 'var(--font-xxxl)'
+          }}
+        >
+          Administrator Dashboard
+        </h2>
+        <p 
+          className="text-muted mb-4" 
+          style={{ fontSize: 'var(--font-base)' }}
+        >
+          Manage municipality users and their access to the platform
+        </p>
 
-          <Row className="mb-4">
-            <Col className="d-flex justify-content-between align-items-center">
-              <h3 
-                className="mb-0" 
-                style={{ 
-                  fontWeight: 'var(--font-semibold)',
-                  color: 'var(--text-primary)'
-                }}
+          <Tabs
+                activeKey={activeTab}
+                onSelect={(k) => setActiveTab(k)}
+                className="mb-4"
+                style={{ borderBottom: '2px solid var(--border-light)' }}
               >
-                Municipality Users
-              </h3>
-              <Button
-                variant="primary"
-                size="lg"
-                onClick={() => setShowForm(true)}
-                style={{
-                  fontWeight: 'var(--font-semibold)',
-                  padding: '0.75rem 2rem'
-                }}
-              >
-                + Add New User
-              </Button>
-            </Col>
-          </Row>
+                <Tab 
+                  eventKey="users" 
+                  title={
+                    <span style={{ fontSize: 'var(--font-base)', fontWeight: 'var(--font-medium)' }}>
+                      <BsPersonFillGear className="me-2" />
+                      Manage Users
+                    </span>
+                  }
+                >
+                  <div className="pt-4">
+                    <MunicipalityUserList refreshTrigger={refreshTrigger} />
+                  </div>
+                </Tab>
+                
+                <Tab 
+                  eventKey="add-user" 
+                  title={
+                    <span style={{ fontSize: 'var(--font-base)', fontWeight: 'var(--font-medium)' }}>
+                      <BsPersonFillAdd className="me-2" />
+                      Add User
+                    </span>
+                  }
+                >
+                  <div className="pt-4">
+                    <Row className="justify-content-center">
+                      <Col lg={10} xl={9}>
+                        <MunicipalityUserForm
+                          onUserCreated={handleUserCreated}
+                          onCancel={handleCancel}
+                        />
+                      </Col>
+                    </Row>
+                  </div>
+                </Tab>
 
-          <Row>
-            <Col>
-              <MunicipalityUserList refreshTrigger={refreshTrigger} />
-            </Col>
-          </Row>
-        </>
-      )}
+                <Tab 
+                  eventKey="settings" 
+                  title={
+                    <span style={{ fontSize: 'var(--font-base)', fontWeight: 'var(--font-medium)' }}>
+                      <BsGearFill className="me-2" />
+                      Settings
+                    </span>
+                  }
+                >
+                  <div className="pt-4">
+                    <Alert variant="info" style={{ borderRadius: 'var(--radius-lg)' }}>
+                      <h5>Coming Soon</h5>
+                      <p className="mb-0">Platform settings and configuration options will be available here.</p>
+                    </Alert>
+                  </div>
+                </Tab>
+              </Tabs>
     </Container>
   );
 }

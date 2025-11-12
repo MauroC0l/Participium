@@ -8,7 +8,6 @@ export default function CitizenHome({ user }) {
 
   return (
     <div className="ch-wrapper">
-
       {/* Header */}
       <header className="ch-header">
         <h1 className="ch-title">Welcome, {userName}!</h1>

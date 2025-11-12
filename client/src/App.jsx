@@ -1,4 +1,5 @@
 import { Routes, Route , useLocation , Navigate } from "react-router-dom";
+import { useEffect } from "react";
 import Login from "./pages/login.jsx";
 import Register from "./pages/register.jsx";
 import Home from "./pages/homepage.jsx";
@@ -10,6 +11,15 @@ function App() {
   // Hide navbar on login and register pages
   const hideNavbar = location.pathname === "/login" || location.pathname === "/register" || location.pathname === "/";
   
+  // Add/remove body class based on navbar visibility
+  useEffect(() => {
+    if (hideNavbar) {
+      document.body.classList.remove('has-navbar');
+    } else {
+      document.body.classList.add('has-navbar');
+    }
+  }, [hideNavbar]);
+
   return (
     <>
       {!hideNavbar && <Navbar />}

@@ -180,55 +180,39 @@ export default function MunicipalityUserList({ refreshTrigger }) {
 
   if (loading) {
     return (
-      <Card 
-        className="shadow-lg" 
-        style={{ 
-          borderRadius: 'var(--radius-xl)',
-          border: 'none'
-        }}
-      >
-        <Card.Body className="text-center py-5">
-          <Spinner animation="border" style={{ color: 'var(--primary)' }} />
-          <div className="mt-3" style={{ color: 'var(--text-secondary)' }}>
-            Loading users...
-          </div>
-        </Card.Body>
-      </Card>
+      <div className="text-center py-5">
+        <Spinner animation="border" style={{ color: 'var(--primary)' }} />
+        <div className="mt-3" style={{ color: 'var(--text-secondary)' }}>
+          Loading users...
+        </div>
+      </div>
     );
   }
 
   return (
     <>
-      <Card 
-        className="shadow-lg" 
+      <h3 
         style={{ 
-          borderRadius: 'var(--radius-xl)',
-          border: 'none'
+          color: 'var(--primary)',
+          fontWeight: 'var(--font-bold)',
+          fontSize: 'var(--font-xl)',
+          marginBottom: 'var(--spacing-lg)'
         }}
       >
-        <Card.Body className="p-4">
-          <h3 
-            style={{ 
-              color: 'var(--primary)',
-              fontWeight: 'var(--font-bold)',
-              fontSize: 'var(--font-xl)',
-              marginBottom: 'var(--spacing-lg)'
-            }}
-          >
-            Users List
-          </h3>
+        Users List
+      </h3>
 
-          {error && (
-            <Alert variant="danger" onClose={() => setError("")} dismissible>
-              {error}
-            </Alert>
-          )}
+      {error && (
+        <Alert variant="danger" onClose={() => setError("")} dismissible>
+          {error}
+        </Alert>
+      )}
 
-          {success && (
-            <Alert variant="success" onClose={() => setSuccess("")} dismissible>
-              {success}
-            </Alert>
-          )}
+      {success && (
+        <Alert variant="success" onClose={() => setSuccess("")} dismissible>
+          {success}
+        </Alert>
+      )}
 
           {users.length === 0 ? (
             <div className="mul-empty">
@@ -277,8 +261,6 @@ export default function MunicipalityUserList({ refreshTrigger }) {
               </table>
             </div>
           )}
-        </Card.Body>
-      </Card>
 
       {/* Edit Modal */}
       <Modal show={showEditModal} onHide={() => setShowEditModal(false)} centered>

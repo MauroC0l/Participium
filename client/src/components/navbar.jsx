@@ -35,14 +35,15 @@ export default function Navbar() {
 
   return (
     <BSNavbar 
+      fixed="top"
       style={{ 
         backgroundColor: 'var(--primary)', 
         boxShadow: 'var(--shadow-md)',
-        padding: '1rem 0'
+        padding: '1rem 0',
+        zIndex: 1030
       }} 
       variant="dark" 
-      expand="lg" 
-      className="mb-4"
+      expand="lg"
     >
       <Container fluid className="px-4">
         <BSNavbar.Brand 
@@ -61,15 +62,24 @@ export default function Navbar() {
           <Nav className="ms-auto align-items-center">
             {showLogout && (
               <>
-                <span 
-                  className="text-light me-3" 
-                  style={{ 
-                    fontWeight: 'var(--font-medium)',
-                    fontSize: 'var(--font-sm)'
-                  }}
-                >
-                  {user.username}
-                </span>
+                <div className="text-light me-3">
+                  <div 
+                    style={{ 
+                      fontWeight: 'var(--font-medium)',
+                      fontSize: 'var(--font-sm)'
+                    }}
+                  >
+                    {user.username}
+                  </div>
+                  <div 
+                    style={{ 
+                      fontSize: '0.8rem',
+                      opacity: 0.8
+                    }}
+                  >
+                    {user.role}
+                  </div>
+                </div>
                 <Button
                   variant="light"
                   onClick={handleLogout}
