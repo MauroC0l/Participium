@@ -41,13 +41,13 @@
   font-size:0.95rem;
 }
 
-.hp-welcome {
+/* .hp-welcome {
   background: linear-gradient(180deg,var(--card),var(--accent));
   padding:14px 18px;
   border-radius:10px;
   box-shadow:0 6px 18px rgba(16,38,86,0.06);
   display:inline-block;
-}
+} */
 
 .hp-main {
   display:grid;

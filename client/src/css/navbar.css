@@ -19,9 +19,9 @@
   z-index: 100;
 }
 .logout-btn {
-  margin-left: auto;
+  margin-left: 1300px;
   padding: 8px 16px;
-  background: #ff4d4d;
+  background: #1e202e;
   border: none;
   color: white;
   font-weight: 600;
