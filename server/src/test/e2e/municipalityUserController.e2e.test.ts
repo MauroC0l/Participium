@@ -835,49 +835,8 @@ describe('MunicipalityUserController E2E Tests', () => {
     });
   });
 
-  /* describe('GET /api/roles - Get All Roles', () => {
-    it('should return all municipality roles', async () => {
-      // Act
-      const response = await request(app)
-        .get('/api/roles')
-        .expect('Content-Type', /json/)
-        .expect(200);
-
-      // Assert
-      expect(Array.isArray(response.body)).toBe(true);
-      expect(response.body.length).toBeGreaterThan(0);
-
-      // Verify contains municipality roles
-      expect(response.body).toContain(UserRole.MUNICIPAL_PUBLIC_RELATIONS_OFFICER);
-      expect(response.body).toContain(UserRole.MUNICIPAL_ADMINISTRATOR);
-      expect(response.body).toContain(UserRole.TECHNICAL_OFFICE_STAFF_MEMBER);
-      expect(response.body).toContain(UserRole.URBAN_PLANNING_MANAGER);
-      expect(response.body).toContain(UserRole.PRIVATE_BUILDING_MANAGER);
-      expect(response.body).toContain(UserRole.INFRASTRUCTURE_MANAGER);
-      expect(response.body).toContain(UserRole.MAINTENANCE_STAFF_MEMBER);
-      expect(response.body).toContain(UserRole.PUBLIC_GREEN_SPACES_MANAGER);
-
-      // Verify does NOT contain Citizen or Administrator
-      expect(response.body).not.toContain(UserRole.CITIZEN);
-      expect(response.body).not.toContain(UserRole.ADMINISTRATOR);
-    });
-
-    it('should be accessible without authentication', async () => {
-      // Act
-      const response = await request(app)
-        .get('/api/roles')
-        .expect('Content-Type', /json/)
-        .expect(200);
-
-      // Assert
-      expect(Array.isArray(response.body)).toBe(true);
-    });
-  }); */
-
   describe('GET /api/roles - Get All Roles', () => {
 
-    // Questo test sostituisce 'should be accessible without authentication'
-    // Verifica che la rotta sia correttamente protetta.
     it('should return 401 if not authenticated', async () => {
       // Act
       const response = await request(app)
@@ -891,7 +850,6 @@ describe('MunicipalityUserController E2E Tests', () => {
       expect(response.body.message).toContain('Not authenticated');
     });
 
-    // Questo test è la versione corretta di 'should return all municipality roles'
     it('should return all municipality roles when authenticated as admin', async () => {
       // --- Arrange: Esegui il login come admin ---
       // (Preso direttamente dal tuo file di esempio AuthController)
@@ -934,7 +892,6 @@ describe('MunicipalityUserController E2E Tests', () => {
       expect(response.body).not.toContain(UserRole.ADMINISTRATOR);
     });
 
-    // Aggiungiamo un test per un utente NON-Admin (es. testcitizen)
     it('should return 403 if authenticated as non-admin (e.g., Citizen)', async () => {
       // --- Arrange: Esegui il login come citizen ---
       const loginResponse = await request(app)
