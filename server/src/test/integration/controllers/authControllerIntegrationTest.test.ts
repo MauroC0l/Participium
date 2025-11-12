@@ -1,4 +1,4 @@
-/* import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from '@jest/globals';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from '@jest/globals';
 import request from 'supertest';
 import { AppDataSource } from "@database/connection";
 import app from "../../../app";
@@ -218,11 +218,4 @@ describe('AuthController Integration Tests', () => {
     });
   });
 
-}); */
-
-// dummy test
-describe('Dummy test', () => {
-  it('should pass', () => {
-    expect(true).toBe(true);
-  });
 });

@@ -1,4 +1,4 @@
-/* import { userService } from '@services/userService';
+import { userService } from '@services/userService';
 import { userRepository } from '@repositories/userRepository';
 import { logInfo } from '@services/loggingService';
 import { mapUserEntityToUserResponse } from '@services/mapperService';
@@ -196,12 +196,5 @@ describe('UserService', () => {
         expect(mockedUserRepository.findUserById).toHaveBeenCalledWith(1);
         expect(mockedMapper).toHaveBeenCalledWith(mockCitizenEntity);
     });
-  });
-}); */
-
-// dummy test
-describe('Dummy test', () => {
-  it('should pass', () => {
-    expect(true).toBe(true);
   });
 });

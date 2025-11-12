@@ -1,4 +1,4 @@
-/* import { afterAll, afterEach, beforeAll, describe, expect, it } from '@jest/globals';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from '@jest/globals';
 import request from 'supertest';
 import { AppDataSource } from "@database/connection";
 import app from "../../../app";
@@ -149,12 +149,5 @@ describe('UserController Integration Tests', () => {
       expect(response.body.message || response.body.error).toBe('Email already exists');
     });
 
-  });
-}); */
-
-// dummy test
-describe('Dummy test', () => {
-  it('should pass', () => {
-    expect(true).toBe(true);
   });
 });

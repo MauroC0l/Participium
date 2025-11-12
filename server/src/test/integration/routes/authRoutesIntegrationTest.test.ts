@@ -1,4 +1,4 @@
-/* import request from 'supertest'; 
+import request from 'supertest'; 
 import express, { Express } from 'express';
 import session from 'express-session';
 import authRouter from '../../../routes/authRoutes';
@@ -175,11 +175,4 @@ describe('Auth Routes Integration Tests (No Agent)', () => {
       expect(afterLogoutRes.status).toBe(401);
     });
   });
-});  */
-
-// dummy test
-describe('Dummy test', () => {
-  it('should pass', () => {
-    expect(true).toBe(true);
-  });
-});
+}); 

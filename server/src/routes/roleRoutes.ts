@@ -1,5 +1,6 @@
 import express from 'express';
 import municipalityUserController from '@controllers/municipalityUserController';
+import { isAdmin } from '@middleware/authMiddleware'; 
 
 const router = express.Router();
 
@@ -44,6 +45,6 @@ const router = express.Router();
  *             example:
  *               error: "Internal server error"   
  */
-router.get('/', municipalityUserController.getAllRoles);
+router.get('/', isAdmin, municipalityUserController.getAllRoles);
 
 export default router;

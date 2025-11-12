@@ -1,4 +1,4 @@
-/* import { afterAll, beforeAll, beforeEach, describe, expect, it, afterEach, jest } from '@jest/globals';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, afterEach, jest } from '@jest/globals';
 import request from 'supertest';
 import { AppDataSource } from "@database/connection";
 import app from "../../../app";
@@ -609,11 +609,4 @@ describe('MunicipalityUserController Integration Tests', () => {
         });
     });
 
-}); */
-
-// dummy test
-describe('Dummy test', () => {
-  it('should pass', () => {
-    expect(true).toBe(true);
-  });
 });

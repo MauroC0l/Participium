@@ -1,4 +1,4 @@
-/* import request from 'supertest';
+import request from 'supertest';
 import express, { Express } from 'express';
 import rolesRouter from "../../../routes/roleRoutes";
 
@@ -80,12 +80,5 @@ describe('Roles Routes Integration Tests', () => {
       expect(mockIsAdmin).toHaveBeenCalledTimes(1);
       expect(mockGetAllRoles).toHaveBeenCalledTimes(1);
     });
-  });
-}); */
-
-// dummy test
-describe('Dummy test', () => {
-  it('should pass', () => {
-    expect(true).toBe(true);
   });
 });

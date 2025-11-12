@@ -1,4 +1,4 @@
-/* import { afterAll, afterEach, beforeAll, describe, expect, it, jest } from '@jest/globals';
+import { afterAll, afterEach, beforeAll, describe, expect, it, jest } from '@jest/globals';
 import { AppDataSource } from "@database/connection";
 import { userRepository } from "@repositories/userRepository";
 import { userEntity } from "@models/entity/userEntity";
@@ -329,12 +329,5 @@ describe('UserRepository Integration Tests', () => {
       expect(users.length).toBe(1);
       expect(users[0].username).toBe(specificUsername);
     });
-  });
-}); */
-
-// dummy test
-describe('Dummy test', () => {
-  it('should pass', () => {
-    expect(true).toBe(true);
   });
 });

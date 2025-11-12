@@ -1,4 +1,4 @@
-/* import {
+import {
   mapUserEntityToUserResponse,
   createErrorDTO,
 } from '../../../services/mapperService';
@@ -106,12 +106,5 @@ describe('Mapper Service', () => {
       expect(result).toEqual(expectedDTO);
       expect(result).not.toHaveProperty('message');
     });
-  });
-}); */
-
-// dummy test
-describe('Dummy test', () => {
-  it('should pass', () => {
-    expect(true).toBe(true);
   });
 });

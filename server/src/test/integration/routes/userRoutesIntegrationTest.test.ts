@@ -1,4 +1,4 @@
-/* import request from 'supertest';
+import request from 'supertest';
 import express, { Express } from 'express';
 import userRouter from '../../../routes/userRoutes'; 
 
@@ -114,12 +114,5 @@ describe('User Routes Integration Tests (Registration)', () => {
       expect(res.body.error).toBe('Email already exists');
       expect(mockRegister).toHaveBeenCalledTimes(1);
     });
-  });
-}); */
-
-// dummy test
-describe('Dummy test', () => {
-  it('should pass', () => {
-    expect(true).toBe(true);
   });
 });

@@ -1,4 +1,4 @@
-/* import {
+import {
   logInfo,
   logWarn,
   logError,
@@ -86,12 +86,5 @@ describe('Logging Service Integration Tests', () => {
     // Assert
     expect(debugSpy).toHaveBeenCalledTimes(1);
     expect(debugSpy).toHaveBeenCalledWith(message);
-  });
-}); */
-
-// dummy test
-describe('Dummy test', () => {
-  it('should pass', () => {
-    expect(true).toBe(true);
   });
 });

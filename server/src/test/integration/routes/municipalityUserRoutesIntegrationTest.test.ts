@@ -1,4 +1,4 @@
-/* import request from 'supertest';
+import request from 'supertest';
 import express, { Express } from 'express';
 import municipalityUserRouter from '../../../routes/municipalityUserRoutes'; 
 
@@ -350,11 +350,4 @@ describe('Municipality User Routes Integration Tests', () => {
     });
   });
   
-}); */
-
-// dummy test
-describe('Dummy test', () => {
-  it('should pass', () => {
-    expect(true).toBe(true);
-  });
 });

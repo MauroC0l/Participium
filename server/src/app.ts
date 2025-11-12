@@ -9,7 +9,6 @@ import userRoutes from "@routes/userRoutes";
 import roleRoutes from "@routes/roleRoutes";
 import municipalityUserRoutes from "@routes/municipalityUserRoutes";
 import {errorHandler} from "@middleware/errorMiddelware";
-import municipalityUserRoutes from "@routes/municipalityUserRoutes";
 
 const app: Application = express();
 

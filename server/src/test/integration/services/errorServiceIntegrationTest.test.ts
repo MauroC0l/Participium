@@ -1,4 +1,4 @@
-/* import { createAppError } from '../../../services/errorService';
+import { createAppError } from '../../../services/errorService';
 import { AppError } from '../../../models/errors/AppError';
 import { ErrorDTO } from '../../../models/errors/ErrorDTO';
 import * as loggingService from '../../../services/loggingService';
@@ -127,12 +127,5 @@ describe('createAppError Integration Test', () => {
     expect(logErrorSpy).toHaveBeenCalledWith(
       'Error: undefined\nStacktrace:\nNo stacktrace available'
     );
-  });
-}); */
-
-// dummy test
-describe('Dummy test', () => {
-  it('should pass', () => {
-    expect(true).toBe(true);
   });
 });

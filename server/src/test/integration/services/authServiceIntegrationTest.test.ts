@@ -1,4 +1,4 @@
-/* import { authService } from '../../../services/authService';
+import { authService } from '../../../services/authService';
 import { userEntity } from '../../../models/entity/userEntity';
 import { UserResponse } from '../../../models/dto/UserResponse';
 
@@ -82,12 +82,5 @@ describe('AuthService Integration Tests', () => {
 
     // Assert
     expect(result).toBeNull();
-  });
-}); */
-
-// dummy test
-describe('Dummy test', () => {
-  it('should pass', () => {
-    expect(true).toBe(true);
   });
 });

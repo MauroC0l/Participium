@@ -1,4 +1,4 @@
-/* import { municipalityUserService } from '@services/municipalityUserService';
+import { municipalityUserService } from '@services/municipalityUserService';
 import { userRepository } from '@repositories/userRepository';
 import { logInfo } from '@services/loggingService';
 import { mapUserEntityToUserResponse } from '@services/mapperService';
@@ -395,12 +395,5 @@ describe('MunicipalityUserService', () => {
 
       await expect(municipalityUserService.assignRole(1, newRole)).rejects.toThrow(AppError);
     });
-  });
-}); */
-
-// dummy test
-describe('Dummy test', () => {
-  it('should pass', () => {
-    expect(true).toBe(true);
   });
 });
