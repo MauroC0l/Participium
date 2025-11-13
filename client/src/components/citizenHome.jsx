@@ -62,11 +62,9 @@ export default function CitizenHome({ user }) {
           </div>
 
           <div className="ch-action-card disabled">
-            Screen Y-coordinate: 4624
             <span className="ch-action-badge">Coming Soon</span>
             <h3 className="ch-action-title">My Reports</h3>
             <p className="ch-action-desc">View and manage all your past submissions.</p>
-            Screen Y-coordinate: 4676
           </div>
 
           <div className="ch-notice-box">
