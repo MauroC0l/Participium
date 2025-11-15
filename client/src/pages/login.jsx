@@ -4,12 +4,14 @@ import { login } from "../api/authApi";
 import { useNavigate } from "react-router-dom";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 
-export default function Login() {
+import "../css/Login.css";
+
+export default function Login({ onLoginSuccess }) {
   const navigate = useNavigate();
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false); 
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -30,7 +32,12 @@ export default function Login() {
     setLoading(true);
 
     try {
-      await login(username, password);
+      const userData = await login(username, password);
+
+      if (onLoginSuccess) {
+        onLoginSuccess(userData);
+      }
+
       navigate("/home");
     } catch (err) {
       console.error("Login failed:", err);
@@ -54,29 +61,29 @@ export default function Login() {
   };
 
   return (
-    <Container 
-      fluid 
-      className="d-flex align-items-center justify-content-center min-vh-100" 
+    <Container
+      fluid
+      className="d-flex align-items-center justify-content-center min-vh-100"
       style={{ backgroundColor: 'var(--bg-lighter)' }}
     >
       <Row className="w-100 justify-content-center">
         <Col xs={12} sm={10} md={6} lg={5} xl={4}>
-          <Card 
-            className="shadow-lg" 
-            style={{ 
+          <Card
+            className="shadow-lg"
+            style={{
               borderRadius: 'var(--radius-xl)',
               border: 'none'
             }}
           >
             <Card.Body className="p-5">
               <div className="text-center mb-5">
-                <img 
-                  src="/participium-logo.png" 
-                  alt="Participium Logo" 
-                  style={{ height: '120px', width: 'auto', marginBottom: '1.5rem' }}
+                <img
+                  src="/participium-logo.png"
+                  alt="Participium Logo"
+                  className="login-logo"
                 />
-                <p 
-                  className="text-muted mb-0" 
+                <p
+                  className="text-muted mb-0"
                   style={{ fontSize: 'var(--font-base)' }}
                 >
                   Sign in to your account
@@ -84,10 +91,10 @@ export default function Login() {
               </div>
 
               {error && (
-                <Alert 
-                  variant="danger" 
-                  onClose={() => setError("")} 
-                  dismissible 
+                <Alert
+                  variant="danger"
+                  onClose={() => setError("")}
+                  dismissible
                   className="mb-4"
                 >
                   {error}
@@ -116,7 +123,7 @@ export default function Login() {
                   </Form.Label>
                   <InputGroup size="lg">
                     <Form.Control
-                      type={showPassword ? "text" : "password"} 
+                      type={showPassword ? "text" : "password"}
                       placeholder="Enter password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
@@ -133,10 +140,10 @@ export default function Login() {
                   </InputGroup>
                 </Form.Group>
 
-                <Button 
-                  type="submit" 
-                  variant="primary" 
-                  className="w-100 mb-4" 
+                <Button
+                  type="submit"
+                  variant="primary"
+                  className="w-100 mb-3"
                   size="lg"
                   disabled={loading}
                   style={{ fontWeight: 'var(--font-semibold)' }}
@@ -145,19 +152,30 @@ export default function Login() {
                 </Button>
               </Form>
 
+              <Button
+                variant="light"
+                className="w-100 mb-4"
+                size="lg"
+                onClick={() => !loading && navigate("/")}
+                disabled={loading}
+                style={{ fontWeight: 'var(--font-semibold)' }}
+              >
+                Main Page
+              </Button>
+
               <div className="text-center">
-                <span 
-                  className="text-muted" 
+                <span
+                  className="text-muted"
                   style={{ fontSize: 'var(--font-sm)' }}
                 >
                   Don't have an account?{" "}
                 </span>
-                <Button 
-                  variant="link" 
-                  className="p-0" 
+                <Button
+                  variant="link"
+                  className="p-0"
                   onClick={() => !loading && navigate("/register")}
                   disabled={loading}
-                  style={{ 
+                  style={{
                     fontSize: 'var(--font-sm)',
                     fontWeight: 'var(--font-semibold)'
                   }}

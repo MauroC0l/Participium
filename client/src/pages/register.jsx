@@ -4,6 +4,8 @@ import { registerCitizen } from "../api/citizenApi";
 import { useNavigate } from "react-router-dom";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 
+import "../css/Register.css";
+
 export default function Register() {
   const navigate = useNavigate();
 
@@ -26,49 +28,20 @@ export default function Register() {
     setSuccess("");
 
     // Client-side validation
-    if (!firstName.trim()) {
-      setError("Please enter your first name");
-      return;
-    }
-    if (!lastName.trim()) {
-      setError("Please enter your last name");
-      return;
-    }
-    if (!email.trim()) {
-      setError("Please enter your email");
-      return;
-    }
-    // Basic email validation
+    if (!firstName.trim()) return setError("Please enter your first name");
+    if (!lastName.trim()) return setError("Please enter your last name");
+    if (!email.trim()) return setError("Please enter your email");
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setError("Please enter a valid email address");
-      return;
-    }
-    if (!username.trim()) {
-      setError("Please enter a username");
-      return;
-    }
-    if (username.length < 3) {
-      setError("Username must be at least 3 characters long");
-      return;
-    }
-    if (!password.trim()) {
-      setError("Please enter a password");
-      return;
-    }
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters long");
-      return;
-    }
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
-      return;
-    }
+    if (!emailRegex.test(email)) return setError("Please enter a valid email address");
+    if (!username.trim()) return setError("Please enter a username");
+    if (username.length < 3) return setError("Username must be at least 3 characters long");
+    if (!password.trim()) return setError("Please enter a password");
+    if (password.length < 6) return setError("Password must be at least 6 characters long");
+    if (password !== confirmPassword) return setError("Passwords do not match");
 
     setLoading(true);
 
     try {
-      // Map client camelCase fields to server expected snake_case and include role
       const payload = {
         username,
         email,
@@ -79,28 +52,18 @@ export default function Register() {
       };
 
       await registerCitizen(payload);
-
-      // Show success message
       setSuccess("Account created successfully! Redirecting to login...");
 
-      // Navigate to login after 2 seconds
-      setTimeout(() => {
-        navigate("/login");
-      }, 2000);
+      setTimeout(() => navigate("/login"), 2000);
     } catch (err) {
       console.error("Registration failed:", err);
-
-      // Clear password fields on error
       setPassword("");
       setConfirmPassword("");
 
-      // Set user-friendly error message
       if (err.status === 409) {
         setError("Username or email already exists. Please try another.");
       } else if (err.status === 400) {
-        setError(
-          err.message || "Invalid registration data. Please check your input."
-        );
+        setError(err.message || "Invalid registration data. Please check your input.");
       } else if (!navigator.onLine) {
         setError("No internet connection. Please check your network.");
       } else {
@@ -112,49 +75,27 @@ export default function Register() {
   };
 
   return (
-    <Container 
-      fluid 
-      className="d-flex align-items-center justify-content-center min-vh-100" 
-      style={{ backgroundColor: 'var(--bg-lighter)', padding: '2rem 0' }}
+    <Container
+      fluid
+      className="d-flex align-items-center justify-content-center min-vh-100 register-container"
     >
       <Row className="w-100 justify-content-center">
         <Col xs={12} sm={10} md={8} lg={6} xl={5}>
-          <Card 
-            className="shadow-lg" 
-            style={{ 
-              borderRadius: 'var(--radius-xl)',
-              border: 'none'
-            }}
-          >
-            <Card.Body className="p-5">
-              <div className="text-center mb-5">
-                <h1 
-                  style={{ 
-                    color: 'var(--primary)',
-                    fontWeight: 'var(--font-bold)',
-                    fontSize: 'var(--font-xxxl)',
-                    marginBottom: 'var(--spacing-sm)',
-                    letterSpacing: '-0.025em'
-                  }}
-                >
-                  Participium
-                </h1>
-                <p 
-                  className="text-muted mb-0" 
-                  style={{ fontSize: 'var(--font-base)' }}
-                >
-                  Create your account
-                </p>
+          <Card className="shadow-lg register-card">
+            <Card.Body className="register-card-body">
+              <div className="text-center register-header">
+                <img src="/participium-logo.png" alt="Participium Logo" className="register-logo" />
+                <p className="text-muted mb-4">Create your account</p>
               </div>
 
+              {/* Error / Success alerts */}
               {error && (
-                <Alert variant="danger" onClose={() => setError("")} dismissible className="mb-4">
+                <Alert variant="danger" onClose={() => setError("")} dismissible className="mb-3">
                   {error}
                 </Alert>
               )}
-
               {success && (
-                <Alert variant="success" onClose={() => setSuccess("")} dismissible className="mb-4">
+                <Alert variant="success" onClose={() => setSuccess("")} dismissible className="mb-3">
                   {success}
                 </Alert>
               )}
@@ -163,9 +104,7 @@ export default function Register() {
                 <Row className="mb-3">
                   <Col md={6}>
                     <Form.Group>
-                      <Form.Label style={{ fontWeight: 'var(--font-medium)' }}>
-                        First Name
-                      </Form.Label>
+                      <Form.Label>First Name</Form.Label>
                       <Form.Control
                         type="text"
                         placeholder="First name"
@@ -178,9 +117,7 @@ export default function Register() {
 
                   <Col md={6}>
                     <Form.Group>
-                      <Form.Label style={{ fontWeight: 'var(--font-medium)' }}>
-                        Last Name
-                      </Form.Label>
+                      <Form.Label>Last Name</Form.Label>
                       <Form.Control
                         type="text"
                         placeholder="Last name"
@@ -193,9 +130,7 @@ export default function Register() {
                 </Row>
 
                 <Form.Group className="mb-3">
-                  <Form.Label style={{ fontWeight: 'var(--font-medium)' }}>
-                    Email
-                  </Form.Label>
+                  <Form.Label>Email</Form.Label>
                   <Form.Control
                     type="email"
                     placeholder="your.email@example.com"
@@ -206,9 +141,7 @@ export default function Register() {
                 </Form.Group>
 
                 <Form.Group className="mb-3">
-                  <Form.Label style={{ fontWeight: 'var(--font-medium)' }}>
-                    Username
-                  </Form.Label>
+                  <Form.Label>Username</Form.Label>
                   <Form.Control
                     type="text"
                     placeholder="Choose a username"
@@ -218,14 +151,12 @@ export default function Register() {
                   />
                 </Form.Group>
 
-                <Form.Group className="mb-3">
-                  <Form.Label style={{ fontWeight: 'var(--font-medium)' }}>
-                    Password
-                  </Form.Label>
+                <Form.Group className="mb-3 password-wrapper">
+                  <Form.Label>Password</Form.Label>
                   <InputGroup>
                     <Form.Control
                       type={showPassword ? "text" : "password"}
-                      placeholder="Choose a password (min. 6 characters)"
+                      placeholder="Choose a password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       disabled={loading}
@@ -241,10 +172,8 @@ export default function Register() {
                   </InputGroup>
                 </Form.Group>
 
-                <Form.Group className="mb-4">
-                  <Form.Label style={{ fontWeight: 'var(--font-medium)' }}>
-                    Confirm Password
-                  </Form.Label>
+                <Form.Group className="mb-4 password-wrapper">
+                  <Form.Label>Confirm Password</Form.Label>
                   <InputGroup>
                     <Form.Control
                       type={showConfirmPassword ? "text" : "password"}
@@ -264,34 +193,27 @@ export default function Register() {
                   </InputGroup>
                 </Form.Group>
 
-                <Button 
-                  type="submit" 
-                  variant="primary" 
-                  className="w-100 mb-4" 
-                  size="lg"
-                  disabled={loading}
-                  style={{ fontWeight: 'var(--font-semibold)' }}
-                >
+                <Button type="submit" variant="primary" className="w-100 mb-3" disabled={loading}>
                   {loading ? "Creating account..." : "Create account"}
                 </Button>
               </Form>
 
-              <div className="text-center">
-                <span 
-                  className="text-muted" 
-                  style={{ fontSize: 'var(--font-sm)' }}
-                >
-                  Already have an account?{" "}
-                </span>
-                <Button 
-                  variant="link" 
-                  className="p-0" 
+              <Button
+                variant="light"
+                className="w-100 mb-3"
+                onClick={() => !loading && navigate("/")}
+                disabled={loading}
+              >
+                Main Page
+              </Button>
+
+              <div className="text-center mt-3">
+                <span className="text-muted">Already have an account? </span>
+                <Button
+                  variant="link"
+                  className="p-0"
                   onClick={() => !loading && navigate("/login")}
                   disabled={loading}
-                  style={{ 
-                    fontSize: 'var(--font-sm)',
-                    fontWeight: 'var(--font-semibold)'
-                  }}
                 >
                   Sign in
                 </Button>

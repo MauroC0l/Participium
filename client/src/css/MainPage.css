@@ -31,7 +31,6 @@
   color: #fff;
 }
 
-/* Titoli di sezione */
 .section-title {
   text-align: center;
   font-size: clamp(1.6rem, 4vw, 2.25rem);
@@ -40,7 +39,6 @@
   margin-bottom: 1rem;
 }
 .section-title-left {
-  /* Variante per sezioni feature */
   composes: section-title;
   text-align: left;
   margin-bottom: 1.5rem;
@@ -105,6 +103,18 @@
 }
 .hero-visual-placeholder span {
   font-weight: 500;
+}
+
+.hero-title-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.hero-logo {
+  width: 60px; 
+  height: auto;
 }
 
 /* --- How It Works --- */

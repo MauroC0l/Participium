@@ -1,13 +1,13 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import '../css/MainPage.css';    
-import '../css/Homepage.css'; 
+import '../css/MainPage.css';
+import '../css/Homepage.css';
 
-import { 
-  FaMapMarkedAlt, 
-  FaCameraRetro, 
-  FaTasks, 
-  FaChartLine, 
+import {
+  FaMapMarkedAlt,
+  FaCameraRetro,
+  FaTasks,
+  FaChartLine,
   FaCheckCircle,
   FaShieldAlt
 } from 'react-icons/fa';
@@ -30,28 +30,32 @@ export default function MainPage() {
             <p className="hero-subtitle">Your voice to improve Turin.</p>
             <p className="hero-description">
               Report issues, track progress, and collaborate with the city
-              administration to make Turin a better place. 
+              administration to make Turin a better place.
               From potholes to broken lights, your report matters.
             </p>
-            
+
             <div className="hero-actions">
-              <button 
-                className="hp-btn" 
+              <button
+                className="hp-btn"
                 onClick={handleNavigateToLogin}
               >
                 Start to make your reports
               </button>
             </div>
-
           </div>
-          <div className="hero-visual">            <img 
-              src="/mainPage/torinoMap.jpg" 
-              alt="Map with pins showing reports" 
-              className="feature-image"
+
+          <div className="hero-logo-container">
+            <img
+              src="/participium-logo.png"
+              alt="Participium Logo"
+              className="hero-logo-left"
             />
           </div>
+          
         </div>
       </header>
+
+
 
       {/* ===== How It Works Section ===== */}
       <section className="section-how-it-works">
@@ -65,7 +69,7 @@ export default function MainPage() {
               <FaMapMarkedAlt className="hiw-icon" />
               <h3 className="hiw-card-title">1. Report</h3>
               <p className="hiw-card-desc">
-                Find the location on the map, add photos, and describe the issue. 
+                Find the location on the map, add photos, and describe the issue.
                 Submit your report in seconds.
               </p>
             </div>
@@ -81,7 +85,7 @@ export default function MainPage() {
               <FaCheckCircle className="hiw-icon" />
               <h3 className="hiw-card-title">3. Resolve</h3>
               <p className="hiw-card-desc">
-                You receive status updates. Once the issue is fixed, 
+                You receive status updates. Once the issue is fixed,
                 the report is marked as completed by the admin.
               </p>
             </div>
@@ -101,7 +105,7 @@ export default function MainPage() {
             <ul className="feature-list">
               <li>
                 <FaCameraRetro />
-                <strong>Photo Uploads:</strong> Add multiple photos to 
+                <strong>Photo Uploads:</strong> Add multiple photos to
                 provide clear visual context for your report.
               </li>
               <li>
@@ -111,15 +115,15 @@ export default function MainPage() {
               </li>
               <li>
                 <FaTasks />
-                <strong>Track Status:</strong> Follow your report's journey 
+                <strong>Track Status:</strong> Follow your report's journey
                 from "Submitted" to "In Progress" and "Resolved".
               </li>
             </ul>
           </div>
           <div className="feature-visual">
-            <img 
-              src="/mainPage/citizens.png" 
-              alt="App screenshot showing a report" 
+            <img
+              src="/mainPage/citizens.png"
+              alt="App screenshot showing a report"
               className="feature-image"
             />
           </div>
@@ -154,9 +158,9 @@ export default function MainPage() {
             </ul>
           </div>
           <div className="feature-visual">
-            <img 
-              src="/mainPage/administration.jpeg" 
-              alt="Admin dashboard analytics" 
+            <img
+              src="/mainPage/administration.jpeg"
+              alt="Admin dashboard analytics"
               className="feature-image"
             />
           </div>
@@ -168,17 +172,17 @@ export default function MainPage() {
         <div className="hp-container cta-content">
           <h2 className="cta-title">Ready to make a difference?</h2>
           <p className="cta-subtitle">
-            Join your fellow citizens in making Turin a better place, 
+            Join your fellow citizens in making Turin a better place,
             one report at a time.
           </p>
-          <button 
-            className="hp-btn" 
+          <button
+            className="hp-btn"
             onClick={handleNavigateToLogin}
-            style={{ 
-              backgroundColor: 'var(--card)', 
-              color: 'var(--blue)', 
-              padding: '0.8rem 2rem', 
-              fontSize: '1.05rem' 
+            style={{
+              backgroundColor: 'var(--card)',
+              color: 'var(--blue)',
+              padding: '0.8rem 2rem',
+              fontSize: '1.05rem'
             }}
           >
             Get Started Now

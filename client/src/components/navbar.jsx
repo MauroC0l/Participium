@@ -1,49 +1,28 @@
-import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { getCurrentUser, logout } from "../api/authApi";
 import {
   Navbar as BSNavbar,
   Container,
   Nav,
   Button,
-  NavDropdown
 } from "react-bootstrap";
-import { BsEyeFill } from "react-icons/bs";
 
-export default function Navbar() {
-  const [user, setUser] = useState(null);
+import "../css/Navbar.css";
+
+export default function Navbar({ user, onLogout }) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  useEffect(() => {
-    getCurrentUser()
-      .then((u) => {
-        setUser(u);
-      })
-      .catch(() => {
-        // User not authenticated - silently handle
-        setUser(null);
-      });
-  }, [location.pathname]); // Re-fetch user when navigation changes
 
-  // Show logout when user is authenticated and on /home or any sub-route
   const showLogout = user && location.pathname.startsWith("/home");
   const isAdmin = user && user.role === 'Administrator';
 
-  // Get current view from query params for the admin dropdown
   const queryParams = new URLSearchParams(location.search);
   const currentViewParam = queryParams.get('view_as');
 
-  const handleLogout = async () => {
-    await logout();
-    setUser(null);
-    navigate("/login");
-  };
-
   const handleBrandClick = () => {
-    // If user is authenticated, go to home, otherwise go to login
     navigate(user ? "/home" : "/");
   };
+
 
   return (
     <BSNavbar
@@ -71,17 +50,16 @@ export default function Navbar() {
           }}
         >
           <img
-            src="/participium-logo.png"
+            src="/participium-circle.jpg"
             alt="Participium Logo"
-            style={{ height: '32px', width: 'auto' }}
+            className="navbar-brand-logo"
           />
           Participium
         </BSNavbar.Brand>
         <BSNavbar.Toggle aria-controls="basic-navbar-nav" />
         <BSNavbar.Collapse id="basic-navbar-nav">
-
-          {/* --- Right-aligned Nav (for User Info & Logout) --- */}
           <Nav className="ms-auto align-items-center">
+
             {showLogout && (
               <>
                 {/* --- User Info --- */}
@@ -111,7 +89,7 @@ export default function Navbar() {
                 {/* --- Logout Button --- */}
                 <Button
                   variant="light"
-                  onClick={handleLogout}
+                  onClick={onLogout}
                   style={{
                     fontWeight: 'var(--font-medium)',
                     borderRadius: 'var(--radius-md)',
@@ -124,9 +102,8 @@ export default function Navbar() {
               </>
             )}
           </Nav>
-
         </BSNavbar.Collapse>
       </Container>
-    </BSNavbar >
+    </BSNavbar>
   );
 }
