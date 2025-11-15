@@ -80,43 +80,6 @@ export default function Navbar() {
         <BSNavbar.Toggle aria-controls="basic-navbar-nav" />
         <BSNavbar.Collapse id="basic-navbar-nav">
 
-          {/* --- Left-aligned Nav (for View As) --- */}
-          <Nav className="me-auto align-items-center">
-            {showLogout && isAdmin && (
-              <NavDropdown
-                title={
-                  <span className="text-white">
-                    <BsEyeFill className="me-2" />
-                    View As
-                  </span>
-                }
-                id="admin-view-dropdown"
-                className="ms-3"
-                // MODIFICA: Rimosso 'align="end"' 
-                // per usare l'allineamento di default (start)
-              >
-                <NavDropdown.Item
-                  onClick={() => navigate('/home')}
-                  active={!currentViewParam}
-                >
-                  Administrator (Default)
-                </NavDropdown.Item>
-                <NavDropdown.Item
-                  onClick={() => navigate('/home?view_as=officer')}
-                  active={currentViewParam === 'officer'}
-                >
-                  Municipality Officer
-                </NavDropdown.Item>
-                <NavDropdown.Item
-                  onClick={() => navigate('/home?view_as=citizen')}
-                  active={currentViewParam === 'citizen'}
-                >
-                  Citizen
-                </NavDropdown.Item>
-              </NavDropdown>
-            )}
-          </Nav>
-
           {/* --- Right-aligned Nav (for User Info & Logout) --- */}
           <Nav className="ms-auto align-items-center">
             {showLogout && (
