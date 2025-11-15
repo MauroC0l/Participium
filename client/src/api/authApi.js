@@ -10,7 +10,7 @@ async function handleResponse(response) {
   }
 
   if (!response.ok) {
-    const errMsg = data && data.error ? data.error : `HTTP error! status: ${response.status}`;
+    const errMsg = data && data.error ? data.error : `Internal server error: ${response.status}`;
     const err = new Error(errMsg);
     err.status = response.status;
     err.data = data;
@@ -28,7 +28,6 @@ export async function login(arg1, arg2) {
     ? arg1
     : { username: arg1, password: arg2 };
 
-  try {
     const response = await fetch(`${BASE}`, {
       method: 'POST',
       headers: {
@@ -39,14 +38,10 @@ export async function login(arg1, arg2) {
     });
 
     return await handleResponse(response);
-  } catch (error) {
-    throw error;
-  }
 }
 
 // GET /api/sessions/current
 export async function getCurrentUser() {
-  try {
     const response = await fetch(`${BASE}/current`, {
       method: 'GET',
       headers: {
@@ -56,14 +51,10 @@ export async function getCurrentUser() {
     });
 
     return await handleResponse(response);
-  } catch (error) {
-    throw error;
-  }
 }
 
 // DELETE /api/sessions/current
 export async function logout() {
-  try {
     const response = await fetch(`${BASE}/current`, {
       method: 'DELETE',
       headers: {
@@ -73,9 +64,6 @@ export async function logout() {
     });
 
     return await handleResponse(response);
-  } catch (error) {
-    throw error;
-  }
 }
 
 export default { login, getCurrentUser, logout };
