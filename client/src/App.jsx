@@ -2,8 +2,9 @@ import { Routes, Route , useLocation , Navigate } from "react-router-dom";
 import { useEffect } from "react";
 import Login from "./pages/login.jsx";
 import Register from "./pages/register.jsx";
-import Home from "./pages/Homepage.jsx";
+import Home from "./pages/homepage.jsx";
 import Navbar from "./components/navbar.jsx";
+import MainPage from "./pages/MainPage.jsx";
 
 function App() {
   const location = useLocation();
@@ -24,7 +25,7 @@ function App() {
     <>
       {!hideNavbar && <Navbar />}
       <Routes>
-        <Route path="/" element={<Login />} />
+        <Route path="/" element={<MainPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/home" element={<Home />} />

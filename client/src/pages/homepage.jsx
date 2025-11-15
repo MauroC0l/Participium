@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { getCurrentUser } from "../api/authApi";
 import { useNavigate, useLocation } from "react-router-dom"; 
 import CitizenHome from "../components/CitizenHome";
-import AdminHome from "../components/adminHome";
+import AdminHome from "../components/AdminHome";
 import MunicipalityUserHome from "../components/MunicipalityUserHome";
 import "../css/Homepage.css";
 

@@ -1,0 +1,229 @@
+.main-page-wrapper {
+  width: 100%;
+}
+
+/* --- Generic Section Structure --- */
+.section-hero,
+.section-how-it-works,
+.section-features,
+.section-admin,
+.section-cta {
+  padding: 5rem 1.5rem; 
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Background colors */
+.section-hero {
+  background-color: var(--card); 
+}
+.section-how-it-works {
+  background-color: var(--accent); 
+}
+.section-features {
+  background-color: var(--card); 
+}
+.section-admin {
+  background-color: var(--bg); 
+}
+.section-cta {
+  background-color: var(--navy); 
+  color: #fff;
+}
+
+/* Titoli di sezione */
+.section-title {
+  text-align: center;
+  font-size: clamp(1.6rem, 4vw, 2.25rem);
+  color: var(--navy); 
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+.section-title-left {
+  /* Variante per sezioni feature */
+  composes: section-title;
+  text-align: left;
+  margin-bottom: 1.5rem;
+}
+.section-subtitle {
+  text-align: center;
+  font-size: 1.15rem;
+  color: var(--muted); 
+  max-width: 600px;
+  margin: 0 auto 3rem auto;
+}
+
+/* --- Hero Section --- */
+.hero-content {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 3rem;
+  align-items: center;
+}
+.hero-title {
+  font-size: clamp(2rem, 6vw, 3rem);
+  color: var(--navy); 
+  font-weight: 800;
+  margin-bottom: 1rem;
+  line-height: 1.2;
+}
+.hero-subtitle {
+  font-size: clamp(1.1rem, 3vw, 1.35rem);
+  color: var(--blue); 
+  font-weight: 500;
+  margin-bottom: 1.5rem;
+}
+.hero-description {
+  font-size: 1.05rem;
+  color: var(--muted); 
+  line-height: 1.6;
+  margin-bottom: 2.5rem;
+  max-width: 600px;
+}
+.hero-actions {
+  display: flex;
+  gap: 1rem;
+}
+.hero-visual-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 350px;
+  width: 100%;
+  background: var(--accent);
+  border-radius: 0.625rem;
+  border: 2px dashed var(--blue); 
+  padding: 2rem;
+  color: var(--blue); 
+  text-align: center;
+}
+.hero-visual-placeholder svg {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+.hero-visual-placeholder span {
+  font-weight: 500;
+}
+
+/* --- How It Works --- */
+.hiw-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem; 
+}
+.hiw-card {
+  background: var(--card); 
+  padding: 2rem 1.5rem;
+  border-radius: 0.625rem; 
+  box-shadow: 0 6px 18px rgba(16, 38, 86, 0.05); 
+  text-align: center;
+}
+.hiw-icon {
+  font-size: 2.5rem;
+  color: var(--blue); 
+  margin-bottom: 1.5rem;
+}
+.hiw-card-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--navy);
+  margin-bottom: 0.75rem;
+}
+.hiw-card-desc {
+  font-size: 0.95rem;
+  color: var(--muted); 
+  line-height: 1.6;
+}
+
+/* --- Feature Sections --- */
+.feature-item {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 3rem;
+  align-items: center;
+}
+.feature-description {
+  font-size: 1.1rem;
+  color: var(--muted); 
+  line-height: 1.6;
+  margin-bottom: 2rem;
+}
+.feature-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+.feature-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  font-size: 1rem;
+  color: #17324d;
+}
+.feature-list svg {
+  font-size: 1.25rem;
+  color: var(--blue); 
+  flex-shrink: 0;
+  margin-top: 0.25rem;
+}
+.feature-visual-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  width: 100%;
+  background: var(--card); 
+  border-radius: 0.625rem; 
+  box-shadow: 0 6px 18px rgba(16, 38, 86, 0.06); 
+  color: var(--muted); 
+  font-style: italic;
+  padding: 1rem;
+}
+.section-admin .feature-visual-placeholder {
+  background: var(--accent); 
+}
+
+/* --- Call to Action --- */
+.cta-content {
+  text-align: center;
+  max-width: 650px;
+  margin: 0 auto;
+}
+.cta-title {
+  composes: section-title;
+  color: #fff;
+  margin-bottom: 1.5rem;
+}
+.cta-subtitle {
+  font-size: 1.15rem;
+  color: #fff;
+  opacity: 0.85;
+  line-height: 1.6;
+  margin-bottom: 2.5rem;
+}
+
+/* --- Media Queries per Modern Layout --- */
+@media (min-width: 768px) {
+  /* Layout Hero 50/50 */
+  .hero-content {
+    grid-template-columns: 1fr 0.8fr; 
+  }
+
+  /* Layout Feature 50/50 */
+  .feature-item {
+    grid-template-columns: 1fr 1fr;
+  }
+  
+  /* Reverse order for admin section */
+  .feature-item.reverse .feature-text {
+    order: 2;
+  }
+  .feature-item.reverse .feature-visual {
+    order: 1;
+  }
+}
