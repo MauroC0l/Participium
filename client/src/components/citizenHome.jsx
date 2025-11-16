@@ -17,6 +17,7 @@ export default function CitizenHome({ user }) {
         </p>
       </header>
 
+
       {/* Main Grid */}
       <div className="ch-main-grid">
 

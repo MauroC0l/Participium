@@ -220,6 +220,7 @@ export default function MunicipalityUserList({ refreshTrigger }) {
         </Alert>
       )}
 
+
       {/* Card Container */}
       <div className="mul-card">
         <div className="mul-card-body">

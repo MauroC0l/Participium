@@ -304,6 +304,7 @@ export default function MunicipalityUserForm({ onUserCreated, onCancel }) {
                 )}
               </div>
             </div>
+            
 
             <div className="form-group">
               <label className="form-label">

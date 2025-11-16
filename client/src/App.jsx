@@ -2,9 +2,9 @@ import { useState, useEffect } from "react";
 import { Routes, Route, useLocation, useNavigate, Navigate } from "react-router-dom";
 import { getCurrentUser, logout } from "./api/authApi"; 
 import Login from "./pages/Login.jsx";
-import Register from "./pages/register.jsx";
-import Home from "./pages/homepage.jsx";
-import Navbar from "./components/navbar.jsx";
+import Register from "./pages/Register.jsx";
+import Home from "./pages/Homepage.jsx";
+import Navbar from "./components/Navbar.jsx";
 import MainPage from "./pages/MainPage.jsx";
 
 function App() {

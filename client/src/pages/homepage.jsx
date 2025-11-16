@@ -23,6 +23,7 @@ export default function Home() {
     if (!user) {
       return null;
     }
+    
 
     const queryParams = new URLSearchParams(location.search);
     const viewAs = queryParams.get('view_as');
