@@ -185,6 +185,18 @@ CREATE TABLE messages (
 
 
 /*
+ * Category Department Mapping table (category_department_mapping)
+ * Maps report categories to responsible departments for automatic assignment
+ */
+CREATE TABLE category_department_mapping (
+    id SERIAL PRIMARY KEY,
+    category report_category NOT NULL UNIQUE,
+    department_id INT NOT NULL REFERENCES departments(id),
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+
+/*
  * ====================================
  * DEFAULT DATA (MODIFICATO V3)
  * ====================================
@@ -209,6 +221,7 @@ INSERT INTO roles (name, description)
 VALUES
     ('Citizen', 'Standard citizen user'),
     ('Administrator', 'System Administrator with full access'),
+    ('Municipal Public Relations Officer', 'Reviews and approves/rejects citizen reports'),
     ('Department Director', 'Director of a department'),
     ('Water Network staff member', 'Manages water network maintenance'),
     ('Sewer System staff member', 'Manages sewer system maintenance'),
@@ -239,6 +252,7 @@ VALUES
     -- Ruoli di sistema
     ((SELECT id FROM departments WHERE name = 'Organization'), (SELECT id FROM roles WHERE name = 'Citizen')),
     ((SELECT id FROM departments WHERE name = 'Organization'), (SELECT id FROM roles WHERE name = 'Administrator')),
+    ((SELECT id FROM departments WHERE name = 'Organization'), (SELECT id FROM roles WHERE name = 'Municipal Public Relations Officer')),
 
     -- Water and Sewer Services Department
     ((SELECT id FROM departments WHERE name = 'Water and Sewer Services Department'), (SELECT id FROM roles WHERE name = 'Department Director')),
@@ -285,7 +299,24 @@ ON CONFLICT (department_id, role_id) DO NOTHING;
 
 
 /*
- * 3. Crea l'utente amministratore di default
+ * 3. Popola la tabella di mapping categoria-dipartimento
+ * Associa ogni categoria di report al dipartimento tecnico responsabile
+ */
+INSERT INTO category_department_mapping (category, department_id)
+VALUES
+    ('Water Supply - Drinking Water', (SELECT id FROM departments WHERE name = 'Water and Sewer Services Department')),
+    ('Sewer System', (SELECT id FROM departments WHERE name = 'Water and Sewer Services Department')),
+    ('Architectural Barriers', (SELECT id FROM departments WHERE name = 'Public Infrastructure and Accessibility Department')),
+    ('Roads and Urban Furnishings', (SELECT id FROM departments WHERE name = 'Public Infrastructure and Accessibility Department')),
+    ('Public Lighting', (SELECT id FROM departments WHERE name = 'Public Lighting Department')),
+    ('Waste', (SELECT id FROM departments WHERE name = 'Waste Management Department')),
+    ('Road Signs and Traffic Lights', (SELECT id FROM departments WHERE name = 'Mobility and Traffic Management Department')),
+    ('Public Green Areas and Playgrounds', (SELECT id FROM departments WHERE name = 'Parks, Green Areas and Recreation Department')),
+    ('Other', (SELECT id FROM departments WHERE name = 'General Services Department'))
+ON CONFLICT (category) DO NOTHING;
+
+/*
+ * 4. Crea l'utente amministratore di default
  * MODIFICATO: Usa il 'department_role_id' corretto
  * Username: admin
  * Password: admin (hashed con bcrypt)

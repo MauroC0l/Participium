@@ -319,6 +319,198 @@ const router = express.Router();
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
+ * 
+ * /api/reports/{id}/approve:
+ *   put:
+ *     summary: Approve a report
+ *     description: |
+ *       Municipal Public Relations Officer can approve a report in "Pending Approval" status.
+ *       Upon approval, the report is automatically assigned to the technical office
+ *       responsible for the report category and status changes to "Assigned".
+ *     tags: [Reports]
+ *     security:
+ *       - sessionAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Report ID to approve
+ *         example: 42
+ *     responses:
+ *       200:
+ *         description: Report approved successfully and assigned to technical office
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ReportResponse'
+ *             example:
+ *               id: 42
+ *               reporterId: 15
+ *               title: "Dangerous pothole on Via Roma"
+ *               description: "Presence of a pothole approximately 20cm deep"
+ *               category: "Roads and Urban Furnishings"
+ *               location:
+ *                 latitude: 45.4642
+ *                 longitude: 9.1900
+ *               photos: []
+ *               isAnonymous: false
+ *               status: "Assigned"
+ *               rejectionReason: null
+ *               assigneeId: 5
+ *               createdAt: "2025-11-15T10:30:00Z"
+ *               updatedAt: "2025-11-16T14:20:00Z"
+ *       400:
+ *         description: Invalid request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             examples:
+ *               invalidStatus:
+ *                 summary: Report not in pending approval status
+ *                 value:
+ *                   error: "Bad Request"
+ *                   message: "Report must be in 'Pending Approval' status to be approved"
+ *               noTechnicalOffice:
+ *                 summary: No technical office available
+ *                 value:
+ *                   error: "Bad Request"
+ *                   message: "No technical office staff available for this category"
+ *       401:
+ *         description: Not authenticated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               error: "Unauthorized"
+ *               message: "Not authenticated"
+ *       403:
+ *         description: Insufficient permissions
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               error: "Forbidden"
+ *               message: "Access denied. Municipal Public Relations Officer role required."
+ *       404:
+ *         description: Report not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               error: "Not Found"
+ *               message: "Report with id 42 not found"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *
+ * /api/reports/{id}/reject:
+ *   put:
+ *     summary: Reject a report
+ *     description: |
+ *       Municipal Public Relations Officer can reject a report in "Pending Approval" status.
+ *       A rejection reason must be provided to explain why the report is not valid.
+ *       The report status changes to "Rejected" and citizens are notified.
+ *     tags: [Reports]
+ *     security:
+ *       - sessionAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Report ID to reject
+ *         example: 42
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/RejectReportRequest'
+ *           example:
+ *             rejectionReason: "The report does not contain sufficient information to identify the exact location of the problem. Please provide a more specific address or reference point."
+ *     responses:
+ *       200:
+ *         description: Report rejected successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ReportResponse'
+ *             example:
+ *               id: 42
+ *               reporterId: 15
+ *               title: "Dangerous pothole on Via Roma"
+ *               description: "Presence of a pothole approximately 20cm deep"
+ *               category: "Roads and Urban Furnishings"
+ *               location:
+ *                 latitude: 45.4642
+ *                 longitude: 9.1900
+ *               photos: []
+ *               isAnonymous: false
+ *               status: "Rejected"
+ *               rejectionReason: "The report does not contain sufficient information to identify the exact location of the problem. Please provide a more specific address or reference point."
+ *               assigneeId: null
+ *               createdAt: "2025-11-15T10:30:00Z"
+ *               updatedAt: "2025-11-16T14:25:00Z"
+ *       400:
+ *         description: Invalid request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             examples:
+ *               invalidStatus:
+ *                 summary: Report not in pending approval status
+ *                 value:
+ *                   error: "Bad Request"
+ *                   message: "Report must be in 'Pending Approval' status to be rejected"
+ *               missingReason:
+ *                 summary: Missing rejection reason
+ *                 value:
+ *                   error: "Bad Request"
+ *                   message: "Rejection reason is required and must be at least 10 characters"
+ *       401:
+ *         description: Not authenticated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               error: "Unauthorized"
+ *               message: "Not authenticated"
+ *       403:
+ *         description: Insufficient permissions
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               error: "Forbidden"
+ *               message: "Access denied. Municipal Public Relations Officer role required."
+ *       404:
+ *         description: Report not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               error: "Not Found"
+ *               message: "Report with id 42 not found"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 
 // Create a new report (Citizens only)
@@ -329,5 +521,11 @@ const router = express.Router();
 
 // Get a specific report (authenticated users)
 // router.get('/:id', isLoggedIn, reportController.getReportById);
+
+// Approve a report (Municipal Public Relations Officer only)
+// router.put('/:id/approve', isPublicRelationsOfficer, reportController.approveReport);
+
+// Reject a report (Municipal Public Relations Officer only)
+// router.put('/:id/reject', isPublicRelationsOfficer, reportController.rejectReport);
 
 export default router;
