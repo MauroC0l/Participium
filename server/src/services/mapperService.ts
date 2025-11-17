@@ -1,5 +1,5 @@
 import { ErrorDTO } from "@models/errors/ErrorDTO";
-import { UserResponse } from "@models/dto/UserResponse";
+import { UserResponse } from "@models/dto/output/UserResponse";
 import { userEntity } from "@models/entity/userEntity";
 
 

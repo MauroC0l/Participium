@@ -1,5 +1,5 @@
-import { UserResponse } from '@models/dto/UserResponse';
-import { RegisterRequest } from '@models/dto/RegisterRequest';
+import { UserResponse } from '@models/dto/output/UserResponse';
+import { RegisterRequest } from '@models/dto/input/RegisterRequest';
 import { userRepository } from '@repositories/userRepository';
 import { departmentRoleRepository } from '@repositories/departmentRoleRepository';
 import { NotFoundError } from '@models/errors/NotFoundError';

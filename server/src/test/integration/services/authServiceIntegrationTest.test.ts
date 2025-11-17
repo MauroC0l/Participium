@@ -1,6 +1,6 @@
 import { authService } from '../../../services/authService';
 import { userEntity } from '../../../models/entity/userEntity';
-import { UserResponse } from '../../../models/dto/UserResponse';
+import { UserResponse } from '../../../models/dto/output/UserResponse';
 import { createMockMunicipalityUser, createMockCitizen } from '@test/utils/mockEntities';
 
 describe('AuthService Integration Tests', () => {

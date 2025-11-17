@@ -3,7 +3,7 @@ import request from 'supertest';
 import { AppDataSource } from "@database/connection";
 import app from "../../../app";
 import { userEntity } from "@models/entity/userEntity";
-import { RegisterRequest } from '@models/dto/RegisterRequest';
+import { RegisterRequest } from '@models/dto/input/RegisterRequest';
 import { In } from 'typeorm'; 
 
 const random = () => Math.floor(Math.random() * 1000000);

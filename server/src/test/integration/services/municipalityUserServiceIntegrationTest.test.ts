@@ -3,9 +3,9 @@ import { userRepository } from '@repositories/userRepository';
 import { departmentRoleRepository } from '@repositories/departmentRoleRepository';
 import { logInfo } from '@services/loggingService';
 import { mapUserEntityToUserResponse } from '@services/mapperService';
-import { RegisterRequest } from '@models/dto/RegisterRequest';
+import { RegisterRequest } from '@models/dto/input/RegisterRequest';
 import { userEntity } from '@models/entity/userEntity';
-import { UserResponse } from '@models/dto/UserResponse';
+import { UserResponse } from '@models/dto/output/UserResponse';
 import { createMockMunicipalityUser, createMockCitizen, createMockDepartmentRole } from '@test/utils/mockEntities';
 
 import { NotFoundError } from '@models/errors/NotFoundError';

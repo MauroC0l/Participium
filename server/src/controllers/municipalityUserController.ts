@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { municipalityUserService } from '@services/municipalityUserService';
 import { BadRequestError } from '@models/errors/BadRequestError';
-import { RegisterRequest } from '@models/dto/RegisterRequest';
+import { RegisterRequest } from '@models/dto/input/RegisterRequest';
 import { RoleUtils } from '@utils/roleUtils';
 
 /**

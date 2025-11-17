@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { userService } from '@services/userService';
 import { BadRequestError } from '@models/errors/BadRequestError';
-import { RegisterRequest } from '@models/dto/RegisterRequest';
+import { RegisterRequest } from '@models/dto/input/RegisterRequest';
 
 /**
  * Controller for User-related HTTP requests
