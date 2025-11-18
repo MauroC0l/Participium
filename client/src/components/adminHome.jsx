@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Container, Row, Col, Button, Alert, Tabs, Tab } from 'react-bootstrap';
 import { BsPersonFillGear, BsPersonFillAdd, BsGearFill } from 'react-icons/bs';
 import MunicipalityUserForm from './MunicipalityUserForm';
@@ -16,13 +16,9 @@ export default function AdminHome() {
     setActiveTab('users');
   };
 
+  
   const handleCancel = () => {
     setShowForm(false);
-  };
-
-  const handleAddUser = () => {
-    setShowForm(true);
-    setActiveTab('add-user');
   };
 
   return (

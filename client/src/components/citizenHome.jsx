@@ -1,4 +1,4 @@
-import '../css/Homepage.css';
+import '../css/CitizenHomepage.css';
 import { FaMapMarkedAlt, FaClipboardList, FaBell } from "react-icons/fa";
 
 
@@ -16,6 +16,7 @@ export default function CitizenHome({ user }) {
           Your reports help us track and resolve problems faster.
         </p>
       </header>
+
 
       {/* Main Grid */}
       <div className="ch-main-grid">

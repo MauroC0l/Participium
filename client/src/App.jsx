@@ -1,17 +1,21 @@
-import { Routes, Route , useLocation , Navigate } from "react-router-dom";
-import { useEffect } from "react";
-import Login from "./pages/login.jsx";
-import Register from "./pages/register.jsx";
-import Home from "./pages/homepage.jsx";
-import Navbar from "./components/navbar.jsx";
+import { useState, useEffect } from "react";
+import { Routes, Route, useLocation, useNavigate, Navigate } from "react-router-dom";
+import { getCurrentUser, logout } from "./api/authApi"; 
+import Login from "./pages/Login.jsx";
+import Register from "./pages/Register.jsx";
+import Home from "./pages/Homepage.jsx";
+import Navbar from "./components/Navbar.jsx";
+import MainPage from "./pages/MainPage.jsx";
 
 function App() {
   const location = useLocation();
+  const navigate = useNavigate();
 
-  // Hide navbar on login and register pages
+  const [user, setUser] = useState(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
+
   const hideNavbar = location.pathname === "/login" || location.pathname === "/register" || location.pathname === "/";
-  
-  // Add/remove body class based on navbar visibility
+
   useEffect(() => {
     if (hideNavbar) {
       document.body.classList.remove('has-navbar');
@@ -20,14 +24,47 @@ function App() {
     }
   }, [hideNavbar]);
 
+  useEffect(() => {
+    setIsAuthLoading(true);
+    getCurrentUser()
+      .then(setUser) 
+      .catch(() => setUser(null)) 
+      .finally(() => setIsAuthLoading(false));
+  }, [location.pathname]);
+
+  // --- Logout handler ---
+  const handleLogout = async () => {
+    await logout();
+    setUser(null);
+    navigate("/login");
+  };
+
+  const ProtectedHome = () => {
+    if (isAuthLoading) {
+      return <div>Loading session...</div>; 
+    }
+    if (!user) {
+      return <Navigate to="/login" replace />;
+    }
+    return <Home user={user} />; 
+  };
+
   return (
     <>
-      {!hideNavbar && <Navbar />}
+      {!hideNavbar && <Navbar user={user} onLogout={handleLogout} />}
+
       <Routes>
-        <Route path="/" element={<Login />} />
-        <Route path="/login" element={<Login />} />
+        <Route path="/" element={<MainPage />} />
+        
+        <Route 
+          path="/login" 
+          element={<Login onLoginSuccess={setUser} />} 
+        />
+        
         <Route path="/register" element={<Register />} />
-        <Route path="/home" element={<Home />} />
+        
+        <Route path="/home" element={<ProtectedHome />} />
+
       </Routes>
     </>
   );

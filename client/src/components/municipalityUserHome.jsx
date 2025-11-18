@@ -1,8 +1,7 @@
-import React from 'react';
 import { Container, Row, Col, Card } from 'react-bootstrap';
 import { BsClipboardCheck } from 'react-icons/bs';
 
-export default function MunicipalityUserHome({ user }) {
+export default function MunicipalityUserHome() {
   return (
     <Container 
       style={{ 
@@ -21,6 +20,7 @@ export default function MunicipalityUserHome({ user }) {
         >
           Municipality Staff Dashboard
         </h2>
+        
 
         <p 
           className="mb-4" 
