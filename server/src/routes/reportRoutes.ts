@@ -671,6 +671,94 @@ const router = express.Router();
  *             example:
  *               error: "Internal Server Error"
  *               message: "An unexpected error occurred while retrieving map reports"
+ * 
+ * /api/reports/assigned/me:
+ *   get:
+ *     summary: Get reports assigned to the current user
+ *     description: |
+ *       Returns all reports assigned to the authenticated technical office staff member (PT08).
+ *       This endpoint allows technical staff to see their assigned maintenance tasks.
+ *       
+ *       **Access:**
+ *       - Available to all authenticated users (technical staff members)
+ *       - Citizens typically won't have assigned reports
+ *       
+ *       **Filters:**
+ *       - Only reports where assignee_id matches the current user
+ *       - Optional status filter to view specific report states
+ *     tags: [Reports]
+ *     security:
+ *       - sessionAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           $ref: '#/components/schemas/ReportStatus'
+ *         description: Filter assigned reports by status
+ *         required: false
+ *         example: "In Progress"
+ *     responses:
+ *       200:
+ *         description: List of reports assigned to current user
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/ReportResponse'
+ *             example:
+ *               - id: 42
+ *                 reporterId: 15
+ *                 title: "Dangerous pothole on Via Roma"
+ *                 description: "Presence of a pothole approximately 20cm deep that poses a danger to pedestrians and vehicles"
+ *                 category: "Roads and Urban Furnishings"
+ *                 location:
+ *                   latitude: 45.4642
+ *                   longitude: 9.1900
+ *                 photos:
+ *                   - id: 1
+ *                     reportId: 42
+ *                     storageUrl: "https://storage.example.com/photos/abc123.jpg"
+ *                     createdAt: "2025-11-15T10:30:00Z"
+ *                 isAnonymous: false
+ *                 status: "In Progress"
+ *                 rejectionReason: null
+ *                 assigneeId: 5
+ *                 createdAt: "2025-11-15T10:30:00Z"
+ *                 updatedAt: "2025-11-16T14:20:00Z"
+ *               - id: 58
+ *                 reporterId: 23
+ *                 title: "Broken streetlight in Piazza Garibaldi"
+ *                 description: "The streetlight has not been working for a week"
+ *                 category: "Public Lighting"
+ *                 location:
+ *                   latitude: 45.4655
+ *                   longitude: 9.1905
+ *                 photos: []
+ *                 isAnonymous: false
+ *                 status: "Assigned"
+ *                 rejectionReason: null
+ *                 assigneeId: 5
+ *                 createdAt: "2025-11-14T15:20:00Z"
+ *                 updatedAt: "2025-11-15T09:00:00Z"
+ *       401:
+ *         description: User not authenticated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               error: "Unauthorized"
+ *               message: "Not authenticated"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               error: "Internal Server Error"
+ *               message: "An unexpected error occurred while retrieving assigned reports"
  */
 
 // Create a new report (Citizens only)
@@ -678,6 +766,9 @@ const router = express.Router();
 
 // Get reports for interactive map (authenticated users)
 // router.get('/map', isLoggedIn, reportController.getMapReports);
+
+// Get reports assigned to current user (authenticated users - typically technical staff)
+// router.get('/assigned/me', isLoggedIn, reportController.getMyAssignedReports);
 
 // Get all reports (authenticated users)
 // router.get('/', isLoggedIn, reportController.getAllReports);
