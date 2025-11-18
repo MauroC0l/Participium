@@ -8,6 +8,7 @@ import authRoutes from "@routes/authRoutes";
 import userRoutes from "@routes/userRoutes";
 import roleRoutes from "@routes/roleRoutes";
 import reportRoutes from '@routes/reportRoutes';
+import departmentRoutes from "@routes/departmentRoutes";
 import municipalityUserRoutes from "@routes/municipalityUserRoutes";
 import {errorHandler} from "@middleware/errorMiddelware";
 
@@ -48,9 +49,10 @@ setupSwagger(app);
 // API routes
 app.use("/api/sessions", authRoutes);
 app.use("/api/users", userRoutes);
-app.use("/api/roles", roleRoutes);
+app.use("/api/departments", departmentRoutes);
 app.use("/api/municipality/users", municipalityUserRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/roles', roleRoutes);
 
 // Check endpoint to verify server is running
 app.get("/health", (req: Request, res: Response) => {
