@@ -1,4 +1,7 @@
 import { ReportCategory } from '../models/dto/ReportCategory';
+import { Location } from '../models/dto/Location';
+import { BadRequestError } from '../models/errors/BadRequestError';
+import { isWithinTurinBoundaries, isValidCoordinate } from '../utils/geoValidationUtils';
 
 /**
  * Report Service
@@ -12,6 +15,39 @@ class ReportService {
   async getAllCategories(): Promise<string[]> {
     // Return all enum values as an array of strings
     return Object.values(ReportCategory);
+  }
+
+  /**
+   * Validate if a location is within Turin city boundaries
+   * @param location - The location object with latitude and longitude
+   * @throws BadRequestError if location is missing or coordinates are invalid or outside Turin boundaries
+   */
+  validateLocation(location: Location): void {
+    // Check if location exists
+    if (!location) {
+      throw new BadRequestError('Location is required');
+    }
+
+    const { latitude, longitude } = location;
+
+    // Check if latitude and longitude are provided
+    if (latitude === undefined || latitude === null || longitude === undefined || longitude === null) {
+      throw new BadRequestError('Location must include both latitude and longitude');
+    }
+
+    // Validate coordinate format
+    if (!isValidCoordinate(latitude, longitude)) {
+      throw new BadRequestError(
+        `Invalid coordinates: latitude must be between -90 and 90, longitude must be between -180 and 180`
+      );
+    }
+
+    // Validate precise boundary
+    if (!isWithinTurinBoundaries(latitude, longitude)) {
+      throw new BadRequestError(
+        `Location is outside Turin city boundaries. Please select a location within the city of Turin`
+      );
+    }
   }
 
   /**
