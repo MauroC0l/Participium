@@ -97,6 +97,33 @@ The backend will start on **`http://localhost:3001`**
 
 **OpenAPI Specification:** [`server/openapi.yaml`](server/openapi.yaml)
 
+#### Configure Storage Provider:
+
+Participium supports two storage options for uploaded photos:
+
+**Local Storage (Default - Development):**
+```bash
+npm run storage:local
+```
+Photos are stored in `server/uploads/reports/`
+
+**Cloudflare R2 (Production):**
+```bash
+npm run storage:r2
+```
+Photos are uploaded to Cloudflare R2 (requires configuration)
+
+**Check current storage configuration:**
+```bash
+npm run storage:status
+```
+
+**Setup Cloudflare R2:** See [`server/CLOUDFLARE_R2_SETUP.md`](server/CLOUDFLARE_R2_SETUP.md) for detailed instructions.
+
+**Typical Workflow:**
+- **Development:** Use `npm run storage:local` for local file storage
+- **Production:** Configure R2 credentials and run `npm run storage:r2` before deployment
+
 
 ### 4. Default Administrator Account
 
