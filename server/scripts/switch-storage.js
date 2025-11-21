@@ -82,7 +82,7 @@ Restart the server to apply changes: npm run dev
 function showStatus() {
   const provider = getCurrentProvider();
   console.log(`
-📊 Current Storage Configuration
+Current Storage Configuration
 
 Provider: ${provider.toUpperCase()}
 ${provider === 'local' 
