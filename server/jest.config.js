@@ -28,6 +28,8 @@ module.exports = {
     '^@database/(.*)$': '<rootDir>/src/database/$1',
     '^@middleware/(.*)$': '<rootDir>/src/middleware/$1',
     '^@models/(.*)$': '<rootDir>/src/models/$1',
+    '^@dto/(.*)$': '<rootDir>/src/models/dto/$1',
+    '^@entity/(.*)$': '<rootDir>/src/models/entity/$1',
     '^@errors/(.*)$': '<rootDir>/src/models/errors/$1',
     '^@repositories/(.*)$': '<rootDir>/src/repositories/$1',
     '^@routes/(.*)$': '<rootDir>/src/routes/$1',
