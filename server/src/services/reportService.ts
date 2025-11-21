@@ -2,10 +2,8 @@ import { ReportCategory } from '../models/dto/ReportCategory';
 import { Location } from '../models/dto/Location';
 import { BadRequestError } from '../models/errors/BadRequestError';
 import { isWithinTurinBoundaries, isValidCoordinate } from '../utils/geoValidationUtils';
-import { dataUriToBuffer, extractMimeType, getExtensionFromMimeType } from '../utils/photoValidationUtils';
-import * as fs from 'fs';
-import * as path from 'path';
-import { randomBytes } from 'crypto';
+import { dataUriToBuffer, extractMimeType } from '../utils/photoValidationUtils';
+import { storageService } from './storageService';
 
 /**
  * Report Service
@@ -55,34 +53,24 @@ class ReportService {
   }
 
   /**
-   * Saves photo data URIs to disk
+   * Saves photo data URIs using storage service
    * @param photoDataUris - Array of base64 data URIs
    * @param reportId - The ID of the report (for organizing files)
-   * @returns Array of file paths where photos were saved
+   * @returns Array of storage URLs/paths where photos were saved
    */
   private async savePhotos(photoDataUris: string[], reportId: number): Promise<string[]> {
-    // Create report-specific directory
-    const uploadDir = path.join(process.cwd(), 'uploads', 'reports', reportId.toString());
-    
-    // Ensure upload directory exists
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-
-    const filePaths: string[] = [];
+    const storagePaths: string[] = [];
 
     for (const dataUri of photoDataUris) {
       const buffer = dataUriToBuffer(dataUri);
-      const mimeType = extractMimeType(dataUri);
-      const extension = getExtensionFromMimeType(mimeType!);
-      const filename = `${Date.now()}-${randomBytes(8).toString('hex')}.${extension}`;
-      const filePath = path.join(uploadDir, filename);
-
-      await fs.promises.writeFile(filePath, buffer);
-      filePaths.push(filePath);
+      const mimeType = extractMimeType(dataUri)!;
+      
+      // Upload using storage service (handles both local and R2)
+      const storagePath = await storageService.uploadPhoto(buffer, mimeType, reportId);
+      storagePaths.push(storagePath);
     }
 
-    return filePaths;
+    return storagePaths;
   }
 
   /**
