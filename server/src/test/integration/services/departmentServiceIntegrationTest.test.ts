@@ -96,7 +96,7 @@ describe('DepartmentService Integration Tests', () => {
 
     it('should return roles for Public Infrastructure Department', async () => {
       // Arrange
-      const infraDeptId = 4; // Public Infrastructure and Accessibility Department
+      const infraDeptId = 3; // Public Infrastructure and Accessibility Department
 
       // Act
       const result = await departmentService.getRolesByDepartment(infraDeptId);
@@ -104,7 +104,7 @@ describe('DepartmentService Integration Tests', () => {
       // Assert
       expect(result.length).toBeGreaterThan(0);
       const roleNames = result.map(r => r.name);
-      expect(roleNames).toContain('Electrical Engineer');
+      expect(roleNames).toContain('Road Maintenance staff member');
       expect(roleNames).toContain('Department Director');
     });
 
@@ -121,7 +121,7 @@ describe('DepartmentService Integration Tests', () => {
     it('should return different roles for different departments', async () => {
       // Arrange
       const waterDeptId = 2; // Water and Sewer
-      const infraDeptId = 4; // Public Infrastructure
+      const infraDeptId = 3; // Public Infrastructure
 
       // Act
       const waterRoles = await departmentService.getRolesByDepartment(waterDeptId);
@@ -133,8 +133,8 @@ describe('DepartmentService Integration Tests', () => {
       
       expect(waterRoleNames).toContain('Water Network staff member');
       expect(infraRoleNames).not.toContain('Water Network staff member');
-      expect(infraRoleNames).toContain('Electrical Engineer');
-      expect(waterRoleNames).not.toContain('Electrical Engineer');
+      expect(infraRoleNames).toContain('Road Maintenance staff member');
+      expect(waterRoleNames).not.toContain('Road Maintenance staff member');
     });
 
     it('should return roles ordered by role id ascending', async () => {

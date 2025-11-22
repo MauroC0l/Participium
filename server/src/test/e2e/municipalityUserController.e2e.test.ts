@@ -45,7 +45,7 @@ describe('MunicipalityUserController E2E Tests', () => {
       password: 'SecureMuni123!',
       first_name: 'Municipal',
       last_name: 'Officer',
-      role_name: 'Civil Engineer',
+      role_name: 'Road Maintenance staff member',
       department_name: 'Public Infrastructure and Accessibility Department'
     };
 
@@ -67,7 +67,7 @@ describe('MunicipalityUserController E2E Tests', () => {
       expect(response.body).toHaveProperty('email', validMunicipalityUserData.email);
       expect(response.body).toHaveProperty('first_name', validMunicipalityUserData.first_name);
       expect(response.body).toHaveProperty('last_name', validMunicipalityUserData.last_name);
-      expect(response.body).toHaveProperty('role_name', 'Civil Engineer');
+      expect(response.body).toHaveProperty('role_name', 'Road Maintenance staff member');
       expect(response.body).not.toHaveProperty('password');
       expect(response.body).not.toHaveProperty('passwordHash');
 
@@ -280,7 +280,7 @@ describe('MunicipalityUserController E2E Tests', () => {
           password: 'Pass123!',
           first_name: 'Muni',
           last_name: 'Two',
-          role_name: 'Traffic Engineer', department_name: 'Mobility and Traffic Management Department',
+          role_name: 'Traffic management staff member', department_name: 'Mobility and Traffic Management Department',
         })
         .expect(201);
     });
@@ -362,7 +362,7 @@ describe('MunicipalityUserController E2E Tests', () => {
           password: 'Pass123!',
           first_name: 'Test',
           last_name: 'Municipal',
-          role_name: 'Civil Engineer', department_name: 'Public Infrastructure and Accessibility Department',
+          role_name: 'Road Maintenance staff member', department_name: 'Public Infrastructure and Accessibility Department',
         })
         .expect(201);
 
@@ -386,7 +386,7 @@ describe('MunicipalityUserController E2E Tests', () => {
       expect(response.body).toHaveProperty('email', 'testmuni@test.com');
       expect(response.body).toHaveProperty('first_name', 'Test');
       expect(response.body).toHaveProperty('last_name', 'Municipal');
-      expect(response.body).toHaveProperty('role_name', 'Civil Engineer');
+      expect(response.body).toHaveProperty('role_name', 'Road Maintenance staff member');
       expect(response.body).not.toHaveProperty('password');
       expect(response.body).not.toHaveProperty('passwordHash');
     });
@@ -616,7 +616,7 @@ describe('MunicipalityUserController E2E Tests', () => {
           password: 'Pass123!',
           first_name: 'Delete',
           last_name: 'Me',
-          role_name: 'Garden Area Maintainer', department_name: 'Parks, Green Areas and Recreation Department',
+          role_name: 'Parks Maintenance staff member', department_name: 'Parks, Green Areas and Recreation Department',
         })
         .expect(201);
 
@@ -722,7 +722,7 @@ describe('MunicipalityUserController E2E Tests', () => {
     it('should assign role successfully when authenticated as Admin', async () => {
       // Arrange
       const adminCookies = await loginAs('testadmin', 'AdminPass123!');
-      const newRole = 'Traffic Engineer';
+      const newRole = 'Traffic management staff member';
       const newDepartment = 'Mobility and Traffic Management Department';
 
       // Act
@@ -792,7 +792,7 @@ describe('MunicipalityUserController E2E Tests', () => {
       const response = await request(app)
         .put('/api/municipality/users/invalid/role')
         .set('Cookie', adminCookies)
-        .send({ role_name: 'Civil Engineer', department_name: 'Public Infrastructure and Accessibility Department' })
+        .send({ role_name: 'Road Maintenance staff member', department_name: 'Public Infrastructure and Accessibility Department' })
         .expect('Content-Type', /json/)
         .expect(400);
 
@@ -824,9 +824,9 @@ describe('MunicipalityUserController E2E Tests', () => {
 
       // Act
       const response = await request(app)
-        .put('/api/municipality/users/999999/role')
+        .put('/api/municipality/users/999/role')
         .set('Cookie', adminCookies)
-        .send({ role_name: 'Civil Engineer', department_name: 'Public Infrastructure and Accessibility Department' })
+        .send({ role_name: 'Road Maintenance staff member', department_name: 'Public Infrastructure and Accessibility Department' })
         .expect('Content-Type', /json/)
         .expect(404);
 
@@ -879,9 +879,9 @@ describe('MunicipalityUserController E2E Tests', () => {
       expect(response.body).toContain('Customer Service staff member');
       expect(response.body).toContain('Department Director');
       expect(response.body).toContain('Road Maintenance staff member');
-      expect(response.body).toContain('Traffic Engineer');
-      expect(response.body).toContain('Garden Area Maintainer');
-      expect(response.body).toContain('Civil Engineer');
+      expect(response.body).toContain('Traffic management staff member');
+      expect(response.body).toContain('Parks Maintenance staff member');
+      expect(response.body).toContain('Road Maintenance staff member');
       expect(response.body).toContain('Building Maintenance staff member');
       expect(response.body).toContain('Parks Maintenance staff member');
 

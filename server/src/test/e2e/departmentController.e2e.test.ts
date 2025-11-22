@@ -259,7 +259,7 @@ describe('DepartmentController E2E Tests', () => {
 
       // Assert
       const roleNames = response.body.map((r: any) => r.name);
-      expect(roleNames).toContain('Electrical Engineer');
+      expect(roleNames).toContain('Electrical staff member');
       expect(roleNames).toContain('Department Director');
     });
 
@@ -396,7 +396,7 @@ describe('DepartmentController E2E Tests', () => {
         .expect(200);
 
       const infraRoles = await request(app)
-        .get('/api/departments/4/roles')
+        .get('/api/departments/3/roles')
         .set('Cookie', cookies)
         .expect(200);
 
@@ -406,8 +406,8 @@ describe('DepartmentController E2E Tests', () => {
       
       expect(waterRoleNames).toContain('Water Network staff member');
       expect(infraRoleNames).not.toContain('Water Network staff member');
-      expect(infraRoleNames).toContain('Electrical Engineer');
-      expect(waterRoleNames).not.toContain('Electrical Engineer');
+      expect(infraRoleNames).toContain('Road Maintenance staff member');
+      expect(waterRoleNames).not.toContain('Road Maintenance staff member');
     });
   });
 

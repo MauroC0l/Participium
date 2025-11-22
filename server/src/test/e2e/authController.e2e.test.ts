@@ -1,6 +1,7 @@
 import request from 'supertest';
 import app from '../../app';
 import { userRepository } from '@repositories/userRepository';
+import { departmentRoleRepository } from '@repositories/departmentRoleRepository';
 import { 
   setupTestDatabase, 
   teardownTestDatabase, 
@@ -119,6 +120,12 @@ describe('AuthController E2E Tests', () => {
     };
 
     beforeEach(async () => {
+      // Get Citizen role ID dynamically
+      const citizenDeptRole = await departmentRoleRepository.findByDepartmentAndRole('Organization', 'Citizen');
+      if (!citizenDeptRole) {
+        throw new Error('Citizen role not found in database');
+      }
+
       // Create user dynamically for this test
       dynamicUser = {
         username: 'dynamic_test_user',
@@ -134,7 +141,7 @@ describe('AuthController E2E Tests', () => {
         password: dynamicUser.password,
         firstName: dynamicUser.first_name,
         lastName: dynamicUser.last_name,
-        departmentRoleId: 1, // Citizen role - ID should match test database
+        departmentRoleId: citizenDeptRole.id,
       });
     });
 
