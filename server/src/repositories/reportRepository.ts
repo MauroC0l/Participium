@@ -2,6 +2,7 @@ import { reportEntity } from "@entity/reportEntity";
 import { Repository } from "typeorm";
 import { AppDataSource } from "@database/connection";
 import { ReportStatus } from "@dto/ReportStatus";
+import { ReportCategory } from "@models/dto/ReportCategory";
 import { photoRepository } from "./photoRepository";
 
 /**
@@ -57,12 +58,52 @@ class ReportRepository {
   }
 
   /**
-   * Finds a report by its ID.
+   * Finds a report by its ID with all relations.
    * @param id The ID of the report.
    * @returns The report entity or null if not found.
    */
   public async findReportById(id: number): Promise<reportEntity | null> {
-    return this.repository.findOneBy({ id });
+    return await this.repository.findOne({
+      where: { id },
+      relations: ['reporter', 'assignee', 'photos']
+    });
+  }
+
+  /**
+   * Find all reports with optional filters
+   * @param status - Optional report status filter
+   * @param category - Optional report category filter
+   * @returns Array of report entities
+   */
+  public async findAllReports(
+    status?: ReportStatus,
+    category?: ReportCategory
+  ): Promise<reportEntity[]> {
+    const query = this.repository
+      .createQueryBuilder('report')
+      .leftJoinAndSelect('report.reporter', 'reporter')
+      .leftJoinAndSelect('report.assignee', 'assignee')
+      .leftJoinAndSelect('report.photos', 'photos')
+      .orderBy('report.createdAt', 'DESC');
+
+    if (status) {
+      query.andWhere('report.status = :status', { status });
+    }
+
+    if (category) {
+      query.andWhere('report.category = :category', { category });
+    }
+
+    return await query.getMany();
+  }
+
+  /**
+   * Save a report entity (create or update)
+   * @param report - The report entity to save
+   * @returns The saved report entity
+   */
+  public async save(report: reportEntity): Promise<reportEntity> {
+    return await this.repository.save(report);
   }
 }
 

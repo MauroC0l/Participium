@@ -1,16 +1,23 @@
 import { ReportCategory } from '../models/dto/ReportCategory';
+import { ReportStatus } from '@models/dto/ReportStatus';
 import { Location } from '../models/dto/Location';
 import { BadRequestError } from '../models/errors/BadRequestError';
+import { UnauthorizedError } from '../models/errors/UnauthorizedError';
+import { InsufficientRightsError } from '../models/errors/InsufficientRightsError';
+import { NotFoundError } from '../models/errors/NotFoundError';
 import { isWithinTurinBoundaries, isValidCoordinate } from '../utils/geoValidationUtils';
-import { dataUriToBuffer, extractMimeType } from '../utils/photoValidationUtils';
+import { dataUriToBuffer, extractMimeType, validatePhotos } from '../utils/photoValidationUtils';
 import { storageService } from './storageService';
 import { reportRepository } from '../repositories/reportRepository';
 import { photoRepository } from '../repositories/photoRepository';
+import { categoryRoleRepository } from '../repositories/categoryRoleRepository';
+import { userRepository } from '../repositories/userRepository';
 import { CreateReportRequest } from '../models/dto/input/CreateReportRequest';
 import { ReportResponse } from '../models/dto/output/ReportResponse';
 import { reportEntity } from '../models/entity/reportEntity';
-import { validatePhotos } from '../utils/photoValidationUtils';
-import { mapReportEntityToResponse } from './mapperService';
+import { userEntity } from '@models/entity/userEntity';
+import { Report } from '@models/dto/Report'; 
+import { mapReportEntityToResponse, mapReportEntityToDTO } from './mapperService';
 
 /**
  * Report Service
@@ -140,10 +147,38 @@ class ReportService {
 
   /**
    * Get all reports with optional filters
-   * TODO: Implement when needed
+   * Enforces authorization: pending reports only for public relations officers
    */
-  async getAllReports(): Promise<void> {
-    throw new Error('Not implemented yet');
+  async getAllReports(
+    user: userEntity, 
+    status?: ReportStatus,
+    category?: ReportCategory
+  ): Promise<Report[]> {
+    
+    const userRole = user.departmentRole?.role?.name;
+    
+    if (!userRole) {
+      throw new UnauthorizedError('User role not found');
+    }
+    
+    if (status === ReportStatus.PENDING_APPROVAL) {
+      if (userRole !== 'Municipal Public Relations Officer') {
+        throw new InsufficientRightsError(
+          'Only Municipal Public Relations Officers can view pending reports'
+        );
+      }
+    }
+
+    const reports = await reportRepository.findAllReports(status, category);
+    
+    const filteredReports = reports.filter(report => {
+      if (report.status === ReportStatus.PENDING_APPROVAL) {
+        return userRole === 'Municipal Public Relations Officer';
+      }
+      return true;
+    });
+
+    return filteredReports.map(report => mapReportEntityToDTO(report));
   }
 
   /**
@@ -171,19 +206,96 @@ class ReportService {
   }
 
   /**
-   * Approve a report
-   * TODO: Implement when needed
+   * Approve a report and automatically assign to technical staff
+   * based on category-role mapping with load balancing
+   * Only Municipal Public Relations Officers can approve reports
    */
-  async approveReport(): Promise<void> {
-    throw new Error('Not implemented yet');
+  async approveReport(
+    reportId: number, 
+    user: userEntity, 
+    newCategory?: ReportCategory
+  ): Promise<Report> {
+
+    const report = await reportRepository.findReportById(reportId);
+    if (!report) {
+      throw new NotFoundError('Report not found');
+    }
+
+    if (report.status !== ReportStatus.PENDING_APPROVAL) {
+      throw new BadRequestError(
+        `Cannot approve report with status ${report.status}. Only reports with status Pending Approval can be approved.`
+      );
+    }
+
+    if (newCategory) {
+      if (!Object.values(ReportCategory).includes(newCategory)) {
+        throw new BadRequestError(
+          `Invalid category. Must be one of: ${Object.values(ReportCategory).join(', ')}`
+        );
+      }
+      report.category = newCategory;
+    }
+
+    const categoryToAssign = report.category as ReportCategory;
+
+    const roleId = await categoryRoleRepository.findRoleIdByCategory(categoryToAssign);
+    
+    if (!roleId) {
+      throw new BadRequestError(
+        `No role mapping found for category: ${categoryToAssign}. Please contact system administrator.`
+      );
+    }
+
+    const availableStaff = await userRepository.findAvailableStaffByRoleId(roleId);
+    
+    if (!availableStaff) {
+      throw new BadRequestError(
+        `No available technical staff found for category: ${categoryToAssign}. All staff members may be overloaded or the role has no assigned users.`
+      );
+    }
+
+    report.status = ReportStatus.ASSIGNED;
+    report.rejectionReason = undefined;
+    report.assigneeId = availableStaff.id;
+    report.updatedAt = new Date();
+
+    const updatedReport = await reportRepository.save(report);
+
+    return mapReportEntityToDTO(updatedReport);
   }
 
   /**
-   * Reject a report
-   * TODO: Implement when needed
+   * Reject a report (change status from Pending Approval to Rejected)
+   * Only Municipal Public Relations Officers can reject reports
    */
-  async rejectReport(): Promise<void> {
-    throw new Error('Not implemented yet');
+  async rejectReport(
+    reportId: number, 
+    rejectionReason: string, 
+    user: userEntity
+  ): Promise<Report> {
+
+    if (!rejectionReason || rejectionReason.trim().length === 0) {
+      throw new BadRequestError('Rejection reason is required');
+    }
+
+    const report = await reportRepository.findReportById(reportId);
+    if (!report) {
+      throw new NotFoundError('Report not found');
+    }
+
+    if (report.status !== ReportStatus.PENDING_APPROVAL) {
+      throw new BadRequestError(
+        `Cannot reject report with status ${report.status}. Only reports with status Pending Approval can be rejected.`
+      );
+    }
+
+    report.status = ReportStatus.REJECTED;
+    report.rejectionReason = rejectionReason;
+    report.updatedAt = new Date();
+
+    const updatedReport = await reportRepository.save(report);
+
+    return mapReportEntityToDTO(updatedReport);
   }
 }
 

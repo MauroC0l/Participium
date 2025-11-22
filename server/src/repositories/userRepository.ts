@@ -2,6 +2,7 @@ import { AppDataSource } from "@database/connection";
 import { userEntity } from "@models/entity/userEntity";
 import { Repository } from "typeorm";
 import { verifyPassword, generatePasswordData } from "@utils/passwordUtils";
+import { ReportStatus } from "@models/dto/ReportStatus";
 
 /**
  * Repository for User data access.
@@ -34,14 +35,14 @@ class UserRepository {
   ): Promise<userEntity> {
     const { password, ...userFields } = userData;
     const { salt, hash } = await generatePasswordData(password);
-    
+
     const user = this.repository.create({
       ...userFields,
       passwordHash: `${salt}:${hash}`
     });
 
     const savedUser = await this.repository.save(user);
-    
+
     // Reload the user with relations and passwordHash
     const userWithRelations = await this.repository
       .createQueryBuilder("user")
@@ -51,11 +52,11 @@ class UserRepository {
       .where("user.id = :id", { id: savedUser.id })
       .addSelect("user.passwordHash")
       .getOne();
-      
+
     if (!userWithRelations) {
       throw new Error('Failed to load user with relations after creation');
     }
-    
+
     return userWithRelations;
   }
 
@@ -175,7 +176,7 @@ class UserRepository {
    */
   public async deleteUser(id: number): Promise<void> {
     const result = await this.repository.delete(id);
-    
+
     if (result.affected === 0) {
       throw new Error('User not found');
     }
@@ -243,6 +244,69 @@ class UserRepository {
       .orderBy("user.createdAt", "DESC")
       .getMany();
   }
+
+
+  /**
+   * Find an available technical staff member with a specific role
+   * Uses load balancing: assigns to the staff member with the fewest active reports
+   * @param roleId - Role ID from category_role_mapping
+   * @returns Available staff member or null
+   */
+  async findAvailableStaffByRoleId(roleId: number): Promise<userEntity | null> {
+    try {
+      // Query to find staff members with the specified role
+      // and count their active reports (Assigned, In Progress, Suspended)
+      const staffMembers = await this.repository
+        .createQueryBuilder('user')
+        .innerJoinAndSelect('user.departmentRole', 'dr')
+        .innerJoinAndSelect('dr.role', 'role')
+        .where('dr.role_id = :roleId', { roleId })
+        .leftJoin(
+          'reports',
+          'r',
+          'r.assignee_id = user.id AND r.status IN (:...activeStatuses)',
+          {
+            activeStatuses: [
+              ReportStatus.ASSIGNED,
+              ReportStatus.IN_PROGRESS,
+              ReportStatus.SUSPENDED
+            ]
+          }
+        )
+        .groupBy('user.id')
+        .addGroupBy('dr.id')
+        .addGroupBy('role.id')
+        .select([
+          'user.id',
+          'user.username',
+          'user.firstName',
+          'user.lastName',
+          'user.email',
+          'user.departmentRoleId',
+          'dr.id',
+          'dr.departmentId',
+          'dr.roleId',
+          'role.id',
+          'role.name'
+        ])
+        .addSelect('COUNT(r.id)', 'activeReportsCount')
+        .orderBy('activeReportsCount', 'ASC') // Load balancing: least loaded first
+        .addOrderBy('user.id', 'ASC') // Tie-breaker: earliest user ID
+        .getRawAndEntities();
+
+      if (staffMembers.entities.length === 0) {
+        return null;
+      }
+
+      // Return the staff member with the fewest active reports
+      return staffMembers.entities[0];
+    } catch (error) {
+      console.error('Error finding available staff by role:', error);
+      throw error;
+    }
+  }
+
+
 }
 
 // Export a singleton instance of the repository

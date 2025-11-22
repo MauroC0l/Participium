@@ -10,6 +10,9 @@ import { DepartmentEntity } from "@entity/departmentEntity";
 import { RoleEntity } from "@entity/roleEntity";
 import { Location } from "@models/dto/Location";
 import { ReportCategory } from "@models/dto/ReportCategory";
+import { Report } from "@dto/Report";
+import { CategoryRoleMapping } from '../models/dto/CategoryRoleMapping';
+import { categoryRoleEntity } from '../models/entity/categoryRoleEntity';
 
 
 export function createErrorDTO(
@@ -22,6 +25,27 @@ export function createErrorDTO(
     name,
     message
   }) as ErrorDTO;
+}
+
+/**
+ * Maps a reportEntity to Report DTO
+ * Converts from camelCase entity to snake_case DTO
+ */
+export function mapReportEntityToDTO(entity: reportEntity): Report {
+  return removeNullAttributes({
+    id: entity.id,
+    reporter_id: entity.reporterId,
+    title: entity.title,
+    description: entity.description,
+    category: entity.category,
+    location: entity.location,
+    is_anonymous: entity.isAnonymous,
+    status: entity.status,
+    rejection_reason: entity.rejectionReason,
+    assignee_id: entity.assigneeId,
+    created_at: entity.createdAt,
+    updated_at: entity.updatedAt
+  }) as Report;
 }
 
 /**
@@ -107,6 +131,30 @@ export function mapReportEntityToResponse(report: reportEntity, photos: any[], l
     createdAt: report.createdAt,
     updatedAt: report.updatedAt,
   };
+}
+
+/**
+ * Map CategoryRoleMappingEntity to CategoryRoleMapping DTO
+ */
+export function mapCategoryRoleMappingToDTO(
+  entity: categoryRoleEntity
+): CategoryRoleMapping {
+  return {
+    id: entity.id,
+    category: entity.category,
+    roleId: entity.roleId,
+    roleName: entity.role?.name, // Include role name if relation is loaded
+    createdAt: entity.createdAt
+  };
+}
+
+/**
+ * Map array of entities to DTOs
+ */
+export function mapCategoryRoleMappingsToDTOs(
+  entities: categoryRoleEntity[]
+): CategoryRoleMapping[] {
+  return entities.map(mapCategoryRoleMappingToDTO);
 }
 
 function removeNullAttributes<T extends Record<string, any>>(

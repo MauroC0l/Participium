@@ -1,6 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
 import { reportService } from '../services/reportService';
 import { CreateReportRequest } from '../models/dto/input/CreateReportRequest';
+import { ReportStatus } from '@models/dto/ReportStatus';
+import { ReportCategory } from '@models/dto/ReportCategory';
+import { UnauthorizedError } from '@models/errors/UnauthorizedError';
+import { BadRequestError } from '@models/errors/BadRequestError';
+import { User } from '@models/dto/User';
+import { userRepository } from '../repositories/userRepository'; 
 
 /**
  * Report Controller
@@ -42,8 +48,47 @@ class ReportController {
    */
   async getAllReports(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      // TODO: Implement get all reports logic
-      res.status(501).json({ error: 'Not implemented yet' });
+      if (!req.user) {
+        throw new UnauthorizedError('Not authenticated');
+      }
+
+      const userId = (req.user as User).id;
+      
+      const userEntity = await userRepository.findUserById(userId);
+      
+      if (!userEntity) {
+        throw new UnauthorizedError('User not found');
+      }      
+      
+      const { status, category } = req.query;
+      
+      let reportStatus: ReportStatus | undefined;
+      if (status && typeof status === 'string') {
+        if (!Object.values(ReportStatus).includes(status as ReportStatus)) {
+          throw new BadRequestError(
+            `Invalid status. Must be one of: ${Object.values(ReportStatus).join(', ')}`
+          );
+        }
+        reportStatus = status as ReportStatus;
+      }
+
+      let reportCategory: ReportCategory | undefined;
+      if (category && typeof category === 'string') {
+        if (!Object.values(ReportCategory).includes(category as ReportCategory)) {
+          throw new BadRequestError(
+            `Invalid category. Must be one of: ${Object.values(ReportCategory).join(', ')}`
+          );
+        }
+        reportCategory = category as ReportCategory;
+      }
+
+      const reports = await reportService.getAllReports(
+        userEntity,
+        reportStatus,
+        reportCategory
+      );
+      
+      res.status(200).json(reports);
     } catch (error) {
       next(error);
     }
@@ -94,8 +139,31 @@ class ReportController {
    */
   async approveReport(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      // TODO: Implement approve report logic
-      res.status(501).json({ error: 'Not implemented yet' });
+      if (!req.user) {
+        throw new UnauthorizedError('Not authenticated');
+      }
+
+      const userId = (req.user as User).id;
+      const userEntity = await userRepository.findUserById(userId);
+      
+      if (!userEntity) {
+        throw new UnauthorizedError('User not found');
+      }
+
+      const reportId = parseInt(req.params.id);
+      if (isNaN(reportId)) {
+        throw new BadRequestError('Invalid report ID');
+      }
+
+      const { category } = req.body;
+
+      const approvedReport = await reportService.approveReport(
+        reportId, 
+        userEntity,
+        category as ReportCategory | undefined
+      );
+      
+      res.status(200).json(approvedReport);
     } catch (error) {
       next(error);
     }
@@ -107,8 +175,34 @@ class ReportController {
    */
   async rejectReport(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      // TODO: Implement reject report logic
-      res.status(501).json({ error: 'Not implemented yet' });
+      if (!req.user) {
+        throw new UnauthorizedError('Not authenticated');
+      }
+
+      const userId = (req.user as User).id;
+      const userEntity = await userRepository.findUserById(userId);
+      
+      if (!userEntity) {
+        throw new UnauthorizedError('User not found');
+      }
+
+      const reportId = parseInt(req.params.id);
+      if (isNaN(reportId)) {
+        throw new BadRequestError('Invalid report ID');
+      }
+
+      const { rejectionReason } = req.body;
+      if (!rejectionReason) {
+        throw new BadRequestError('rejectionReason is required in request body');
+      }
+
+      const rejectedReport = await reportService.rejectReport(
+        reportId, 
+        rejectionReason, 
+        userEntity
+      );
+      
+      res.status(200).json(rejectedReport);
     } catch (error) {
       next(error);
     }
