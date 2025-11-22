@@ -1,6 +1,6 @@
 # Participium - Database Structure (v3)
 
-This document describes the database schema (Version 3.0) designed for the **Participium** application.
+This document describes the database schema (Version 4.0) designed for the **Participium** application.
 
 * **Database System:** PostgreSQL (v15+)
 * **Required Extensions:** `postgis` (for geolocation data)
@@ -16,6 +16,7 @@ Participium is a citizen reporting system that allows users to submit reports ab
 - **Media Attachments** (photos)
 - **Communication** (comments, messages, notifications)
 - **Geolocation** (using PostGIS for spatial data)
+- **Automatic Assignment Workflow**
 
 ---
 
@@ -232,16 +233,24 @@ Stores permission levels and job roles that can be assigned to users across depa
 - Primary key on `id`
 - Unique index on `name`
 
-**Pre-populated Roles:**
-System roles:
+**System roles:**
 - `Citizen` - Standard citizen user
 - `Administrator` - System Administrator with full access
+- `Municipal Public Relations Officer` - Reviews and approves/rejects citizen reports
 
-Municipality roles include:
-- `Department Director` - Director of a department
-- Department-specific staff roles (e.g., `Water Network staff member`, `Electrical Engineer`, `Parks Maintenance staff member`)
-- Technical roles (e.g., `Civil Engineer`, `Traffic Signal Technician`)
-- Support roles (e.g., `Customer Service staff member`, `Support Officer`)
+**Department-specific roles:**
+- `Department Director` - Director of a department (applicable to all technical departments)
+- `Water Network staff member` - Manages water network maintenance
+- `Sewer System staff member` - Manages sewer system maintenance
+- `Road Maintenance staff member` - Maintains road infrastructure
+- `Accessibility staff member` - Ensures accessibility compliance
+- `Electrical staff member` - Manages electrical systems
+- `Recycling Program staff member` - Coordinates recycling programs
+- `Traffic management staff member` - Manages traffic systems
+- `Parks Maintenance staff member` - Maintains parks and green areas
+- `Customer Service staff member` - Provides customer service
+- `Building Maintenance staff member` - Maintains building facilities
+- `Support Officer` - Provides general support services
 
 ---
 
@@ -268,6 +277,21 @@ Defines valid "positions" by linking departments to roles. This table represents
 - Users are assigned to positions via the `users.department_role_id` foreign key
 - The Admin UI can use this table to show only valid roles when filtering by department
 
+
+### 10. `category_role_mapping`
+**NEW in V4:** Maps report categories to specific technical roles for automatic assignment.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| `id` | `SERIAL` | **PRIMARY KEY** | Unique mapping identifier |
+| `category` | `report_category` | NOT NULL, UNIQUE | Report category (from ENUM) |
+| `role_id` | `INT` | **FOREIGN KEY** → `roles(id)`, NOT NULL | Technical role responsible for this category |
+| `created_at` | `TIMESTAMPTZ` | DEFAULT CURRENT_TIMESTAMP | Mapping creation date |
+
+**Indexes:**
+- Primary key on `id`
+- Unique index on `category`
+- Foreign key index on `role_id`
 ---
 
 ## Entity Relationships
@@ -312,39 +336,50 @@ The initialization script populates the following default data:
 7. **Parks, Green Areas and Recreation Department**
 8. **General Services Department**
 
-### Roles (24 total)
-- **Citizen** - Standard citizen user
-- **Administrator** - System administrator with full access
-- **Department Director** - Director of a department
-- **Water Network staff member** - Manages water network maintenance
-- **Sewer System staff member** - Manages sewer system maintenance
-- **Network Technician** - Technical support for network systems
-- **Road Maintenance staff member** - Maintains road infrastructure
-- **Civil Engineer** - Engineering professional for infrastructure projects
-- **Accessibility staff member** - Ensures accessibility compliance
-- **System staff member** - General system maintenance
-- **Electrical Engineer** - Engineering professional for electrical systems
-- **Electrical Technician** - Technical support for electrical systems
-- **Collection Services staff member** - Manages waste collection services
-- **Recycling Program Coordinator** - Coordinates recycling programs
-- **Sanitation Worker** - Performs sanitation duties
-- **Traffic Engineer** - Engineering professional for traffic systems
-- **Signage staff member** - Manages road signage
-- **Traffic Signal Technician** - Technical support for traffic signals
-- **Parks Maintenance staff member** - Maintains parks and green areas
-- **Playground Safety Inspector** - Inspects playground safety
-- **Garden Area Maintainer** - Maintains garden areas
-- **Customer Service staff member** - Provides customer service
-- **Building Maintenance staff member** - Maintains building facilities
-- **Support Officer** - Provides general support services
 
-### Department-Role Combinations (32 total positions)
-The script creates valid position combinations, such as:
-- Organization / Citizen
-- Organization / Administrator
-- Water and Sewer Services Department / Department Director
-- Water and Sewer Services Department / Water Network staff member
-- And 28 more combinations across all departments
+
+
+**Pre-populated Position Combinations (22 total):**
+
+**Organization Department:**
+- Citizen
+- Administrator
+- Municipal Public Relations Officer
+
+**Water and Sewer Services Department:**
+- Department Director
+- Water Network staff member
+- Sewer System staff member
+
+**Public Infrastructure and Accessibility Department:**
+- Department Director
+- Road Maintenance staff member
+- Accessibility staff member
+
+**Public Lighting Department:**
+- Department Director
+- Electrical staff member
+
+**Waste Management Department:**
+- Department Director
+- Recycling Program staff member
+
+**Mobility and Traffic Management Department:**
+- Department Director
+- Traffic management staff member
+
+**Parks, Green Areas and Recreation Department:**
+- Department Director
+- Parks Maintenance staff member
+
+**General Services Department:**
+- Department Director
+- Customer Service staff member
+- Building Maintenance staff member
+- Support Officer
+
+---
+
 
 ### Default Administrator User
 - **Username:** `admin`
@@ -354,6 +389,16 @@ The script creates valid position combinations, such as:
 - **Name:** System Administrator
 
 ---
+
+## Automatic Assignment Workflow
+
+**NEW in V4:** The system supports automatic assignment of approved reports:
+
+1. **Citizen submits report** → Status: "Pending Approval"
+2. **Municipal Public Relations Officer reviews** → Can optionally modify category
+3. **Officer approves report** → System uses `category_role_mapping` to find responsible department
+4. **System assigns to technical staff** → Finds available staff member in that department
+5. **Status changes to "Assigned"** → Technical staff receives the task
 
 ## Database Initialization
 
@@ -371,4 +416,6 @@ The [`docker-compose.yml`](server/docker-compose.yml ) file automatically runs [
 | 1.1 | 2025-11-08 | Updated user roles - expanded from 4 to 10 roles with specific municipal responsibilities |
 | 2.0 | 2025-01-12 | Added geolocation support with PostGIS for citizen reports |
 | 3.0 | 2025-11-17 | **Major refactoring:** Replaced ENUM-based roles with relational role system. Added `departments`, `roles`, and `department_roles` tables. Changed `users.role` to `users.department_role_id` for flexible role-department assignments. Pre-populated 8 departments and 24+ roles covering various municipal services. |
+| 4.0 | 2025-11-22 | **Added automatic assignment:** Added `category_role_mapping` table to map report categories to departments. Reduced role count from 24 to 15 (consolidated similar roles). |
+
 

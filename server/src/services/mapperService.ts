@@ -7,6 +7,8 @@ import { DepartmentEntity } from "@entity/departmentEntity";
 import { RoleEntity } from "@entity/roleEntity";
 import { Report } from "@dto/Report";
 import { reportEntity } from "@entity/reportEntity";
+import { CategoryRoleMapping } from '../models/dto/CategoryRoleMapping';
+import { categoryRoleEntity } from '../models/entity/categoryRoleEntity';
 
 
 export function createErrorDTO(
@@ -101,4 +103,29 @@ function removeNullAttributes<T extends Record<string, any>>(
   );
   
   return Object.fromEntries(filtered) as Partial<T>;
+}
+
+
+/**
+ * Map CategoryRoleMappingEntity to CategoryRoleMapping DTO
+ */
+export function mapCategoryRoleMappingToDTO(
+  entity: categoryRoleEntity
+): CategoryRoleMapping {
+  return {
+    id: entity.id,
+    category: entity.category,
+    roleId: entity.roleId,
+    roleName: entity.role?.name, // Include role name if relation is loaded
+    createdAt: entity.createdAt
+  };
+}
+
+/**
+ * Map array of entities to DTOs
+ */
+export function mapCategoryRoleMappingsToDTOs(
+  entities: categoryRoleEntity[]
+): CategoryRoleMapping[] {
+  return entities.map(mapCategoryRoleMappingToDTO);
 }

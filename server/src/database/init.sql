@@ -1,6 +1,6 @@
 /*
  * ====================================
- * INITIALIZATION SCRIPT FOR THE DATABASE - V3
+ * INITIALIZATION SCRIPT FOR THE DATABASE - V4
  * ====================================
  */
 
@@ -187,11 +187,25 @@ CREATE TABLE messages (
 /*
  * Category Department Mapping table (category_department_mapping)
  * Maps report categories to responsible departments for automatic assignment
- */
+ 
 CREATE TABLE category_department_mapping (
     id SERIAL PRIMARY KEY,
     category report_category NOT NULL UNIQUE,
     department_id INT NOT NULL REFERENCES departments(id),
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);*/
+
+
+
+/*
+ * Category Role Mapping table (category_role_mapping)
+ * Maps report categories to specific technical roles for automatic assignment
+ * When a report is approved, the system assigns it to a staff member with the mapped role
+ */
+CREATE TABLE category_role_mapping (
+    id SERIAL PRIMARY KEY,
+    category report_category NOT NULL UNIQUE,
+    role_id INT NOT NULL REFERENCES roles(id),
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -225,22 +239,12 @@ VALUES
     ('Department Director', 'Director of a department'),
     ('Water Network staff member', 'Manages water network maintenance'),
     ('Sewer System staff member', 'Manages sewer system maintenance'),
-    ('Network Technician', 'Technical support for network systems'),
     ('Road Maintenance staff member', 'Maintains road infrastructure'),
-    ('Civil Engineer', 'Engineering professional for infrastructure projects'),
     ('Accessibility staff member', 'Ensures accessibility compliance'),
-    ('System staff member', 'General system maintenance'),
-    ('Electrical Engineer', 'Engineering professional for electrical systems'),
-    ('Electrical Technician', 'Technical support for electrical systems'),
-    ('Collection Services staff member', 'Manages waste collection services'),
-    ('Recycling Program Coordinator', 'Coordinates recycling programs'),
-    ('Sanitation Worker', 'Performs sanitation duties'),
-    ('Traffic Engineer', 'Engineering professional for traffic systems'),
-    ('Signage staff member', 'Manages road signage'),
-    ('Traffic Signal Technician', 'Technical support for traffic signals'),
+    ('Electrical staff member', 'Manages electrical systems'),
+    ('Recycling Program staff member', 'Coordinates recycling programs'),
+    ('Traffic management staff member', 'Manages traffic systems'),
     ('Parks Maintenance staff member', 'Maintains parks and green areas'),
-    ('Playground Safety Inspector', 'Inspects playground safety'),
-    ('Garden Area Maintainer', 'Maintains garden areas'),
     ('Customer Service staff member', 'Provides customer service'),
     ('Building Maintenance staff member', 'Maintains building facilities'),
     ('Support Officer', 'Provides general support services')
@@ -258,37 +262,27 @@ VALUES
     ((SELECT id FROM departments WHERE name = 'Water and Sewer Services Department'), (SELECT id FROM roles WHERE name = 'Department Director')),
     ((SELECT id FROM departments WHERE name = 'Water and Sewer Services Department'), (SELECT id FROM roles WHERE name = 'Water Network staff member')),
     ((SELECT id FROM departments WHERE name = 'Water and Sewer Services Department'), (SELECT id FROM roles WHERE name = 'Sewer System staff member')),
-    ((SELECT id FROM departments WHERE name = 'Water and Sewer Services Department'), (SELECT id FROM roles WHERE name = 'Network Technician')),
 
     -- Public Infrastructure and Accessibility Department
     ((SELECT id FROM departments WHERE name = 'Public Infrastructure and Accessibility Department'), (SELECT id FROM roles WHERE name = 'Department Director')),
     ((SELECT id FROM departments WHERE name = 'Public Infrastructure and Accessibility Department'), (SELECT id FROM roles WHERE name = 'Road Maintenance staff member')),
-    ((SELECT id FROM departments WHERE name = 'Public Infrastructure and Accessibility Department'), (SELECT id FROM roles WHERE name = 'Civil Engineer')),
     ((SELECT id FROM departments WHERE name = 'Public Infrastructure and Accessibility Department'), (SELECT id FROM roles WHERE name = 'Accessibility staff member')),
 
     -- Public Lighting Department
     ((SELECT id FROM departments WHERE name = 'Public Lighting Department'), (SELECT id FROM roles WHERE name = 'Department Director')),
-    ((SELECT id FROM departments WHERE name = 'Public Lighting Department'), (SELECT id FROM roles WHERE name = 'System staff member')),
-    ((SELECT id FROM departments WHERE name = 'Public Lighting Department'), (SELECT id FROM roles WHERE name = 'Electrical Engineer')),
-    ((SELECT id FROM departments WHERE name = 'Public Lighting Department'), (SELECT id FROM roles WHERE name = 'Electrical Technician')),
+    ((SELECT id FROM departments WHERE name = 'Public Lighting Department'), (SELECT id FROM roles WHERE name = 'Electrical staff member')),
 
     -- Waste Management Department
     ((SELECT id FROM departments WHERE name = 'Waste Management Department'), (SELECT id FROM roles WHERE name = 'Department Director')),
-    ((SELECT id FROM departments WHERE name = 'Waste Management Department'), (SELECT id FROM roles WHERE name = 'Collection Services staff member')),
-    ((SELECT id FROM departments WHERE name = 'Waste Management Department'), (SELECT id FROM roles WHERE name = 'Recycling Program Coordinator')),
-    ((SELECT id FROM departments WHERE name = 'Waste Management Department'), (SELECT id FROM roles WHERE name = 'Sanitation Worker')),
+    ((SELECT id FROM departments WHERE name = 'Waste Management Department'), (SELECT id FROM roles WHERE name = 'Recycling Program staff member')),
 
     -- Mobility and Traffic Management Department
     ((SELECT id FROM departments WHERE name = 'Mobility and Traffic Management Department'), (SELECT id FROM roles WHERE name = 'Department Director')),
-    ((SELECT id FROM departments WHERE name = 'Mobility and Traffic Management Department'), (SELECT id FROM roles WHERE name = 'Traffic Engineer')),
-    ((SELECT id FROM departments WHERE name = 'Mobility and Traffic Management Department'), (SELECT id FROM roles WHERE name = 'Signage staff member')),
-    ((SELECT id FROM departments WHERE name = 'Mobility and Traffic Management Department'), (SELECT id FROM roles WHERE name = 'Traffic Signal Technician')),
+    ((SELECT id FROM departments WHERE name = 'Mobility and Traffic Management Department'), (SELECT id FROM roles WHERE name = 'Traffic management staff member')),
 
     -- Parks, Green Areas and Recreation Department
     ((SELECT id FROM departments WHERE name = 'Parks, Green Areas and Recreation Department'), (SELECT id FROM roles WHERE name = 'Department Director')),
     ((SELECT id FROM departments WHERE name = 'Parks, Green Areas and Recreation Department'), (SELECT id FROM roles WHERE name = 'Parks Maintenance staff member')),
-    ((SELECT id FROM departments WHERE name = 'Parks, Green Areas and Recreation Department'), (SELECT id FROM roles WHERE name = 'Playground Safety Inspector')),
-    ((SELECT id FROM departments WHERE name = 'Parks, Green Areas and Recreation Department'), (SELECT id FROM roles WHERE name = 'Garden Area Maintainer')),
 
     -- General Services Department
     ((SELECT id FROM departments WHERE name = 'General Services Department'), (SELECT id FROM roles WHERE name = 'Department Director')),
@@ -301,7 +295,7 @@ ON CONFLICT (department_id, role_id) DO NOTHING;
 /*
  * 3. Popola la tabella di mapping categoria-dipartimento
  * Associa ogni categoria di report al dipartimento tecnico responsabile
- */
+ 
 INSERT INTO category_department_mapping (category, department_id)
 VALUES
     ('Water Supply - Drinking Water', (SELECT id FROM departments WHERE name = 'Water and Sewer Services Department')),
@@ -313,6 +307,24 @@ VALUES
     ('Road Signs and Traffic Lights', (SELECT id FROM departments WHERE name = 'Mobility and Traffic Management Department')),
     ('Public Green Areas and Playgrounds', (SELECT id FROM departments WHERE name = 'Parks, Green Areas and Recreation Department')),
     ('Other', (SELECT id FROM departments WHERE name = 'General Services Department'))
+ON CONFLICT (category) DO NOTHING;*/
+
+/*
+ * Popola la tabella di mapping categoria-ruolo
+ * Associa ogni categoria di report al ruolo tecnico specifico responsabile
+ */
+ 
+INSERT INTO category_role_mapping (category, role_id)
+VALUES
+    ('Water Supply - Drinking Water', (SELECT id FROM roles WHERE name = 'Water Network staff member')),
+    ('Sewer System', (SELECT id FROM roles WHERE name = 'Sewer System staff member')),
+    ('Architectural Barriers', (SELECT id FROM roles WHERE name = 'Accessibility staff member')),
+    ('Roads and Urban Furnishings', (SELECT id FROM roles WHERE name = 'Road Maintenance staff member')),
+    ('Public Lighting', (SELECT id FROM roles WHERE name = 'Electrical staff member')),
+    ('Waste', (SELECT id FROM roles WHERE name = 'Recycling Program staff member')),
+    ('Road Signs and Traffic Lights', (SELECT id FROM roles WHERE name = 'Traffic management staff member')),
+    ('Public Green Areas and Playgrounds', (SELECT id FROM roles WHERE name = 'Parks Maintenance staff member')),
+    ('Other', (SELECT id FROM roles WHERE name = 'Support Officer'))
 ON CONFLICT (category) DO NOTHING;
 
 /*

@@ -10,6 +10,8 @@ import { userEntity } from '@models/entity/userEntity';
 
 import { NotFoundError } from '../models/errors/NotFoundError';
 import { BadRequestError } from '../models/errors/BadRequestError';
+import { categoryRoleRepository } from '../repositories/categoryRoleRepository';
+import { userRepository } from '../repositories/userRepository';
 
 
 
@@ -96,11 +98,19 @@ async getAllReports(
   }
 
 
+
+
   /**
-   * Approve a report (change status from Pending Approval to Assigned)
+   * Approve a report and automatically assign to technical staff
+   * based on category-role mapping with load balancing
    * Only Municipal Public Relations Officers can approve reports
    */
-  async approveReport(reportId: number, user: userEntity, newCategory?: ReportCategory ): Promise<Report> {
+  async approveReport(
+    reportId: number, 
+    user: userEntity, 
+    newCategory?: ReportCategory
+  ): Promise<Report> {
+
 
     const report = await reportRepository.findReportById(reportId);
     if (!report) {
@@ -113,26 +123,50 @@ async getAllReports(
       );
     }
 
-      if (newCategory) {
 
-    if (!Object.values(ReportCategory).includes(newCategory)) {
+    if (newCategory) {
+      if (!Object.values(ReportCategory).includes(newCategory)) {
+        throw new BadRequestError(
+          `Invalid category. Must be one of: ${Object.values(ReportCategory).join(', ')}`
+        );
+      }
+      report.category = newCategory;
+    }
+
+
+    const categoryToAssign = report.category as ReportCategory;
+
+
+    const roleId = await categoryRoleRepository.findRoleIdByCategory(categoryToAssign);
+    
+    if (!roleId) {
       throw new BadRequestError(
-        `Invalid category. Must be one of: ${Object.values(ReportCategory).join(', ')}`
+        `No role mapping found for category: ${categoryToAssign}. Please contact system administrator.`
       );
     }
 
-    report.category = newCategory;
-  }
+
+    const availableStaff = await userRepository.findAvailableStaffByRoleId(roleId);
+    
+    if (!availableStaff) {
+      throw new BadRequestError(
+        `No available technical staff found for category: ${categoryToAssign}. All staff members may be overloaded or the role has no assigned users.`
+      );
+    }
+
 
     report.status = ReportStatus.ASSIGNED;
-    report.rejectionReason = undefined; 
-    report.assigneeId = undefined; //TODO: implement automatic assignment service
+    report.rejectionReason = undefined;
+    report.assigneeId = availableStaff.id;
     report.updatedAt = new Date();
+
 
     const updatedReport = await reportRepository.save(report);
 
     return mapReportEntityToDTO(updatedReport);
   }
+
+
 
   /**
    * Reject a report (change status from Pending Approval to Rejected)
