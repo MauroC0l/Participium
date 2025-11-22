@@ -36,15 +36,16 @@ export const isCitizen: RequestHandler = (
   res: Response, 
   next: NextFunction
 ): void => {
-  if (!req.isAuthenticated()) {
-      return next(new UnauthorizedError("Not authenticated"));
-  }
-  
-  const roleName = getUserRoleName(req.user);
-  if (roleName !== 'Citizen') {
-    return next(new InsufficientRightsError('Access denied. Citizen role required'));
-  }
-  next();
+  // First check authentication using isLoggedIn
+  isLoggedIn(req, res, (err?: any) => {
+    if (err) return next(err);
+    
+    const roleName = getUserRoleName(req.user);
+    if (roleName !== 'Citizen') {
+      return next(new InsufficientRightsError('Access denied. Citizen role required'));
+    }
+    next();
+  });
 };
 
 /**
@@ -55,15 +56,16 @@ export const isAdmin: RequestHandler = (
   res: Response, 
   next: NextFunction
 ): void => {
-  if (!req.isAuthenticated()) {
-    return next(new UnauthorizedError('Not authenticated'));
-  }
-  
-  const roleName = getUserRoleName(req.user);
-  if (roleName !== 'Administrator') {
-    return next(new InsufficientRightsError('Access denied. Admin role required.'));
-  }
-  next();
+  // First check authentication using isLoggedIn
+  isLoggedIn(req, res, (err?: any) => {
+    if (err) return next(err);
+    
+    const roleName = getUserRoleName(req.user);
+    if (roleName !== 'Administrator') {
+      return next(new InsufficientRightsError('Access denied. Admin role required.'));
+    }
+    next();
+  });
 };
 
 /**
@@ -77,15 +79,16 @@ export const requireRole = (requiredRole: string): RequestHandler => {
     res: Response, 
     next: NextFunction
   ): void => {
-    if (!req.isAuthenticated()) {
-      return next(new UnauthorizedError('Not authenticated'));
-    }
+    // First check authentication using isLoggedIn
+    isLoggedIn(req, res, (err?: any) => {
+      if (err) return next(err);
 
-    const roleName = getUserRoleName(req.user);
-    if (!roleName || roleName !== requiredRole) {
-      return next(new InsufficientRightsError(`Access denied. ${requiredRole} role required.`));
-    }
-    
-    next();
+      const roleName = getUserRoleName(req.user);
+      if (!roleName || roleName !== requiredRole) {
+        return next(new InsufficientRightsError(`Access denied. ${requiredRole} role required.`));
+      }
+      
+      next();
+    });
   };
 };

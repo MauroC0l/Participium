@@ -1,5 +1,4 @@
 import { departmentService } from '@services/departmentService';
-import { AppDataSource } from '@database/connection';
 import { 
   setupTestDatabase, 
   teardownTestDatabase, 

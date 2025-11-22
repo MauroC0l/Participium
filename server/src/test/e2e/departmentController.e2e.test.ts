@@ -1,6 +1,5 @@
 import request from 'supertest';
 import app from '../../app';
-import { AppDataSource } from '@database/connection';
 import { 
   setupTestDatabase, 
   teardownTestDatabase, 
