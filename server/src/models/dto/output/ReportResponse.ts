@@ -3,6 +3,16 @@ import { ReportCategory } from '../ReportCategory';
 import { ReportStatus } from '../ReportStatus';
 
 /**
+ * User info for reporter/assignee in API response
+ */
+export interface UserInfo {
+  id: number;
+  first_name: string;
+  last_name: string;
+  username: string;
+}
+
+/**
  * Photo in API response format (camelCase)
  */
 export interface PhotoResponse {
@@ -96,6 +106,7 @@ export interface PhotoResponse {
 export interface ReportResponse {
   id: number;
   reporterId: number | null;
+  reporter?: UserInfo | null;
   title: string;
   description: string;
   category: ReportCategory;
@@ -105,6 +116,7 @@ export interface ReportResponse {
   status: ReportStatus;
   rejectionReason: string | null;
   assigneeId: number | null;
+  assignee?: UserInfo | null;
   createdAt: Date;
   updatedAt: Date;
 }

@@ -14,6 +14,7 @@ import { Report } from "@dto/Report";
 import { CategoryRoleMapping } from '../models/dto/CategoryRoleMapping';
 import { categoryRoleEntity } from '../models/entity/categoryRoleEntity';
 import { ReportStatus } from "@models/dto/ReportStatus";
+import { storageConfig } from '../config/storage';
 
 
 export function createErrorDTO(
@@ -26,6 +27,25 @@ export function createErrorDTO(
     name,
     message
   }) as ErrorDTO;
+}
+
+/**
+ * Generate full URL for photo storage path
+ * For local storage: prepends /uploads/ prefix
+ * For R2: returns the URL as-is (already complete)
+ */
+function getPhotoUrl(storageUrl: string): string {
+  if (storageConfig.provider === 'local') {
+    // For local storage, prepend /uploads/ if not already present
+    if (storageUrl.startsWith('/uploads/')) {
+      return storageUrl;
+    }
+    // Remove leading slash if present, then prepend /uploads/
+    const cleanPath = storageUrl.startsWith('/') ? storageUrl.slice(1) : storageUrl;
+    return `/${storageConfig.local.uploadDir}/${cleanPath}`;
+  }
+  // For R2, the URL is already complete
+  return storageUrl;
 }
 
 /**
@@ -157,18 +177,44 @@ export function mapReportEntityToReportResponse(entity: reportEntity): ReportRes
     location = entity.location;
   }
 
+  // Map reporter info if available and not anonymous
+  const reporter = !entity.isAnonymous && entity.reporter ? {
+    id: entity.reporter.id,
+    first_name: entity.reporter.firstName,
+    last_name: entity.reporter.lastName,
+    username: entity.reporter.username
+  } : null;
+
+  // Map assignee info if available
+  const assignee = entity.assignee ? {
+    id: entity.assignee.id,
+    first_name: entity.assignee.firstName,
+    last_name: entity.assignee.lastName,
+    username: entity.assignee.username
+  } : null;
+
+  // Map photos if available with full URLs
+  const photos = entity.photos ? entity.photos.map(photo => ({
+    id: photo.id,
+    reportId: photo.reportId,
+    storageUrl: getPhotoUrl(photo.storageUrl),
+    createdAt: photo.createdAt
+  })) : [];
+
   return {
     id: entity.id,
     reporterId: entity.isAnonymous ? null : entity.reporterId,
+    reporter,
     title: entity.title,
     description: entity.description,
     category: entity.category as ReportCategory,
     location,
-    photos: [], // Photos loaded via relations
+    photos,
     isAnonymous: entity.isAnonymous,
     status: entity.status as ReportStatus,
     rejectionReason: entity.rejectionReason || null,
     assigneeId: entity.assigneeId || null,
+    assignee,
     createdAt: entity.createdAt,
     updatedAt: entity.updatedAt
   };

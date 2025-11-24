@@ -43,7 +43,7 @@ export default function MunicipalityUserHome() {
       
       const formattedReports = reportsData.map(report => ({
         ...report,
-        createdAt: new Date(report.created_at), 
+        createdAt: new Date(report.createdAt), 
         
         images: report.photos 
           ? report.photos.map(p => (typeof p === 'string' ? p : p.storageUrl)) 

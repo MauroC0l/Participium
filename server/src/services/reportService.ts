@@ -154,7 +154,7 @@ class ReportService {
     user: userEntity, 
     status?: ReportStatus,
     category?: ReportCategory
-  ): Promise<Report[]> {
+  ): Promise<ReportResponse[]> {
     
     const userRole = user.departmentRole?.role?.name;
     
@@ -179,7 +179,7 @@ class ReportService {
       return true;
     });
 
-    return filteredReports.map(report => mapReportEntityToDTO(report));
+    return filteredReports.map(report => mapReportEntityToReportResponse(report));
   }
 
   /**
