@@ -116,6 +116,7 @@ class ReportService {
         category: reportData.category,
         location: `POINT(${reportData.location.longitude} ${reportData.location.latitude})`,
         isAnonymous: reportData.isAnonymous || false,
+        photos: []
       };
 
       // Create report in database first to get the ID
@@ -170,7 +171,7 @@ class ReportService {
     }
 
     const reports = await reportRepository.findAllReports(status, category);
-    
+
     const filteredReports = reports.filter(report => {
       if (report.status === ReportStatus.PENDING_APPROVAL) {
         return userRole === 'Municipal Public Relations Officer';

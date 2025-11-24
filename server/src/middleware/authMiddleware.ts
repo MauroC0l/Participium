@@ -29,46 +29,6 @@ export const isLoggedIn: RequestHandler = (
 };
 
 /**
- * Middleware to check if the user is a citizen
- */
-export const isCitizen: RequestHandler = (
-  req: Request, 
-  res: Response, 
-  next: NextFunction
-): void => {
-  // First check authentication using isLoggedIn
-  isLoggedIn(req, res, (err?: any) => {
-    if (err) return next(err);
-    
-    const roleName = getUserRoleName(req.user);
-    if (roleName !== 'Citizen') {
-      return next(new InsufficientRightsError('Access denied. Citizen role required'));
-    }
-    next();
-  });
-};
-
-/**
- * Middleware to check if the user is an admin
- */
-export const isAdmin: RequestHandler = (
-  req: Request, 
-  res: Response, 
-  next: NextFunction
-): void => {
-  // First check authentication using isLoggedIn
-  isLoggedIn(req, res, (err?: any) => {
-    if (err) return next(err);
-    
-    const roleName = getUserRoleName(req.user);
-    if (roleName !== 'Administrator') {
-      return next(new InsufficientRightsError('Access denied. Admin role required.'));
-    }
-    next();
-  });
-};
-
-/**
  * Role-based authorization middleware factory
  * @param {string} requiredRole The role required to access the route
  * @returns {function} Middleware function

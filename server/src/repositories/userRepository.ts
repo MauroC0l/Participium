@@ -245,7 +245,6 @@ class UserRepository {
       .getMany();
   }
 
-
   /**
    * Find an available technical staff member with a specific role
    * Uses load balancing: assigns to the staff member with the fewest active reports
@@ -253,59 +252,22 @@ class UserRepository {
    * @returns Available staff member or null
    */
   async findAvailableStaffByRoleId(roleId: number): Promise<userEntity | null> {
-    try {
-      // Query to find staff members with the specified role
-      // and count their active reports (Assigned, In Progress, Suspended)
-      const staffMembers = await this.repository
-        .createQueryBuilder('user')
-        .innerJoinAndSelect('user.departmentRole', 'dr')
-        .innerJoinAndSelect('dr.role', 'role')
-        .where('dr.role_id = :roleId', { roleId })
-        .leftJoin(
-          'reports',
-          'r',
-          'r.assignee_id = user.id AND r.status IN (:...activeStatuses)',
-          {
-            activeStatuses: [
-              ReportStatus.ASSIGNED,
-              ReportStatus.IN_PROGRESS,
-              ReportStatus.SUSPENDED
-            ]
-          }
-        )
-        .groupBy('user.id')
-        .addGroupBy('dr.id')
-        .addGroupBy('role.id')
-        .select([
-          'user.id',
-          'user.username',
-          'user.firstName',
-          'user.lastName',
-          'user.email',
-          'user.departmentRoleId',
-          'dr.id',
-          'dr.departmentId',
-          'dr.roleId',
-          'role.id',
-          'role.name'
-        ])
-        .addSelect('COUNT(r.id)', 'activeReportsCount')
-        .orderBy('activeReportsCount', 'ASC') // Load balancing: least loaded first
-        .addOrderBy('user.id', 'ASC') // Tie-breaker: earliest user ID
-        .getRawAndEntities();
-
-      if (staffMembers.entities.length === 0) {
-        return null;
-      }
-
-      // Return the staff member with the fewest active reports
-      return staffMembers.entities[0];
-    } catch (error) {
-      console.error('Error finding available staff by role:', error);
-      throw error;
-    }
+    return this.repository
+      .createQueryBuilder("user")
+      .innerJoinAndSelect("user.departmentRole", "dr")
+      .innerJoinAndSelect("dr.role", "role")
+      .leftJoin("reports", "r", "r.assignee_id = user.id AND r.status IN (:...statuses)", { 
+        statuses: [ReportStatus.ASSIGNED, ReportStatus.IN_PROGRESS, ReportStatus.SUSPENDED] 
+      })
+      .where("dr.role_id = :roleId", { roleId })
+      .groupBy("user.id")
+      .addGroupBy("dr.id")
+      .addGroupBy("role.id")
+      .addSelect("COUNT(r.id)", "report_count")
+      .orderBy("report_count", "ASC")
+      .addOrderBy("user.id", "ASC")
+      .getOne();
   }
-
 
 }
 

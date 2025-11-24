@@ -2,7 +2,7 @@ import request from 'supertest';
 import express, { Express } from 'express';
 import municipalityUserRouter from '../../../routes/municipalityUserRoutes'; 
 
-import { isAdmin } from '@middleware/authMiddleware';
+import { requireRole } from '@middleware/authMiddleware';
 import municipalityUserController from '@controllers/municipalityUserController';
 
 jest.mock('@middleware/authMiddleware');
@@ -15,7 +15,7 @@ app.use(express.json());
 app.use('/api/municipality/users', municipalityUserRouter);
 
 
-const mockIsAdmin = isAdmin as jest.Mock;
+const mockRequireRole = requireRole as jest.Mock;
 
 const mockCreateUser =
   municipalityUserController.createMunicipalityUser as jest.Mock;
@@ -71,17 +71,19 @@ describe('Municipality User Routes Integration Tests', () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
-    mockIsAdmin.mockImplementation((req, res, next) => {
-      const userType = req.headers['x-test-user-type'];
+    mockRequireRole.mockImplementation((role: string) => {
+      return (req: any, res: any, next: any) => {
+        const userType = req.headers['x-test-user-type'];
 
-      if (userType === 'ADMIN') {
-        req.user = { id: 99, role: 'ADMIN' };
-        next();
-      } else if (userType === 'CITIZEN') {
-        res.status(403).json({ error: 'Insufficient rights' });
-      } else {
-        res.status(401).json({ error: 'Not authenticated' });
-      }
+        if (userType === 'ADMIN') {
+          req.user = { id: 99, role: 'ADMIN' };
+          next();
+        } else if (userType === 'CITIZEN') {
+          res.status(403).json({ error: 'Insufficient rights' });
+        } else {
+          res.status(401).json({ error: 'Not authenticated' });
+        }
+      };
     });
 
     mockCreateUser.mockImplementation((req, res) => {
@@ -156,7 +158,6 @@ describe('Municipality User Routes Integration Tests', () => {
 
       expect(res.status).toBe(201);
       expect(res.body).toEqual(mockUserResponse);
-      expect(mockIsAdmin).toHaveBeenCalledTimes(1);
       expect(mockCreateUser).toHaveBeenCalledTimes(1);
     });
 
