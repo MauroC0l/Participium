@@ -299,7 +299,7 @@ const MapPage = () => {
     setTimeout(() => setNotification(null), 5000);
   };
 
-  const handleClear = () => {
+  const handleClear = (showNotification = true) => {
     setMarker(null);
     setFormData({
       title: '',
@@ -313,8 +313,11 @@ const MapPage = () => {
     photos.forEach(photo => URL.revokeObjectURL(photo.preview));
     setPhotos([]);
 
-    setNotification({ message: 'Form resettato.', type: 'info' });
-    setTimeout(() => setNotification(null), 5000);
+    // Mostra la notifica solo se richiesto esplicitamente
+    if (showNotification) {
+      setNotification({ message: 'Form resettato.', type: 'info' });
+      setTimeout(() => setNotification(null), 5000);
+    }
   };
 
   const handleInputChange = (field, value) => {
@@ -398,8 +401,11 @@ const MapPage = () => {
       await createReport(reportData);
       console.log('REPORT CREATOOO: ', reportData);
 
+      // 1. Pulisci il form SENZA mostrare la notifica di reset
+      handleClear(false);
+
+      // 2. Imposta la notifica di successo
       setNotification({ message: 'Segnalazione inviata con successo!', type: 'success' });
-      handleClear();
 
       // Ricarica la lista per vedere il nuovo report sulla mappa
       const updatedReports = await getReports();
@@ -410,6 +416,7 @@ const MapPage = () => {
       setNotification({ message: error.message || 'Errore durante l\'invio.', type: 'error' });
     } finally {
       setIsSubmitting(false);
+      // Il timeout qui sotto rimuoverà la notifica di successo dopo 5 secondi
       setTimeout(() => setNotification(null), 5000);
     }
   };
@@ -779,7 +786,7 @@ const MapPage = () => {
                 <button
                   type="button"
                   className="mp-btn secondary"
-                  onClick={handleClear}
+                  onClick={() => handleClear()}
                   disabled={isSubmitting}
                 >
                   <FaTrash className="mp-btn-icon" />
