@@ -30,7 +30,7 @@ import { Dropdown } from 'react-bootstrap';
 import { getAllCategories, createReport, getReports } from '../api/reportApi';
 
 import '../css/MapPage.css';
-
+import ReportDetails from "../components/ReportDetails";
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 
@@ -120,6 +120,8 @@ const MapPage = () => {
   const [isLoadingMap, setIsLoadingMap] = useState(true);
   const [photos, setPhotos] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedReport, setSelectedReport] = useState(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -548,8 +550,15 @@ const MapPage = () => {
                   chunkedLoading
                   spiderfyOnMaxZoom={true}
                   maxClusterRadius={40}
-                >
-                  {existingReports.map((report) => {
+                  iconCreateFunction={(cluster) => {
+                    const count = cluster.getChildCount();
+                    return L.divIcon({
+                      html: `<div class="mp-cluster-icon">${count}</div>`,
+                       className: 'mp-cluster-marker', 
+                       iconSize: L.point(50, 50)});
+                  }}>
+                  {existingReports.filter((report) => 
+                  report.status !== 'Pending Approval' && report.status !== 'Rejected').map((report) => {
                     const position = getLatLngFromReport(report);
                     if (!position) return null;
 
@@ -560,7 +569,8 @@ const MapPage = () => {
                         icon={DefaultIcon}
                         eventHandlers={{
                           click: () => {
-                            window.open(`/reports/${report.id}`, '_blank', 'noopener,noreferrer');
+                            setSelectedReport(report);
+                            setShowDetailModal(true);
                           }
                         }}
                       >
@@ -825,6 +835,12 @@ const MapPage = () => {
           </div>
         </div>
       </main>
+       {/* Report Detail Modal */}
+      <ReportDetails 
+        show={showDetailModal}
+        onHide={() => setShowDetailModal(false)}
+        report={selectedReport}
+      />
     </div>
   );
 };

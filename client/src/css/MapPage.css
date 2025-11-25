@@ -862,3 +862,25 @@
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   }
 }
+/* Remove Leaflet default cluster background */
+.mp-cluster-marker {
+  background: transparent !important;
+  border: none !important;
+}
+
+/* Your custom round cluster */
+.mp-cluster-icon {
+  width: 33px;
+  height: 33px;
+  border-radius: 50%;
+  background: var(--brand-red);
+  color: white;
+  border: 2px solid white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 20px;
+  /* <<< make the number BIG */
+  font-weight: 700;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.3);
+}
