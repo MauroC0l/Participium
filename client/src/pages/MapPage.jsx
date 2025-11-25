@@ -313,7 +313,10 @@ const MapPage = () => {
     photos.forEach(photo => URL.revokeObjectURL(photo.preview));
     setPhotos([]);
 
-    // Mostra la notifica solo se richiesto esplicitamente
+    // Reset manuale dell'input file se presente nel DOM (opzionale, gestito meglio in handlePhotoUpload)
+    const fileInput = document.getElementById('photos');
+    if (fileInput) fileInput.value = '';
+
     if (showNotification) {
       setNotification({ message: 'Form resettato.', type: 'info' });
       setTimeout(() => setNotification(null), 5000);
@@ -330,10 +333,17 @@ const MapPage = () => {
     if (formErrors[fieldName]) setFormErrors(prev => ({ ...prev, [fieldName]: '' }));
   };
 
+  // --- CORREZIONE 2: Reset del valore input per permettere il re-upload ---
   const handlePhotoUpload = (e) => {
     const files = Array.from(e.target.files);
+    
+    // Se non ci sono file (es. utente preme annulla), non fare nulla
+    if (files.length === 0) return;
+
     if (photos.length + files.length > 3) {
       setFormErrors(prev => ({ ...prev, photos: 'Massimo 3 foto consentite.' }));
+      // Importante: resetta l'input anche in caso di errore
+      e.target.value = null; 
       return;
     }
 
@@ -345,6 +355,9 @@ const MapPage = () => {
 
     setPhotos(prev => [...prev, ...newPhotos]);
     setFormErrors(prev => ({ ...prev, photos: '' }));
+    
+    // Resetta il valore dell'input per permettere di caricare lo stesso file se viene rimosso
+    e.target.value = null;
   };
 
   const removePhoto = (id) => {
@@ -386,6 +399,8 @@ const MapPage = () => {
     try {
       const base64Photos = await Promise.all(photos.map(photo => convertToBase64(photo.file)));
 
+      // --- CORREZIONE 1: Gestione corretta del payload per evitare l'errore DB ---
+      // Assicuriamoci che il backend riceva il formato che si aspetta (spesso snake_case)
       const reportData = {
         title: formData.title.trim(),
         description: formData.description.trim(),
@@ -395,11 +410,16 @@ const MapPage = () => {
           longitude: parseFloat(formData.longitude)
         },
         photos: base64Photos,
-        isAnonymous: formData.is_anonymous
+        // Invia il flag in snake_case per compatibilità col database/backend
+        is_anonymous: formData.is_anonymous,
+        // Mantieni anche camelCase se il backend è ibrido, ma is_anonymous è cruciale per i DB
+        isAnonymous: formData.is_anonymous 
       };
 
+      console.log('REPORT CREATO: ', reportData);
+      console.log("FOTO: ", reportData.photos)
       await createReport(reportData);
-      console.log('REPORT CREATOOO: ', reportData);
+      
 
       // 1. Pulisci il form SENZA mostrare la notifica di reset
       handleClear(false);
@@ -416,7 +436,6 @@ const MapPage = () => {
       setNotification({ message: error.message || 'Errore durante l\'invio.', type: 'error' });
     } finally {
       setIsSubmitting(false);
-      // Il timeout qui sotto rimuoverà la notifica di successo dopo 5 secondi
       setTimeout(() => setNotification(null), 5000);
     }
   };
