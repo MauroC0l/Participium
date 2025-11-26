@@ -1,5 +1,7 @@
 # Technical Debt Management Strategy
 
+## 1. Code Quality Checks and Target Ranges
+
 To guarantee high code quality throughout our development lifecycle, we integrated SonarCloud analysis into our GitHub Actions pipeline. This automated check is triggered on every push to the main, qa, and dev branches. Our strategy relies on Quality Gates that prevent code merging if it deviates significantly from our targets.
 
 We have defined clear acceptance criteria for any ephemeral branch merging into our primary branches. Giving priority to the ease of future development, our strictest requirement is that the **maintainability rating** on new code must always be A: this ensures that the codebase remains clean and easy to evolve. To balance strict quality with development speed, we adopt a more flexible approach for the other metrics: we accept a **security and reliability rating** of B, provided there are no critical vulnerabilities or blocking bugs. Regarding code duplications, our target is to keep the density below 5% on new code to avoid maintenance overhead. Finally, addressing our testing needs, we require that Test Coverage on New Code falls within a target range of at least 80%. This ensures that while we keep our existing code clean, any new feature is well tested before integration.
