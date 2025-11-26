@@ -352,4 +352,10 @@ router.put('/:id/approve', requireRole(UserRole.PUBLIC_RELATIONS_OFFICER), repor
  */
 router.put('/:id/reject', requireRole(UserRole.PUBLIC_RELATIONS_OFFICER), reportController.rejectReport);
 
+// Get all available report categories (public endpoint - no authentication required)
+router.get('/categories', reportController.getCategories);
+
+// Get reports for interactive map (authenticated users)
+router.get('/map', isLoggedIn, reportController.getMapReports);
+
 export default router;
