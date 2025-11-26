@@ -9,6 +9,7 @@ import { ReportStatus } from '@models/dto/ReportStatus';
 import { ReportCategory } from '@models/dto/ReportCategory';
 import { userEntity } from '@models/entity/userEntity';
 import { DepartmentEntity } from '@models/entity/departmentEntity';
+import { reportEntity } from '@models/entity/reportEntity';
 
 const r = () => `_${Math.floor(Math.random() * 1000000)}`;
 
@@ -651,5 +652,341 @@ describe('ReportRepository Integration Tests - getMyAssignedReports', () => {
       expect(result[1].title).toBe('Oldest assigned');
       expect(result[0].createdAt.getTime()).toBeGreaterThan(result[1].createdAt.getTime());
     });
+  });
+
+  // --- findAllReports ---
+  describe('findAllReports', () => {
+    afterEach(async () => {
+      await AppDataSource.query(
+        `DELETE FROM reports WHERE reporter_id = $1`,
+        [testCitizen.id]
+      );
+    });
+
+    it('should return all reports when no filters are provided', async () => {
+      // Arrange
+      await AppDataSource.query(
+        `INSERT INTO reports 
+          (reporter_id, title, description, category, location, status, is_anonymous, created_at) 
+         VALUES ($1, $2, $3, $4, ST_GeogFromText($5), $6, $7, $8),
+                ($1, $9, $10, $11, ST_GeogFromText($12), $13, $7, $14)`,
+        [
+          testCitizen.id,
+          'Pending Report',
+          'Needs approval',
+          ReportCategory.ROADS,
+          'POINT(7.6869005 45.0703393)',
+          ReportStatus.PENDING_APPROVAL,
+          false,
+          new Date('2024-01-01'),
+          'Assigned Report',
+          'Already assigned',
+          ReportCategory.PUBLIC_LIGHTING,
+          'POINT(7.6932941 45.0692403)',
+          ReportStatus.ASSIGNED,
+          new Date('2024-01-02')
+        ]
+      );
+
+      // Act
+      const reports = await reportRepository.findAllReports();
+
+      // Assert
+      expect(reports.length).toBeGreaterThanOrEqual(2);
+      const titles = reports.map(r => r.title);
+      expect(titles).toContain('Pending Report');
+      expect(titles).toContain('Assigned Report');
+    });
+
+    it('should filter by status PENDING_APPROVAL', async () => {
+      // Arrange
+      await AppDataSource.query(
+        `INSERT INTO reports 
+          (reporter_id, title, description, category, location, status, is_anonymous, created_at) 
+         VALUES ($1, $2, $3, $4, ST_GeogFromText($5), $6, $7, $8),
+                ($1, $9, $10, $4, ST_GeogFromText($11), $12, $7, $13)`,
+        [
+          testCitizen.id,
+          'Pending Report 1',
+          'Needs approval',
+          ReportCategory.ROADS,
+          'POINT(7.6869005 45.0703393)',
+          ReportStatus.PENDING_APPROVAL,
+          false,
+          new Date('2024-01-01'),
+          'Assigned Report 1',
+          'Already assigned',
+          'POINT(7.6932941 45.0692403)',
+          ReportStatus.ASSIGNED,
+          new Date('2024-01-02')
+        ]
+      );
+
+      // Act
+      const reports = await reportRepository.findAllReports(ReportStatus.PENDING_APPROVAL);
+
+      // Assert
+      const testReports = reports.filter(r => r.reporterId === testCitizen.id);
+      expect(testReports.length).toBe(1);
+      expect(testReports[0].title).toBe('Pending Report 1');
+      expect(testReports[0].status).toBe(ReportStatus.PENDING_APPROVAL);
+    });
+
+    it('should filter by category', async () => {
+      // Arrange
+      await AppDataSource.query(
+        `INSERT INTO reports 
+          (reporter_id, title, description, category, location, status, is_anonymous, created_at) 
+         VALUES ($1, $2, $3, $4, ST_GeogFromText($5), $6, $7, $8),
+                ($1, $9, $10, $11, ST_GeogFromText($12), $6, $7, $13)`,
+        [
+          testCitizen.id,
+          'Roads Report 1',
+          'Road issue',
+          ReportCategory.ROADS,
+          'POINT(7.6869005 45.0703393)',
+          ReportStatus.ASSIGNED,
+          false,
+          new Date('2024-01-01'),
+          'Lighting Report 1',
+          'Light issue',
+          ReportCategory.PUBLIC_LIGHTING,
+          'POINT(7.6932941 45.0692403)',
+          new Date('2024-01-02')
+        ]
+      );
+
+      // Act
+      const reports = await reportRepository.findAllReports(undefined, ReportCategory.ROADS);
+
+      // Assert
+      const testReports = reports.filter(r => r.reporterId === testCitizen.id);
+      expect(testReports.length).toBe(1);
+      expect(testReports[0].title).toBe('Roads Report 1');
+      expect(testReports[0].category).toBe(ReportCategory.ROADS);
+    });
+
+    it('should filter by both status and category', async () => {
+      // Arrange
+      await AppDataSource.query(
+        `INSERT INTO reports 
+          (reporter_id, title, description, category, location, status, is_anonymous, created_at) 
+         VALUES ($1, $2, $3, $4, ST_GeogFromText($5), $6, $7, $8),
+                ($1, $9, $10, $11, ST_GeogFromText($12), $6, $7, $13),
+                ($1, $14, $15, $4, ST_GeogFromText($16), $17, $7, $18)`,
+        [
+          testCitizen.id,
+          'Pending Roads Report',
+          'Pending road issue',
+          ReportCategory.ROADS,
+          'POINT(7.6869005 45.0703393)',
+          ReportStatus.PENDING_APPROVAL,
+          false,
+          new Date('2024-01-01'),
+          'Pending Lighting Report',
+          'Pending light issue',
+          ReportCategory.PUBLIC_LIGHTING,
+          'POINT(7.6932941 45.0692403)',
+          new Date('2024-01-02'),
+          'Assigned Roads Report',
+          'Assigned road issue',
+          'POINT(7.6782069 45.0625748)',
+          ReportStatus.ASSIGNED,
+          new Date('2024-01-03')
+        ]
+      );
+
+      // Act
+      const reports = await reportRepository.findAllReports(ReportStatus.PENDING_APPROVAL, ReportCategory.ROADS);
+
+      // Assert
+      const testReports = reports.filter(r => r.reporterId === testCitizen.id);
+      expect(testReports.length).toBe(1);
+      expect(testReports[0].title).toBe('Pending Roads Report');
+      expect(testReports[0].status).toBe(ReportStatus.PENDING_APPROVAL);
+      expect(testReports[0].category).toBe(ReportCategory.ROADS);
+    });
+  });
+
+  // --- findReportById ---
+  describe('findReportById', () => {
+    let testReportId: number;
+
+    beforeEach(async () => {
+      const reportResult = await AppDataSource.query(
+        `INSERT INTO reports 
+          (reporter_id, title, description, category, location, status, is_anonymous, created_at) 
+         VALUES ($1, $2, $3, $4, ST_GeogFromText($5), $6, $7, $8)
+         RETURNING id`,
+        [
+          testCitizen.id,
+          'Test Report',
+          'Test description',
+          ReportCategory.ROADS,
+          'POINT(7.6869005 45.0703393)',
+          ReportStatus.PENDING_APPROVAL,
+          false,
+          new Date()
+        ]
+      );
+      testReportId = reportResult[0].id;
+    });
+
+    afterEach(async () => {
+      await AppDataSource.query(
+        `DELETE FROM reports WHERE reporter_id = $1`,
+        [testCitizen.id]
+      );
+    });
+
+    it('should return report when valid ID is provided', async () => {
+      // Act
+      const report = await reportRepository.findReportById(testReportId);
+
+      // Assert
+      expect(report).toBeDefined();
+      expect(report?.id).toBe(testReportId);
+      expect(report?.title).toBe('Test Report');
+      expect(report?.status).toBe(ReportStatus.PENDING_APPROVAL);
+    });
+
+    it('should return null when report does not exist', async () => {
+      // Act
+      const report = await reportRepository.findReportById(999999);
+
+      // Assert
+      expect(report).toBeNull();
+    });
+
+    it('should include reporter information', async () => {
+      // Act
+      const report = await reportRepository.findReportById(testReportId);
+
+      // Assert
+      expect(report).toBeDefined();
+      expect(report?.reporter).toBeDefined();
+      expect(report?.reporterId).toBe(testCitizen.id);
+    });
+  });
+
+  // --- save (for approve/reject operations) ---
+  describe('save', () => {
+    let testReportId: number;
+    let testReport: reportEntity;
+
+    beforeEach(async () => {
+      const reportResult = await AppDataSource.query(
+        `INSERT INTO reports 
+          (reporter_id, title, description, category, location, status, is_anonymous, created_at) 
+         VALUES ($1, $2, $3, $4, ST_GeogFromText($5), $6, $7, $8)
+         RETURNING id`,
+        [
+          testCitizen.id,
+          'Report to Modify',
+          'Original description',
+          ReportCategory.ROADS,
+          'POINT(7.6869005 45.0703393)',
+          ReportStatus.PENDING_APPROVAL,
+          false,
+          new Date()
+        ]
+      );
+      testReportId = reportResult[0].id;
+
+      // Fetch the report entity
+      testReport = (await reportRepository.findReportById(testReportId))!;
+    });
+
+    afterEach(async () => {
+      await AppDataSource.query(
+        `DELETE FROM reports WHERE reporter_id = $1`,
+        [testCitizen.id]
+      );
+    });
+
+    // it('should update report status to ASSIGNED', async () => {
+    //   // Arrange
+    //   testReport.status = ReportStatus.ASSIGNED;
+    //   testReport.assigneeId = testTechnician1.id;
+    //   testReport.updatedAt = new Date();
+
+    //   // Act
+    //   const updatedReport = await reportRepository.save(testReport);
+
+    //   // Assert
+    //   expect(updatedReport).toBeDefined();
+    //   expect(updatedReport.status).toBe(ReportStatus.ASSIGNED);
+    //   expect(updatedReport.assigneeId).toBe(testTechnician1.id);
+    //   expect(updatedReport.updatedAt).toBeDefined();
+
+    //   // Verify in database
+    //   const dbReport = await reportRepository.findReportById(testReportId);
+    //   expect(dbReport?.status).toBe(ReportStatus.ASSIGNED);
+    //   expect(dbReport?.assigneeId).toBe(testTechnician1.id);
+    // });
+
+    it('should update report status to REJECTED with rejection reason', async () => {
+      // Arrange
+      testReport.status = ReportStatus.REJECTED;
+      testReport.rejectionReason = 'Does not meet criteria';
+      testReport.updatedAt = new Date();
+
+      // Act
+      const updatedReport = await reportRepository.save(testReport);
+
+      // Assert
+      expect(updatedReport).toBeDefined();
+      expect(updatedReport.status).toBe(ReportStatus.REJECTED);
+      expect(updatedReport.rejectionReason).toBe('Does not meet criteria');
+      expect(updatedReport.assigneeId).toBeNull();
+
+      // Verify in database
+      const dbReport = await reportRepository.findReportById(testReportId);
+      expect(dbReport?.status).toBe(ReportStatus.REJECTED);
+      expect(dbReport?.rejectionReason).toBe('Does not meet criteria');
+    });
+
+    it('should update report category', async () => {
+      // Arrange
+      testReport.category = ReportCategory.PUBLIC_LIGHTING;
+      testReport.updatedAt = new Date();
+
+      // Act
+      const updatedReport = await reportRepository.save(testReport);
+
+      // Assert
+      expect(updatedReport).toBeDefined();
+      expect(updatedReport.category).toBe(ReportCategory.PUBLIC_LIGHTING);
+
+      // Verify in database
+      const dbReport = await reportRepository.findReportById(testReportId);
+      expect(dbReport?.category).toBe(ReportCategory.PUBLIC_LIGHTING);
+    });
+
+    // it('should clear rejection reason when approving a previously rejected report', async () => {
+    //   // First reject
+    //   testReport.status = ReportStatus.REJECTED;
+    //   testReport.rejectionReason = 'Initial rejection';
+    //   await reportRepository.save(testReport);
+
+    //   // Then approve (simulating a different workflow, but testing the save behavior)
+    //   testReport.status = ReportStatus.ASSIGNED;
+    //   testReport.rejectionReason = undefined;
+    //   testReport.assigneeId = testTechnician1.id;
+
+    //   // Act
+    //   const updatedReport = await reportRepository.save(testReport);
+
+    //   // Assert
+    //   expect(updatedReport).toBeDefined();
+    //   expect(updatedReport.status).toBe(ReportStatus.ASSIGNED);
+    //   expect(updatedReport.rejectionReason).toBeUndefined();
+    //   expect(updatedReport.assigneeId).toBe(testTechnician1.id);
+
+    //   // Verify in database
+    //   const dbReport = await reportRepository.findReportById(testReportId);
+    //   expect(dbReport?.status).toBe(ReportStatus.ASSIGNED);
+    //   expect(dbReport?.rejectionReason).toBeNull();
+    // });
   });
 });

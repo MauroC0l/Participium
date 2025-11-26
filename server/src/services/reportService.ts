@@ -270,6 +270,7 @@ class ReportService {
 
     report.status = ReportStatus.ASSIGNED;
     report.rejectionReason = undefined;
+    report.assignee = availableStaff;
     report.assigneeId = availableStaff.id;
     report.updatedAt = new Date();
 
