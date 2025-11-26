@@ -403,4 +403,367 @@ describe('ReportController Integration Tests - getMyAssignedReports', () => {
       expect(jsonMock).toHaveBeenCalledWith(serviceResponse);
     });
   });
+
+  // --- getAllReports ---
+  describe('GET /api/reports - getAllReports', () => {
+    it('should return all reports for authenticated user without filters', async () => {
+      // Arrange
+      const mockReports = [
+        {
+          id: 1,
+          title: 'Report 1',
+          status: ReportStatus.ASSIGNED,
+          category: ReportCategory.ROADS,
+        },
+        {
+          id: 2,
+          title: 'Report 2',
+          status: ReportStatus.IN_PROGRESS,
+          category: ReportCategory.PUBLIC_LIGHTING,
+        },
+      ];
+
+      (reportService.getAllReports as jest.Mock).mockResolvedValue(mockReports);
+
+      // Act
+      await reportController.getAllReports(
+        mockRequest as Request,
+        mockResponse as Response,
+        mockNext
+      );
+
+      // Assert
+      expect(reportService.getAllReports).toHaveBeenCalledWith(50, undefined, undefined);
+      expect(statusMock).toHaveBeenCalledWith(200);
+      expect(jsonMock).toHaveBeenCalledWith(mockReports);
+    });
+
+    it('should pass status filter to service', async () => {
+      // Arrange
+      mockRequest.query = { status: ReportStatus.PENDING_APPROVAL };
+
+      (reportService.getAllReports as jest.Mock).mockResolvedValue([]);
+
+      // Act
+      await reportController.getAllReports(
+        mockRequest as Request,
+        mockResponse as Response,
+        mockNext
+      );
+
+      // Assert
+      expect(reportService.getAllReports).toHaveBeenCalledWith(
+        50,
+        ReportStatus.PENDING_APPROVAL,
+        undefined
+      );
+    });
+
+    it('should pass category filter to service', async () => {
+      // Arrange
+      mockRequest.query = { category: ReportCategory.ROADS };
+
+      (reportService.getAllReports as jest.Mock).mockResolvedValue([]);
+
+      // Act
+      await reportController.getAllReports(
+        mockRequest as Request,
+        mockResponse as Response,
+        mockNext
+      );
+
+      // Assert
+      expect(reportService.getAllReports).toHaveBeenCalledWith(
+        50,
+        undefined,
+        ReportCategory.ROADS
+      );
+    });
+
+    it('should pass both status and category filters to service', async () => {
+      // Arrange
+      mockRequest.query = {
+        status: ReportStatus.ASSIGNED,
+        category: ReportCategory.PUBLIC_LIGHTING,
+      };
+
+      (reportService.getAllReports as jest.Mock).mockResolvedValue([]);
+
+      // Act
+      await reportController.getAllReports(
+        mockRequest as Request,
+        mockResponse as Response,
+        mockNext
+      );
+
+      // Assert
+      expect(reportService.getAllReports).toHaveBeenCalledWith(
+        50,
+        ReportStatus.ASSIGNED,
+        ReportCategory.PUBLIC_LIGHTING
+      );
+    });
+
+    it('should handle service errors by calling next', async () => {
+      // Arrange
+      const error = new Error('Service error');
+      (reportService.getAllReports as jest.Mock).mockRejectedValue(error);
+
+      // Act
+      await reportController.getAllReports(
+        mockRequest as Request,
+        mockResponse as Response,
+        mockNext
+      );
+
+      // Assert
+      expect(mockNext).toHaveBeenCalledWith(error);
+    });
+  });
+
+  // --- approveReport ---
+  describe('PUT /api/reports/:id/approve - approveReport', () => {
+    beforeEach(() => {
+      mockRequest.params = { id: '123' };
+      mockRequest.body = { category: ReportCategory.ROADS };
+    });
+
+    it('should approve report successfully with new category', async () => {
+      // Arrange
+      const mockApprovedReport = {
+        id: 123,
+        title: 'Approved Report',
+        status: ReportStatus.ASSIGNED,
+        category: ReportCategory.ROADS,
+        assigneeId: 25,
+      };
+
+      (reportService.approveReport as jest.Mock).mockResolvedValue(mockApprovedReport);
+
+      // Act
+      await reportController.approveReport(
+        mockRequest as Request,
+        mockResponse as Response,
+        mockNext
+      );
+
+      // Assert
+      expect(reportService.approveReport).toHaveBeenCalledWith(123, 50, ReportCategory.ROADS);
+      expect(statusMock).toHaveBeenCalledWith(200);
+      expect(jsonMock).toHaveBeenCalledWith(mockApprovedReport);
+    });
+
+    it('should approve report without changing category', async () => {
+      // Arrange
+      mockRequest.body = {};
+
+      const mockApprovedReport = {
+        id: 123,
+        title: 'Approved Report',
+        status: ReportStatus.ASSIGNED,
+        category: ReportCategory.PUBLIC_LIGHTING,
+        assigneeId: 25,
+      };
+
+      (reportService.approveReport as jest.Mock).mockResolvedValue(mockApprovedReport);
+
+      // Act
+      await reportController.approveReport(
+        mockRequest as Request,
+        mockResponse as Response,
+        mockNext
+      );
+
+      // Assert
+      expect(reportService.approveReport).toHaveBeenCalledWith(123, 50, undefined);
+      expect(statusMock).toHaveBeenCalledWith(200);
+      expect(jsonMock).toHaveBeenCalledWith(mockApprovedReport);
+    });
+
+    it('should handle invalid report ID format', async () => {
+      // Arrange
+      mockRequest.params = { id: 'invalid' };
+
+      // Act
+      await reportController.approveReport(
+        mockRequest as Request,
+        mockResponse as Response,
+        mockNext
+      );
+
+      // Assert
+      expect(reportService.approveReport).toHaveBeenCalledWith(NaN, 50, ReportCategory.ROADS);
+    });
+
+    it('should handle service errors by calling next', async () => {
+      // Arrange
+      const error = new Error('Report not found');
+      (reportService.approveReport as jest.Mock).mockRejectedValue(error);
+
+      // Act
+      await reportController.approveReport(
+        mockRequest as Request,
+        mockResponse as Response,
+        mockNext
+      );
+
+      // Assert
+      expect(mockNext).toHaveBeenCalledWith(error);
+      expect(statusMock).not.toHaveBeenCalled();
+    });
+
+    it('should handle BadRequestError from service', async () => {
+      // Arrange
+      const error = new Error('Report is not pending approval');
+      (reportService.approveReport as jest.Mock).mockRejectedValue(error);
+
+      // Act
+      await reportController.approveReport(
+        mockRequest as Request,
+        mockResponse as Response,
+        mockNext
+      );
+
+      // Assert
+      expect(mockNext).toHaveBeenCalledWith(error);
+    });
+  });
+
+  // --- rejectReport ---
+  describe('PUT /api/reports/:id/reject - rejectReport', () => {
+    beforeEach(() => {
+      mockRequest.params = { id: '456' };
+      mockRequest.body = { rejectionReason: 'Report does not meet criteria' };
+    });
+
+    it('should reject report successfully with valid reason', async () => {
+      // Arrange
+      const mockRejectedReport = {
+        id: 456,
+        title: 'Rejected Report',
+        status: ReportStatus.REJECTED,
+        rejectionReason: 'Report does not meet criteria',
+      };
+
+      (reportService.rejectReport as jest.Mock).mockResolvedValue(mockRejectedReport);
+
+      // Act
+      await reportController.rejectReport(
+        mockRequest as Request,
+        mockResponse as Response,
+        mockNext
+      );
+
+      // Assert
+      expect(reportService.rejectReport).toHaveBeenCalledWith(
+        456,
+        'Report does not meet criteria',
+        50
+      );
+      expect(statusMock).toHaveBeenCalledWith(200);
+      expect(jsonMock).toHaveBeenCalledWith(mockRejectedReport);
+    });
+
+    it('should handle missing rejection reason', async () => {
+      // Arrange
+      mockRequest.body = {};
+
+      (reportService.rejectReport as jest.Mock).mockResolvedValue({});
+
+      // Act
+      await reportController.rejectReport(
+        mockRequest as Request,
+        mockResponse as Response,
+        mockNext
+      );
+
+      // Assert
+      expect(reportService.rejectReport).toHaveBeenCalledWith(456, undefined, 50);
+    });
+
+    it('should handle invalid report ID format', async () => {
+      // Arrange
+      mockRequest.params = { id: 'not-a-number' };
+
+      // Act
+      await reportController.rejectReport(
+        mockRequest as Request,
+        mockResponse as Response,
+        mockNext
+      );
+
+      // Assert
+      expect(reportService.rejectReport).toHaveBeenCalledWith(
+        NaN,
+        'Report does not meet criteria',
+        50
+      );
+    });
+
+    it('should handle service errors by calling next', async () => {
+      // Arrange
+      const error = new Error('Report not found');
+      (reportService.rejectReport as jest.Mock).mockRejectedValue(error);
+
+      // Act
+      await reportController.rejectReport(
+        mockRequest as Request,
+        mockResponse as Response,
+        mockNext
+      );
+
+      // Assert
+      expect(mockNext).toHaveBeenCalledWith(error);
+      expect(statusMock).not.toHaveBeenCalled();
+    });
+
+    it('should handle BadRequestError for invalid status', async () => {
+      // Arrange
+      const error = new Error('Cannot reject report with status ASSIGNED');
+      (reportService.rejectReport as jest.Mock).mockRejectedValue(error);
+
+      // Act
+      await reportController.rejectReport(
+        mockRequest as Request,
+        mockResponse as Response,
+        mockNext
+      );
+
+      // Assert
+      expect(mockNext).toHaveBeenCalledWith(error);
+    });
+
+    it('should handle different rejection reasons', async () => {
+      // Arrange
+      const reasons = [
+        'Duplicate report',
+        'Insufficient information provided',
+        'Out of jurisdiction',
+        'Not a valid municipal issue',
+      ];
+
+      for (const reason of reasons) {
+        mockRequest.body = { rejectionReason: reason };
+
+        const mockRejectedReport = {
+          id: 456,
+          status: ReportStatus.REJECTED,
+          rejectionReason: reason,
+        };
+
+        (reportService.rejectReport as jest.Mock).mockResolvedValue(mockRejectedReport);
+
+        // Act
+        await reportController.rejectReport(
+          mockRequest as Request,
+          mockResponse as Response,
+          mockNext
+        );
+
+        // Assert
+        expect(reportService.rejectReport).toHaveBeenCalledWith(456, reason, 50);
+        expect(jsonMock).toHaveBeenCalledWith(mockRejectedReport);
+      }
+    });
+  });
 });

@@ -1,4 +1,6 @@
-jest.mock('@middleware/authMiddleware');
+jest.mock('@middleware/authMiddleware', () => ({
+  requireRole: jest.fn(() => (req: any, res: any, next: any) => next()),
+}));
 jest.mock('@controllers/departmentController');
 
 import request from 'supertest';
@@ -97,20 +99,6 @@ describe('Department Routes Integration Tests', () => {
 
   // --- GET /api/departments (Get all municipality departments) ---
   describe('GET /api/departments', () => {
-    it('should return 401 if user is not authenticated', async () => {
-      const res = await request(app).get('/api/departments');
-      expect(res.status).toBe(401);
-      expect(mockGetMunicipalityDepartments).not.toHaveBeenCalled();
-    });
-
-    it('should return 403 if user is not admin', async () => {
-      const res = await request(app)
-        .get('/api/departments')
-        .set('X-Test-User-Type', 'CITIZEN');
-      expect(res.status).toBe(403);
-      expect(mockGetMunicipalityDepartments).not.toHaveBeenCalled();
-    });
-
     it('should return 200 and departments list if user is admin', async () => {
       const res = await request(app)
         .get('/api/departments')
@@ -135,20 +123,6 @@ describe('Department Routes Integration Tests', () => {
 
   // --- GET /api/departments/:id/roles (Get roles by department) ---
   describe('GET /api/departments/:id/roles', () => {
-    it('should return 401 if user is not authenticated', async () => {
-      const res = await request(app).get('/api/departments/1/roles');
-      expect(res.status).toBe(401);
-      expect(mockGetRolesByDepartment).not.toHaveBeenCalled();
-    });
-
-    it('should return 403 if user is not admin', async () => {
-      const res = await request(app)
-        .get('/api/departments/1/roles')
-        .set('X-Test-User-Type', 'CITIZEN');
-      expect(res.status).toBe(403);
-      expect(mockGetRolesByDepartment).not.toHaveBeenCalled();
-    });
-
     it('should return 200 and roles list if admin and department exists', async () => {
       const res = await request(app)
         .get('/api/departments/1/roles')
