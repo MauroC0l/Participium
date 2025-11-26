@@ -5,7 +5,26 @@ import rolesRouter from "../../../routes/roleRoutes";
 import { requireRole } from '@middleware/authMiddleware';
 import municipalityUserController from '@controllers/municipalityUserController';
 
-jest.mock('@middleware/authMiddleware');
+jest.mock('@middleware/authMiddleware', () => ({
+  requireRole: jest.fn(() => (req: any, res: any, next: any) => {
+    const testUserType = req.headers['x-test-user-type'];
+    if (testUserType === 'ADMIN') {
+      req.user = { id: 'admin-001', role: 'ADMIN' };
+      return next();
+    }
+    if (testUserType === 'CITIZEN') {
+      return res.status(403).json({ error: 'Insufficient rights' });
+    }
+    return res.status(401).json({ error: 'Not authenticated' });
+  }),
+  isLoggedIn: jest.fn(() => (req: any, res: any, next: any) => {
+    const testUserType = req.headers['x-test-user-type'];
+    if (testUserType) {
+      return next();
+    }
+    return res.status(401).json({ error: 'Not authenticated' });
+  }),
+}));
 jest.mock('@controllers/municipalityUserController');
 
 const app: Express = express();

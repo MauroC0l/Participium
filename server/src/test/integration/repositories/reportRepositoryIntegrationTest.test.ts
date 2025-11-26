@@ -1,11 +1,198 @@
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from '@jest/globals';
+import { userRepository } from '@repositories/userRepository';
+import { departmentRoleRepository } from '@repositories/departmentRoleRepository';
+import { In } from 'typeorm';
 import { AppDataSource } from '@database/connection';
 import { reportRepository } from '@repositories/reportRepository';
 import { departmentRepository } from '@repositories/departmentRepository';
 import { ReportStatus } from '@models/dto/ReportStatus';
 import { ReportCategory } from '@models/dto/ReportCategory';
-import { reportEntity } from '@models/entity/reportEntity';
 import { userEntity } from '@models/entity/userEntity';
 import { DepartmentEntity } from '@models/entity/departmentEntity';
+
+const r = () => `_${Math.floor(Math.random() * 1000000)}`;
+
+describe('ReportRepository Integration Tests', () => {
+    let createdUserIds: number[] = [];
+    let createdReportIds: number[] = [];
+    let testUser: userEntity;
+
+    beforeAll(async () => {
+        if (!AppDataSource.isInitialized) {
+            await AppDataSource.initialize();
+        }
+    });
+
+    afterAll(async () => {
+        if (createdReportIds.length > 0) {
+            await (reportRepository as any)['repository'].delete({ id: In(createdReportIds) });
+        }
+        if (createdUserIds.length > 0) {
+            await (userRepository as any)['repository'].delete({ id: In(createdUserIds) });
+        }
+        if (AppDataSource.isInitialized) {
+            await AppDataSource.destroy();
+        }
+    });
+
+    afterEach(async () => {
+        if (createdReportIds.length > 0) {
+            await (reportRepository as any)['repository'].delete({ id: In(createdReportIds) });
+            createdReportIds = [];
+        }
+        if (createdUserIds.length > 0) {
+            await (userRepository as any)['repository'].delete({ id: In(createdUserIds) });
+            createdUserIds = [];
+        }
+    });
+
+    beforeEach(async () => {
+        const citizenRole = await departmentRoleRepository.findByDepartmentAndRole('Organization', 'Citizen');
+        testUser = await userRepository.createUserWithPassword({
+            username: `user${r()}`,
+            password: 'Password123!',
+            email: `user${r()}@test.com`,
+            firstName: 'Test',
+            lastName: 'User',
+            departmentRoleId: citizenRole!.id
+        });
+        createdUserIds.push(testUser.id);
+    });
+
+    describe('createReport', () => {
+        it('should create a report with photos', async () => {
+            const reportData = {
+                reporterId: testUser.id,
+                reporter: testUser,
+                title: 'Test Repository Report',
+                description: 'Description',
+                category: ReportCategory.ROADS,
+                location: 'POINT(7.6869 45.0703)', // WKT format
+                isAnonymous: false
+            };
+            const photoPaths = ['path/to/photo1.jpg', 'path/to/photo2.jpg'];
+
+            const createdReport = await reportRepository.createReport(reportData, photoPaths);
+            createdReportIds.push(createdReport.id);
+
+            expect(createdReport).toBeDefined();
+            expect(createdReport.id).toBeDefined();
+            expect(createdReport.title).toBe(reportData.title);
+            expect(createdReport.status).toBe(ReportStatus.PENDING_APPROVAL);
+
+            // Verify photos were saved using findReportById which loads relations
+            const fetchedReport = await reportRepository.findReportById(createdReport.id);
+            expect(fetchedReport).toBeDefined();
+            expect(fetchedReport!.photos).toHaveLength(2);
+            expect(fetchedReport!.photos.map(p => p.storageUrl)).toEqual(expect.arrayContaining(photoPaths));
+        });
+    });
+
+    describe('findAllReports', () => {
+        it('should return all reports', async () => {
+            // Create two reports
+            const report1Data = {
+                reporterId: testUser.id,
+                reporter: testUser,
+                title: 'Report 1',
+                description: 'Desc 1',
+                category: ReportCategory.ROADS,
+                location: 'POINT(7.6869 45.0703)',
+                isAnonymous: false
+            };
+            const r1 = await reportRepository.createReport(report1Data, []);
+            createdReportIds.push(r1.id);
+
+            const report2Data = {
+                reporterId: testUser.id,
+                reporter: testUser,
+                title: 'Report 2',
+                description: 'Desc 2',
+                category: ReportCategory.WASTE,
+                location: 'POINT(7.6869 45.0703)',
+                isAnonymous: false
+            };
+            const r2 = await reportRepository.createReport(report2Data, []);
+            createdReportIds.push(r2.id);
+
+            const reports = await reportRepository.findAllReports();
+            
+            // Filter to check only created ones (in case DB is not empty)
+            const createdIds = [r1.id, r2.id];
+            const foundReports = reports.filter(r => createdIds.includes(r.id));
+            
+            expect(foundReports).toHaveLength(2);
+            // Verify order (DESC createdAt)
+            expect(foundReports[0].id).toBe(r2.id);
+            expect(foundReports[1].id).toBe(r1.id);
+        });
+
+        it('should filter by status', async () => {
+            const report1Data = {
+                reporterId: testUser.id,
+                reporter: testUser,
+                title: 'Pending Report',
+                description: 'Desc',
+                category: ReportCategory.ROADS,
+                location: 'POINT(7.6869 45.0703)',
+                isAnonymous: false
+            };
+            const r1 = await reportRepository.createReport(report1Data, []);
+            createdReportIds.push(r1.id);
+
+            // Manually update status to ASSIGNED for test
+            await (reportRepository as any)['repository'].update(r1.id, { status: ReportStatus.ASSIGNED });
+
+            const report2Data = {
+                reporterId: testUser.id,
+                reporter: testUser,
+                title: 'Pending Report 2',
+                description: 'Desc',
+                category: ReportCategory.ROADS,
+                location: 'POINT(7.6869 45.0703)',
+                isAnonymous: false
+            };
+            const r2 = await reportRepository.createReport(report2Data, []);
+            createdReportIds.push(r2.id);
+
+            const assignedReports = await reportRepository.findAllReports(ReportStatus.ASSIGNED);
+            const foundAssigned = assignedReports.filter(r => r.id === r1.id);
+            const foundPending = assignedReports.filter(r => r.id === r2.id);
+
+            expect(foundAssigned).toHaveLength(1);
+            expect(foundPending).toHaveLength(0);
+        });
+
+        it('should filter by category', async () => {
+            const r1 = await reportRepository.createReport({
+                reporterId: testUser.id,
+                title: 'Roads Report',
+                description: 'Desc',
+                category: ReportCategory.ROADS,
+                location: 'POINT(7.6869 45.0703)',
+                isAnonymous: false
+            }, []);
+            createdReportIds.push(r1.id);
+
+            const r2 = await reportRepository.createReport({
+                reporterId: testUser.id,
+                title: 'Waste Report',
+                description: 'Desc',
+                category: ReportCategory.WASTE,
+                location: 'POINT(7.6869 45.0703)',
+                isAnonymous: false
+            }, []);
+            createdReportIds.push(r2.id);
+
+            const wasteReports = await reportRepository.findAllReports(undefined, ReportCategory.WASTE);
+            const foundWaste = wasteReports.filter(r => r.id === r2.id);
+            const foundRoads = wasteReports.filter(r => r.id === r1.id);
+
+            expect(foundWaste).toHaveLength(1);
+            expect(foundRoads).toHaveLength(0);
+        });
+    });
+});
 
 describe('ReportRepository Integration Tests - getMyAssignedReports', () => {
   let testTechnician1: userEntity;
