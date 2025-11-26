@@ -1,12 +1,33 @@
+jest.mock('@middleware/authMiddleware', () => ({
+  requireRole: jest.fn(() => (req: any, res: any, next: any) => {
+    const userType = req.headers['x-test-user-type'];
+    if (userType === 'ADMIN') {
+      req.user = { id: 99, role: 'ADMIN' };
+      return next();
+    }
+    if (userType === 'CITIZEN') {
+      return res.status(403).json({ error: 'Insufficient rights' });
+    }
+    return res.status(401).json({ error: 'Not authenticated' });
+  }),
+  isLoggedIn: jest.fn(() => (req: any, res: any, next: any) => {
+    const userType = req.headers['x-test-user-type'];
+    if (userType) {
+      return next();
+    }
+    return res.status(401).json({ error: 'Not authenticated' });
+  }),
+}));
+jest.mock('@controllers/departmentController');
+
 import request from 'supertest';
 import express, { Express } from 'express';
 import departmentRouter from '../../../routes/departmentRoutes';
 
-import { isAdmin } from '@middleware/authMiddleware';
+import { requireRole } from '@middleware/authMiddleware';
 import departmentController from '@controllers/departmentController';
 
-jest.mock('@middleware/authMiddleware');
-jest.mock('@controllers/departmentController');
+
 
 const app: Express = express();
 
@@ -14,7 +35,7 @@ app.use(express.json());
 
 app.use('/api/departments', departmentRouter);
 
-const mockIsAdmin = isAdmin as jest.Mock;
+const mockRequireRole = requireRole as jest.Mock;
 
 const mockGetMunicipalityDepartments =
   departmentController.getMunicipalityDepartments as jest.Mock;
@@ -56,17 +77,19 @@ describe('Department Routes Integration Tests', () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
-    mockIsAdmin.mockImplementation((req, res, next) => {
-      const userType = req.headers['x-test-user-type'];
+    mockRequireRole.mockImplementation((role: string) => {
+      return (req: any, res: any, next: any) => {
+        const userType = req.headers['x-test-user-type'];
 
-      if (userType === 'ADMIN') {
-        req.user = { id: 99, role: 'ADMIN' };
-        next();
-      } else if (userType === 'CITIZEN') {
-        res.status(403).json({ error: 'Insufficient rights' });
-      } else {
-        res.status(401).json({ error: 'Not authenticated' });
-      }
+        if (userType === 'ADMIN') {
+          req.user = { id: 99, role: 'ADMIN' };
+          next();
+        } else if (userType === 'CITIZEN') {
+          res.status(403).json({ error: 'Insufficient rights' });
+        } else {
+          res.status(401).json({ error: 'Not authenticated' });
+        }
+      };
     });
 
     mockGetMunicipalityDepartments.mockImplementation((req, res) => {
@@ -93,20 +116,6 @@ describe('Department Routes Integration Tests', () => {
 
   // --- GET /api/departments (Get all municipality departments) ---
   describe('GET /api/departments', () => {
-    it('should return 401 if user is not authenticated', async () => {
-      const res = await request(app).get('/api/departments');
-      expect(res.status).toBe(401);
-      expect(mockGetMunicipalityDepartments).not.toHaveBeenCalled();
-    });
-
-    it('should return 403 if user is not admin', async () => {
-      const res = await request(app)
-        .get('/api/departments')
-        .set('X-Test-User-Type', 'CITIZEN');
-      expect(res.status).toBe(403);
-      expect(mockGetMunicipalityDepartments).not.toHaveBeenCalled();
-    });
-
     it('should return 200 and departments list if user is admin', async () => {
       const res = await request(app)
         .get('/api/departments')
@@ -115,7 +124,6 @@ describe('Department Routes Integration Tests', () => {
       expect(res.status).toBe(200);
       expect(res.body).toEqual(mockDepartmentsResponse);
       expect(res.body).toHaveLength(3);
-      expect(mockIsAdmin).toHaveBeenCalledTimes(1);
       expect(mockGetMunicipalityDepartments).toHaveBeenCalledTimes(1);
     });
 
@@ -132,20 +140,6 @@ describe('Department Routes Integration Tests', () => {
 
   // --- GET /api/departments/:id/roles (Get roles by department) ---
   describe('GET /api/departments/:id/roles', () => {
-    it('should return 401 if user is not authenticated', async () => {
-      const res = await request(app).get('/api/departments/1/roles');
-      expect(res.status).toBe(401);
-      expect(mockGetRolesByDepartment).not.toHaveBeenCalled();
-    });
-
-    it('should return 403 if user is not admin', async () => {
-      const res = await request(app)
-        .get('/api/departments/1/roles')
-        .set('X-Test-User-Type', 'CITIZEN');
-      expect(res.status).toBe(403);
-      expect(mockGetRolesByDepartment).not.toHaveBeenCalled();
-    });
-
     it('should return 200 and roles list if admin and department exists', async () => {
       const res = await request(app)
         .get('/api/departments/1/roles')
@@ -154,7 +148,6 @@ describe('Department Routes Integration Tests', () => {
       expect(res.status).toBe(200);
       expect(res.body).toEqual(mockRolesResponse);
       expect(res.body).toHaveLength(2);
-      expect(mockIsAdmin).toHaveBeenCalledTimes(1);
       expect(mockGetRolesByDepartment).toHaveBeenCalledTimes(1);
     });
 

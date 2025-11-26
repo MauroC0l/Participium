@@ -4,6 +4,7 @@ import { AppDataSource } from "@database/connection";
 import app from "../../../app";
 import { userEntity } from "@models/entity/userEntity";
 import { userRepository } from '@repositories/userRepository';
+import { departmentRoleRepository } from '@repositories/departmentRoleRepository';
 import { RoleUtils } from '@utils/roleUtils';
 import { In } from 'typeorm';
 import { municipalityUserService } from '@services/municipalityUserService';
@@ -39,13 +40,22 @@ describe('MunicipalityUserController Integration Tests', () => {
     });
 
     beforeEach(async () => {
+        // Get dynamic department role IDs
+        const adminDeptRole = await departmentRoleRepository.findByDepartmentAndRole('Organization', 'Administrator');
+        const citizenDeptRole = await departmentRoleRepository.findByDepartmentAndRole('Organization', 'Citizen');
+        const employeeDeptRole = await departmentRoleRepository.findByDepartmentAndRole('Water and Sewer Services Department', 'Water Network staff member');
+
+        if (!adminDeptRole || !citizenDeptRole || !employeeDeptRole) {
+            throw new Error('Required department roles not found in database');
+        }
+
         ADMIN_CREDENTIALS = {
             username: `admin_user${r()}`,
             password: 'AdminPassword123!',
             email: `admin${r()}@test.com`,
             firstName: 'Admin',
             lastName: 'User',
-            departmentRoleId: 2 // Administrator role
+            departmentRoleId: adminDeptRole.id
         };
         
         CITIZEN_CREDENTIALS = {
@@ -54,7 +64,7 @@ describe('MunicipalityUserController Integration Tests', () => {
             email: `citizen${r()}@test.com`,
             firstName: 'Citizen',
             lastName: 'User',
-            departmentRoleId: 1 // Citizen role
+            departmentRoleId: citizenDeptRole.id
         };
         
         EMPLOYEE_PAYLOAD = {
@@ -81,7 +91,7 @@ describe('MunicipalityUserController Integration Tests', () => {
             email: EMPLOYEE_PAYLOAD.email,
             firstName: EMPLOYEE_PAYLOAD.first_name, 
             lastName: EMPLOYEE_PAYLOAD.last_name,
-            departmentRoleId: 3, // Technical Office Staff Member or similar municipality role
+            departmentRoleId: employeeDeptRole.id,
             emailNotificationsEnabled: true
         });
 
@@ -140,7 +150,7 @@ describe('MunicipalityUserController Integration Tests', () => {
                 email: `new${r()}@employee.com`,
                 first_name: 'New',
                 last_name: 'Employee',
-                role_name: 'Civil Engineer',
+                role_name: 'Road Maintenance staff member',
                 department_name: 'Public Infrastructure and Accessibility Department'
             };
             

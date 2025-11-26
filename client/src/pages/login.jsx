@@ -1,16 +1,19 @@
-import React, { useState } from "react";
-import { Alert, Card, Form, Button, Container, Row, Col, InputGroup, Spinner } from "react-bootstrap";
-import { login } from "../api/authApi"; 
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Alert, Card, Form, Button, Container, Row, Col, Spinner } from "react-bootstrap";
+import { login } from "../api/authApi";
+import { useNavigate, useLocation } from "react-router-dom";
 import { FaEye, FaEyeSlash, FaUser, FaLock, FaArrowLeft } from "react-icons/fa";
 import "../css/Login.css";
 
 export default function Login({ onLoginSuccess }) {
   const navigate = useNavigate();
+  const location = useLocation(); // Hook per leggere lo stato della navigazione (errori in arrivo)
+  
   const [formData, setFormData] = useState({
     username: "",
     password: ""
   });
+  
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -19,16 +22,25 @@ export default function Login({ onLoginSuccess }) {
     password: false
   });
 
+  // EFFETTO: Controlla se ci sono errori passati al caricamento della pagina
+  // (es. redirect da un interceptor axios o da un'altra pagina per errore server)
+  useEffect(() => {
+    if (location.state?.error) {
+      setError(location.state.error);
+      // Puliamo lo stato della history per non mostrare l'errore se l'utente aggiorna la pagina
+      window.history.replaceState({}, document.title);
+    }
+  }, [location]);
+
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
-    // Clear error when user starts typing
+    // Nascondi l'errore appena l'utente inizia a scrivere per correggere
     if (error) setError("");
   };
 
-  
   const handleFocus = (field) => {
     setIsFocused(prev => ({
       ...prev,
@@ -47,20 +59,27 @@ export default function Login({ onLoginSuccess }) {
     e.preventDefault();
     setError("");
 
-    // Enhanced client-side validation
-    if (!formData.username.trim()) {
-      setError("Please enter your username");
+    const trimmedUsername = formData.username.trim();
+
+    // Aggiorna UI se necessario
+    if (trimmedUsername !== formData.username) {
+      setFormData(prev => ({ ...prev, username: trimmedUsername }));
+    }
+
+    // Validazione Client-side
+    if (!trimmedUsername) {
+      setError("Inserisci il tuo username.");
       return;
     }
     if (!formData.password.trim()) {
-      setError("Please enter your password");
+      setError("Inserisci la tua password.");
       return;
     }
 
     setLoading(true);
 
     try {
-      const userData = await login(formData.username, formData.password);
+      const userData = await login(trimmedUsername, formData.password);
 
       if (onLoginSuccess) {
         onLoginSuccess(userData);
@@ -69,23 +88,30 @@ export default function Login({ onLoginSuccess }) {
       navigate("/home");
     } catch (err) {
       console.error("Login failed:", err);
-
-      // Clear password field on error
+      
+      // Resetta la password in caso di errore per sicurezza
       setFormData(prev => ({ ...prev, password: "" }));
 
-      // Enhanced error handling
-      if (err.status === 401) {
-        setError("Invalid username or password. Please try again.");
+      // GESTIONE ERRORI AVANZATA
+      // Priorità: Status Code -> Messaggio Network -> Messaggio Generico
+      
+      if (!err.status && (err.message === "Failed to fetch" || err.message.includes("Network"))) {
+        // Caso specifico: Il server è giù o non raggiungibile (Errore di caricamento/connessione)
+        setError("Impossibile contattare il server. Verifica la tua connessione o riprova più tardi.");
+      } else if (err.status === 401) {
+        setError("Username o password non validi.");
       } else if (err.status === 400) {
-        setError("Invalid request. Please check your input.");
+        setError("Dati mancanti o non validi. Controlla i campi.");
       } else if (err.status === 403) {
-        setError("Account temporarily locked. Please try again later.");
+        setError("Account temporaneamente bloccato o non attivo.");
       } else if (err.status >= 500) {
-        setError("Server error. Please try again later.");
+        // Errori interni del server mostrati come errori del form
+        setError("Internal server error.");
       } else if (typeof navigator !== 'undefined' && !navigator.onLine) {
-        setError("No internet connection. Please check your network.");
+        setError("Nessuna connessione internet rilevata.");
       } else {
-        setError(err.message || "Login failed. Please try again.");
+        // Fallback sul messaggio dell'errore o messaggio generico
+        setError(err.message || "Login fallito. Si prega di riprovare.");
       }
     } finally {
       setLoading(false);
@@ -93,58 +119,58 @@ export default function Login({ onLoginSuccess }) {
   };
 
   return (
-    <Container fluid className="login-page-container">
-      <Row className="login-row">
+    <Container fluid className="log-page-container">
+      <Row className="log-row">
         <Col xs={12} sm={10} md={8} lg={6} xl={4}>
-          <Card className="login-card">
-            <Card.Body className="login-card-body">
+          <Card className="log-card">
+            <Card.Body className="log-card-body">
               
               {/* Back Button */}
               <Button
                 variant="link"
-                className="back-btn"
+                className="log-back-btn"
                 onClick={() => navigate("/")}
                 disabled={loading}
               >
                 <FaArrowLeft className="me-2" />
-                Back to Main
+                Torna alla Home
               </Button>
 
               {/* Header */}
-              <div className="login-header">
-                <div className="logo-container">
+              <div className="log-header">
+                <div className="log-logo-container">
                   <img
                     src="/participium-logo.png"
                     alt="Participium Logo"
-                    className="login-logo"
+                    className="log-logo"
                   />
                 </div>
-                <h1 className="login-title">Welcome Back</h1>
-                <p className="login-subtitle">
-                  Sign in to your account
+                <h1 className="log-title">Bentornato</h1>
+                <p className="log-subtitle">
+                  Accedi al tuo account
                 </p>
               </div>
 
-              {/* Error Alert */}
+              {/* Error Alert - Ora mostra anche errori server e di caricamento */}
               {error && (
                 <Alert
                   variant="danger"
                   onClose={() => setError("")}
                   dismissible
-                  className="login-alert animated-alert"
+                  className="log-alert log-animated-alert"
                 >
                   <div className="d-flex align-items-center">
-                    <div className="alert-message">{error}</div>
+                    <div className="log-alert-message"> {error} </div>
                   </div>
                 </Alert>
               )}
 
               {/* Login Form */}
-              <Form onSubmit={handleLogin} noValidate className="login-form">
+              <Form onSubmit={handleLogin} noValidate className="log-form">
                 {/* Username Field */}
-                <Form.Group className="login-form-group floating-label-group">
-                  <div className={`form-control-container ${isFocused.username || formData.username ? 'focused' : ''}`}>
-                    <FaUser className="input-icon" />
+                <Form.Group className="log-form-group log-floating-label-group">
+                  <div className={`log-form-control-container ${isFocused.username || formData.username ? 'focused' : ''}`}>
+                    <FaUser className="log-input-icon" />
                     <Form.Control
                       type="text"
                       placeholder={(isFocused.username ? '' : 'username')}
@@ -153,18 +179,18 @@ export default function Login({ onLoginSuccess }) {
                       onFocus={() => handleFocus('username')}
                       onBlur={() => handleBlur('username')}
                       disabled={loading}
-                      className="login-input modern-input"
+                      className="log-modern-input"
                     />
-                    <Form.Label className="floating-label">
+                    <Form.Label className="log-floating-label">
                       Username
                     </Form.Label>
                   </div>
                 </Form.Group>
 
                 {/* Password Field */}
-                <Form.Group className="login-form-group floating-label-group">
-                  <div className={`form-control-container ${isFocused.password || formData.password ? 'focused' : ''}`}>
-                    <FaLock className="input-icon" />
+                <Form.Group className="log-form-group log-floating-label-group">
+                  <div className={`log-form-control-container ${isFocused.password || formData.password ? 'focused' : ''}`}>
+                    <FaLock className="log-input-icon" />
                     <Form.Control
                       type={showPassword ? "text" : "password"}
                       placeholder={(isFocused.password ? '' : 'password')}
@@ -173,17 +199,16 @@ export default function Login({ onLoginSuccess }) {
                       onFocus={() => handleFocus('password')}
                       onBlur={() => handleBlur('password')}
                       disabled={loading}
-                      className="modern-input password-input"
+                      className="log-modern-input log-password-input"
                     />
-                    <Form.Label className="floating-label">
+                    <Form.Label className="log-floating-label">
                       Password
                     </Form.Label>
                     <Button
                       variant="outline-secondary"
                       onClick={() => setShowPassword(!showPassword)}
                       disabled={loading}
-                      aria-label={showPassword ? "Hide password" : "Show password"}
-                      className="password-toggle-btn"
+                      className="log-password-toggle-btn"
                     >
                       {showPassword ? <FaEyeSlash /> : <FaEye />}
                     </Button>
@@ -193,7 +218,7 @@ export default function Login({ onLoginSuccess }) {
                 {/* Login Button */}
                 <button
                   type="submit"
-                  className="btn btn-custom-primary login-btn login-btn-primary modern-btn"
+                  className="btn log-btn-custom-primary log-btn log-btn-primary log-modern-btn"
                   disabled={loading}
                 >
                   {loading ? (
@@ -203,26 +228,26 @@ export default function Login({ onLoginSuccess }) {
                         size="sm"
                         className="me-2"
                       />
-                      Signing in...
+                      Accesso in corso...
                     </>
                   ) : (
-                    "Sign in"
+                    "Accedi"
                   )}
                 </button>
               </Form>
 
               {/* Footer */}
-              <div className="login-footer">
-                <span className="login-footer-text">
-                  Don't have an account?{" "}
+              <div className="log-footer">
+                <span className="log-footer-text">
+                  Non hai un account?{" "}
                 </span>
                 <Button
                   variant="link"
-                  className="login-link-btn"
+                  className="log-link-btn"
                   onClick={() => !loading && navigate("/register")}
                   disabled={loading}
                 >
-                  Create one
+                  Registrati
                 </Button>
               </div>
             </Card.Body>

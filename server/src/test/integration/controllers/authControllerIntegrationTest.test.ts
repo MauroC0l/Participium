@@ -4,6 +4,7 @@ import { AppDataSource } from "@database/connection";
 import app from "../../../app";
 import { userEntity } from "@models/entity/userEntity";
 import { userRepository } from '@repositories/userRepository';
+import { departmentRoleRepository } from '@repositories/departmentRoleRepository';
 import { In } from 'typeorm';
 
 const r = () => `_${Math.floor(Math.random() * 1000000)}`;
@@ -45,13 +46,19 @@ describe('AuthController Integration Tests', () => {
 
   // Setup before each test: Create a test user and an agent
   beforeEach(async () => {
+    // Get dynamic department role ID for Citizen
+    const citizenDeptRole = await departmentRoleRepository.findByDepartmentAndRole('Organization', 'Citizen');
+    if (!citizenDeptRole) {
+      throw new Error('Citizen role not found in database');
+    }
+
     TEST_USER_CREDENTIALS = {
       username: `auth_test_user${r()}`,
       password: 'Password123!',
       email: `auth${r()}@test.com`,
       firstName: 'Auth',
       lastName: 'Test',
-      departmentRoleId: 1 // Citizen role
+      departmentRoleId: citizenDeptRole.id
     };
 
     const user = await userRepository.createUserWithPassword({

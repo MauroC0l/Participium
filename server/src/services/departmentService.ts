@@ -10,16 +10,13 @@ import { NotFoundError } from "@errors/NotFoundError";
  */
 class DepartmentService {
   /**
-   * Get all municipality departments (excluding Organization)
+   * Get all departments categorized as municipalities excluding "Organization"
    * @returns Array of department DTOs
    */
   public async getMunicipalityDepartments(): Promise<Department[]> {
     const allDepartments = await departmentRepository.findAll();
-    
-    // Filter out "Organization" department
-    const municipalityDepts = allDepartments.filter(dept => dept.name !== 'Organization');
-    
-    return municipalityDepts.map(dept => mapDepartmentEntityToDTO(dept));
+
+    return allDepartments.map(dept => mapDepartmentEntityToDTO(dept));
   }
 
   /**
@@ -38,8 +35,16 @@ class DepartmentService {
     // Get all department_roles for this department
     const departmentRoles = await departmentRoleRepository.findByDepartment(departmentId);
 
+    // Filter logic: if department is "Organization", exclude "Citizen" and "Administrator" roles
+    const filteredDepartmentRoles = departmentRoles.filter(dr => {
+      if (department.name === 'Organization') {
+        return dr.role.name !== 'Citizen' && dr.role.name !== 'Administrator';
+      }
+      return true;
+    });
+
     // Extract and map the roles
-    return departmentRoles.map(dr => mapRoleEntityToDTO(dr.role));
+    return filteredDepartmentRoles.map(dr => mapRoleEntityToDTO(dr.role));
   }
 }
 

@@ -1,6 +1,5 @@
 import request from 'supertest';
 import app from '../../app';
-import { AppDataSource } from '@database/connection';
 import { 
   setupTestDatabase, 
   teardownTestDatabase, 
@@ -93,9 +92,7 @@ describe('DepartmentController E2E Tests', () => {
       expect(Array.isArray(response.body)).toBe(true);
       expect(response.body.length).toBeGreaterThan(0);
       
-      // Verify Organization is excluded
       const departmentNames = response.body.map((d: any) => d.name);
-      expect(departmentNames).not.toContain('Organization');
       
       // Verify municipality departments are included
       expect(departmentNames).toContain('Water and Sewer Services Department');
@@ -129,7 +126,7 @@ describe('DepartmentController E2E Tests', () => {
         .expect(200);
 
       // Assert - 8 total departments - Organization = 7
-      expect(response.body).toHaveLength(7);
+      expect(response.body).toHaveLength(8);
     });
 
     it('should maintain session across multiple requests', async () => {
@@ -260,7 +257,7 @@ describe('DepartmentController E2E Tests', () => {
 
       // Assert
       const roleNames = response.body.map((r: any) => r.name);
-      expect(roleNames).toContain('Electrical Engineer');
+      expect(roleNames).toContain('Electrical staff member');
       expect(roleNames).toContain('Department Director');
     });
 
@@ -397,7 +394,7 @@ describe('DepartmentController E2E Tests', () => {
         .expect(200);
 
       const infraRoles = await request(app)
-        .get('/api/departments/4/roles')
+        .get('/api/departments/3/roles')
         .set('Cookie', cookies)
         .expect(200);
 
@@ -407,8 +404,8 @@ describe('DepartmentController E2E Tests', () => {
       
       expect(waterRoleNames).toContain('Water Network staff member');
       expect(infraRoleNames).not.toContain('Water Network staff member');
-      expect(infraRoleNames).toContain('Electrical Engineer');
-      expect(waterRoleNames).not.toContain('Electrical Engineer');
+      expect(infraRoleNames).toContain('Road Maintenance staff member');
+      expect(waterRoleNames).not.toContain('Road Maintenance staff member');
     });
   });
 

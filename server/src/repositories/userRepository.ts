@@ -2,6 +2,7 @@ import { AppDataSource } from "@database/connection";
 import { userEntity } from "@models/entity/userEntity";
 import { Repository } from "typeorm";
 import { verifyPassword, generatePasswordData } from "@utils/passwordUtils";
+import { ReportStatus } from "@models/dto/ReportStatus";
 
 /**
  * Repository for User data access.
@@ -34,14 +35,14 @@ class UserRepository {
   ): Promise<userEntity> {
     const { password, ...userFields } = userData;
     const { salt, hash } = await generatePasswordData(password);
-    
+
     const user = this.repository.create({
       ...userFields,
       passwordHash: `${salt}:${hash}`
     });
 
     const savedUser = await this.repository.save(user);
-    
+
     // Reload the user with relations and passwordHash
     const userWithRelations = await this.repository
       .createQueryBuilder("user")
@@ -51,11 +52,11 @@ class UserRepository {
       .where("user.id = :id", { id: savedUser.id })
       .addSelect("user.passwordHash")
       .getOne();
-      
+
     if (!userWithRelations) {
       throw new Error('Failed to load user with relations after creation');
     }
-    
+
     return userWithRelations;
   }
 
@@ -175,7 +176,7 @@ class UserRepository {
    */
   public async deleteUser(id: number): Promise<void> {
     const result = await this.repository.delete(id);
-    
+
     if (result.affected === 0) {
       throw new Error('User not found');
     }
@@ -243,6 +244,31 @@ class UserRepository {
       .orderBy("user.createdAt", "DESC")
       .getMany();
   }
+
+  /**
+   * Find an available technical staff member with a specific role
+   * Uses load balancing: assigns to the staff member with the fewest active reports
+   * @param roleId - Role ID from category_role_mapping
+   * @returns Available staff member or null
+   */
+  async findAvailableStaffByRoleId(roleId: number): Promise<userEntity | null> {
+    return this.repository
+      .createQueryBuilder("user")
+      .innerJoinAndSelect("user.departmentRole", "dr")
+      .innerJoinAndSelect("dr.role", "role")
+      .leftJoin("reports", "r", "r.assignee_id = user.id AND r.status IN (:...statuses)", { 
+        statuses: [ReportStatus.ASSIGNED, ReportStatus.IN_PROGRESS, ReportStatus.SUSPENDED] 
+      })
+      .where("dr.role_id = :roleId", { roleId })
+      .groupBy("user.id")
+      .addGroupBy("dr.id")
+      .addGroupBy("role.id")
+      .addSelect("COUNT(r.id)", "report_count")
+      .orderBy("report_count", "ASC")
+      .addOrderBy("user.id", "ASC")
+      .getOne();
+  }
+
 }
 
 // Export a singleton instance of the repository

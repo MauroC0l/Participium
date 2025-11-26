@@ -1,6 +1,7 @@
 import express from 'express';
 import departmentController from '@controllers/departmentController';
-import { isAdmin } from '@middleware/authMiddleware';
+import { requireRole } from '@middleware/authMiddleware';
+import { UserRole } from '@dto/UserRole';
 
 const router = express.Router();
 
@@ -61,7 +62,7 @@ const router = express.Router();
  *             example:
  *               message: "Internal server error"
  */
-router.get('/', isAdmin, departmentController.getMunicipalityDepartments);
+router.get('/', requireRole(UserRole.ADMINISTRATOR), departmentController.getMunicipalityDepartments);
 
 /**
  * @swagger
@@ -151,6 +152,6 @@ router.get('/', isAdmin, departmentController.getMunicipalityDepartments);
  *             example:
  *               message: "Internal server error"
  */
-router.get('/:id/roles', isAdmin, departmentController.getRolesByDepartment);
+router.get('/:id/roles', requireRole(UserRole.ADMINISTRATOR), departmentController.getRolesByDepartment);
 
 export default router;
