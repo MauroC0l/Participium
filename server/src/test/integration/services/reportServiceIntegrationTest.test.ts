@@ -1,3 +1,7 @@
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { departmentRoleRepository } from '../../../repositories/departmentRoleRepository';
+import { BadRequestError } from '../../../models/errors/BadRequestError';
+import { In } from 'typeorm';
 import { AppDataSource } from '@database/connection';
 import { reportService } from '@services/reportService';
 import { reportRepository } from '@repositories/reportRepository';
@@ -5,13 +9,227 @@ import { userRepository } from '@repositories/userRepository';
 import { departmentRepository } from '@repositories/departmentRepository';
 import { ReportStatus } from '@models/dto/ReportStatus';
 import { ReportCategory } from '@models/dto/ReportCategory';
-import { reportEntity } from '@models/entity/reportEntity';
 import { userEntity } from '@models/entity/userEntity';
 import { DepartmentEntity } from '@models/entity/departmentEntity';
+
+// Mock storage service to avoid actual file I/O
+jest.mock('../../../services/storageService', () => ({
+  storageService: {
+    uploadPhoto: jest.fn<() => Promise<string>>().mockResolvedValue('uploads/reports/1/mock_photo.jpg'),
+    deleteReportPhotos: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
+  }
+}));
+
+const r = () => `_${Math.floor(Math.random() * 1000000)}`;
+
+describe('ReportService Integration Tests', () => {
+    let createdUserIds: number[] = [];
+    let createdReportIds: number[] = [];
+
+    let citizenUser: userEntity;
+    let officerUser: userEntity;
+
+    beforeAll(async () => {
+        if (!AppDataSource.isInitialized) {
+            await AppDataSource.initialize();
+        }
+    });
+
+    afterAll(async () => {
+        if (createdReportIds.length > 0) {
+            await (reportRepository as any)['repository'].delete({ id: In(createdReportIds) });
+        }
+        if (createdUserIds.length > 0) {
+            await (userRepository as any)['repository'].delete({ id: In(createdUserIds) });
+        }
+        if (AppDataSource.isInitialized) {
+            await AppDataSource.destroy();
+        }
+    });
+
+    afterEach(async () => {
+         if (createdReportIds.length > 0) {
+            await (reportRepository as any)['repository'].delete({ id: In(createdReportIds) });
+            createdReportIds = [];
+        }
+        if (createdUserIds.length > 0) {
+            await (userRepository as any)['repository'].delete({ id: In(createdUserIds) });
+            createdUserIds = [];
+        }
+        jest.clearAllMocks();
+    });
+
+    beforeEach(async () => {
+        // Create Citizen
+        const citizenRole = await departmentRoleRepository.findByDepartmentAndRole('Organization', 'Citizen');
+        citizenUser = await userRepository.createUserWithPassword({
+            username: `citizen${r()}`,
+            password: 'Password123!',
+            email: `citizen${r()}@test.com`,
+            firstName: 'Citizen',
+            lastName: 'Test',
+            departmentRoleId: citizenRole!.id
+        });
+        createdUserIds.push(citizenUser.id);
+
+        // Create Officer
+        const officerRole = await departmentRoleRepository.findByDepartmentAndRole('Organization', 'Municipal Public Relations Officer');
+        officerUser = await userRepository.createUserWithPassword({
+            username: `officer${r()}`,
+            password: 'Password123!',
+            email: `officer${r()}@test.com`,
+            firstName: 'Officer',
+            lastName: 'Test',
+            departmentRoleId: officerRole!.id
+        });
+        createdUserIds.push(officerUser.id);
+    });
+
+    const VALID_PHOTO = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=';
+
+    describe('createReport', () => {
+        it('should create a valid report', async () => {
+            const reportData = {
+                title: 'Test Report',
+                description: 'Description',
+                category: ReportCategory.ROADS,
+                location: { latitude: 45.0703, longitude: 7.6869 }, // Turin
+                photos: [VALID_PHOTO],
+                isAnonymous: false
+            };
+
+            const result = await reportService.createReport(reportData, citizenUser.id);
+
+            expect(result).toBeDefined();
+            expect(result.id).toBeDefined();
+            expect(result.title).toBe(reportData.title);
+            expect(result.status).toBe(ReportStatus.PENDING_APPROVAL);
+            
+            createdReportIds.push(result.id);
+
+            // Verify DB
+            const saved = await reportRepository.findReportById(result.id);
+            expect(saved).toBeDefined();
+            expect(saved?.title).toBe(reportData.title);
+        });
+
+        it('should throw BadRequestError if location is outside Turin', async () => {
+             const reportData = {
+                title: 'Outside Turin',
+                description: 'Description',
+                category: ReportCategory.ROADS,
+                location: { latitude: 41.9028, longitude: 12.4964 }, // Rome
+                photos: [VALID_PHOTO],
+                isAnonymous: false
+            };
+
+            await expect(reportService.createReport(reportData, citizenUser.id))
+                .rejects.toThrow(BadRequestError);
+        });
+
+        it('should throw BadRequestError if photos are invalid (empty)', async () => {
+            const reportData = {
+               title: 'No Photos',
+               description: 'Description',
+               category: ReportCategory.ROADS,
+               location: { latitude: 45.0703, longitude: 7.6869 }, 
+               photos: [], // Empty
+               isAnonymous: false
+           };
+
+           await expect(reportService.createReport(reportData, citizenUser.id))
+               .rejects.toThrow(BadRequestError);
+       });
+    });
+
+    describe('getAllReports', () => {
+        it('should return reports visible to Citizen (excluding Pending)', async () => {
+            // Create a pending report (by Citizen)
+            const r1 = await reportService.createReport({
+                title: 'Pending Report',
+                description: 'Desc',
+                category: ReportCategory.ROADS,
+                location: { latitude: 45.0703, longitude: 7.6869 },
+                photos: [VALID_PHOTO],
+                isAnonymous: false
+            }, citizenUser.id);
+            createdReportIds.push(r1.id);
+
+            // Create an assigned report (manually update status)
+            const r2 = await reportService.createReport({
+                title: 'Assigned Report',
+                description: 'Desc',
+                category: ReportCategory.WASTE,
+                location: { latitude: 45.0703, longitude: 7.6869 },
+                photos: [VALID_PHOTO],
+                isAnonymous: false
+            }, citizenUser.id);
+            createdReportIds.push(r2.id);
+            
+            await reportRepository['repository'].update(r2.id, { status: ReportStatus.ASSIGNED });
+
+            // Act
+            const results = await reportService.getAllReports(citizenUser.id);
+
+            // Assert
+            expect(results.some(r => r.id === r2.id)).toBe(true);
+            expect(results.some(r => r.id === r1.id)).toBe(false); // Citizen can't see Pending
+        });
+
+        it('should return all reports to Officer (including Pending)', async () => {
+             // Create a pending report
+            const r1 = await reportService.createReport({
+                title: 'Pending Report',
+                description: 'Desc',
+                category: ReportCategory.ROADS,
+                location: { latitude: 45.0703, longitude: 7.6869 },
+                photos: [VALID_PHOTO],
+                isAnonymous: false
+            }, citizenUser.id);
+            createdReportIds.push(r1.id);
+
+            // Act
+            const results = await reportService.getAllReports(officerUser.id);
+
+            // Assert
+            expect(results.some(r => r.id === r1.id)).toBe(true);
+        });
+        
+        it('should filter by category', async () => {
+             const r1 = await reportService.createReport({
+                title: 'Roads',
+                description: 'Desc',
+                category: ReportCategory.ROADS,
+                location: { latitude: 45.0703, longitude: 7.6869 },
+                photos: [VALID_PHOTO],
+                isAnonymous: false
+            }, citizenUser.id);
+            createdReportIds.push(r1.id);
+            await reportRepository['repository'].update(r1.id, { status: ReportStatus.ASSIGNED });
+
+             const r2 = await reportService.createReport({
+                title: 'Waste',
+                description: 'Desc',
+                category: ReportCategory.WASTE,
+                location: { latitude: 45.0703, longitude: 7.6869 },
+                photos: [VALID_PHOTO],
+                isAnonymous: false
+            }, citizenUser.id);
+            createdReportIds.push(r2.id);
+            await reportRepository['repository'].update(r2.id, { status: ReportStatus.ASSIGNED });
+
+            const results = await reportService.getAllReports(citizenUser.id, undefined, ReportCategory.ROADS);
+            
+            expect(results.some(r => r.id === r1.id)).toBe(true);
+            expect(results.some(r => r.id === r2.id)).toBe(false);
+        });
+    });
+});
 
 describe('ReportService Integration Tests - getMyAssignedReports', () => {
   let testTechnician: userEntity;
   let testCitizen: userEntity;
+  let testRoadStaff: userEntity;
   let publicLightingDepartment: DepartmentEntity;
   let electricalStaffDeptRoleId: number;
   let citizenDeptRoleId: number;
@@ -79,24 +297,56 @@ describe('ReportService Integration Tests - getMyAssignedReports', () => {
       ]
     );
     testTechnician = techResult[0];
+
+    // Find Public Infrastructure Department
+    const publicInfrastructureDepartment = await departmentRepository.findByName('Public Infrastructure and Accessibility Department') as DepartmentEntity;
+    if (!publicInfrastructureDepartment) throw new Error('Public Infrastructure Department not found');
+
+    // Find Road Maintenance staff member department_role_id
+    const roadStaffDeptRoleArr = await AppDataSource.query(
+      `SELECT dr.id
+       FROM department_roles dr
+       INNER JOIN roles r ON dr.role_id = r.id
+       WHERE r.name = $1 AND dr.department_id = $2`,
+      ['Road Maintenance staff member', publicInfrastructureDepartment.id]
+    );
+    if (!roadStaffDeptRoleArr || roadStaffDeptRoleArr.length === 0) throw new Error('Road Maintenance staff member role not found');
+    const roadStaffDeptRoleId = roadStaffDeptRoleArr[0].id;
+
+    // Create test road staff
+    const roadStaffResult = await AppDataSource.query(
+      `INSERT INTO users (username, email, password_hash, first_name, last_name, department_role_id, email_notifications_enabled)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING *`,
+      [
+        'road.test.service',
+        'road.test.service@comune.it',
+        '$2b$10$dummyHashForTesting',
+        'Road',
+        'Staff',
+        roadStaffDeptRoleId,
+        true
+      ]
+    );
+    testRoadStaff = roadStaffResult[0];
   });
 
   afterAll(async () => {
     await AppDataSource.query(
-      `DELETE FROM reports WHERE reporter_id IN ($1, $2)`,
-      [testCitizen.id, testTechnician.id]
+      `DELETE FROM reports WHERE reporter_id IN ($1, $2, $3)`,
+      [testCitizen.id, testTechnician.id, testRoadStaff.id]
     );
     await AppDataSource.query(
-      `DELETE FROM users WHERE id IN ($1, $2)`,
-      [testCitizen.id, testTechnician.id]
+      `DELETE FROM users WHERE id IN ($1, $2, $3)`,
+      [testCitizen.id, testTechnician.id, testRoadStaff.id]
     );
     await AppDataSource.destroy();
   });
 
   afterEach(async () => {
     await AppDataSource.query(
-      `DELETE FROM reports WHERE reporter_id IN ($1, $2)`,
-      [testCitizen.id, testTechnician.id]
+      `DELETE FROM reports WHERE reporter_id IN ($1, $2, $3)`,
+      [testCitizen.id, testTechnician.id, testRoadStaff.id]
     );
   });
 

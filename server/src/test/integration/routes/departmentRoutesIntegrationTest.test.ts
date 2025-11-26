@@ -1,5 +1,22 @@
 jest.mock('@middleware/authMiddleware', () => ({
-  requireRole: jest.fn(() => (req: any, res: any, next: any) => next()),
+  requireRole: jest.fn(() => (req: any, res: any, next: any) => {
+    const userType = req.headers['x-test-user-type'];
+    if (userType === 'ADMIN') {
+      req.user = { id: 99, role: 'ADMIN' };
+      return next();
+    }
+    if (userType === 'CITIZEN') {
+      return res.status(403).json({ error: 'Insufficient rights' });
+    }
+    return res.status(401).json({ error: 'Not authenticated' });
+  }),
+  isLoggedIn: jest.fn(() => (req: any, res: any, next: any) => {
+    const userType = req.headers['x-test-user-type'];
+    if (userType) {
+      return next();
+    }
+    return res.status(401).json({ error: 'Not authenticated' });
+  }),
 }));
 jest.mock('@controllers/departmentController');
 

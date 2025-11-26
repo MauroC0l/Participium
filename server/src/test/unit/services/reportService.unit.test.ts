@@ -2,9 +2,9 @@
 import { reportService } from '../../../services/reportService';
 import { BadRequestError } from '../../../models/errors/BadRequestError';
 import { ReportCategory } from '../../../models/dto/ReportCategory';
-import { ReportStatus } from '@models/dto/ReportStatus';
-import { userEntity } from '@models/entity/userEntity';
 import { reportEntity } from '@models/entity/reportEntity';
+import { userEntity } from '@models/entity/userEntity';
+import { ReportStatus } from '@models/dto/ReportStatus';
 import { UnauthorizedError } from '@models/errors/UnauthorizedError';
 import { InsufficientRightsError } from '@models/errors/InsufficientRightsError';
 import { reportRepository } from '@repositories/reportRepository';
@@ -14,7 +14,13 @@ import { photoRepository } from '@repositories/photoRepository';
 import { storageService } from '@services/storageService';
 import * as photoValidationUtils from '@utils/photoValidationUtils';
 import * as mapperService from '@services/mapperService';
+import { mapReportEntityToReportResponse, mapReportEntityToDTO } from '../../../services/mapperService';
 
+jest.mock('@repositories/userRepository');
+jest.mock('@repositories/reportRepository');
+jest.mock('@repositories/photoRepository');
+jest.mock('@services/storageService');
+jest.mock('@services/mapperService');
 jest.mock('@repositories/userRepository');
 jest.mock('@repositories/reportRepository');
 jest.mock('@repositories/categoryRoleRepository');
@@ -23,7 +29,6 @@ jest.mock('@services/storageService');
 jest.mock('@utils/photoValidationUtils');
 jest.mock('@services/mapperService');
 
-import { mapReportEntityToReportResponse, mapReportEntityToDTO } from '../../../services/mapperService';
 
 // Helper function to create mock report entities
 const createMockReport = (overrides?: Partial<reportEntity>): reportEntity => {
@@ -225,12 +230,6 @@ describe('ReportService', () => {
       });
     });
   });
-
-
-
-
-
-
 
   describe('getMyAssignedReports', () => {
     describe('without status filter', () => {
