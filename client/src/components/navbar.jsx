@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import "../css/Navbar.css";
+import "../css/navbar.css";
 
 export default function Navbar({ user, onLogout }) {
   const navigate = useNavigate();

@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { getCurrentUser } from "../api/authApi";
 import { useNavigate } from "react-router-dom"; 
-import CitizenHome from "../components/CitizenHome";
-import AdminHome from "../components/AdminHome";
-import MunicipalityUserHome from "../components/MunicipalityUserHome";
+import CitizenHome from "../components/citizenHome";
+import AdminHome from "../components/adminHome";
+import MunicipalityUserHome from "../components/municipalityUserHome";
 
 export default function Home() {
   const navigate = useNavigate();
