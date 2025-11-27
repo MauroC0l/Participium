@@ -7,7 +7,7 @@ import "../css/Register.css";
 
 export default function Register() {
   const navigate = useNavigate();
-  const location = useLocation(); // Hook per leggere lo stato della navigazione
+  const location = useLocation(); // Hook to read navigation state
 
   const [formData, setFormData] = useState({
     firstName: "", lastName: "", email: "", username: "", password: "", confirmPassword: ""
@@ -21,7 +21,7 @@ export default function Register() {
   const [focusedField, setFocusedField] = useState("");
   const [passwordStrength, setPasswordStrength] = useState(0);
 
-  // EFFETTO: Controlla se ci sono errori passati al caricamento della pagina
+  // EFFECT: Check if there are errors passed on page load
   useEffect(() => {
     if (location.state?.error) {
       setError(location.state.error);
@@ -126,21 +126,21 @@ export default function Register() {
 
     setFormData(cleanedFormData);
 
-    // Validazione Client-side (Tradotta in Italiano)
-    if (!cleanedFormData.firstName) return setError("Inserisci il tuo nome");
-    if (!cleanedFormData.lastName) return setError("Inserisci il tuo cognome");
-    if (!cleanedFormData.email) return setError("Inserisci la tua email");
+    // Client-side Validation (Translated to English)
+    if (!cleanedFormData.firstName) return setError("Please enter your first name");
+    if (!cleanedFormData.lastName) return setError("Please enter your last name");
+    if (!cleanedFormData.email) return setError("Please enter your email");
     
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(cleanedFormData.email)) return setError("Inserisci un indirizzo email valido");
-    if (/[A-Z]/.test(cleanedFormData.email)) return setError("L'email non deve contenere lettere maiuscole");
+    if (!emailRegex.test(cleanedFormData.email)) return setError("Please enter a valid email address");
+    if (/[A-Z]/.test(cleanedFormData.email)) return setError("Email must not contain uppercase letters");
     
-    if (!cleanedFormData.username) return setError("Scegli un username");
-    if (cleanedFormData.username.length < 3) return setError("L'username deve contenere almeno 3 caratteri");
+    if (!cleanedFormData.username) return setError("Please choose a username");
+    if (cleanedFormData.username.length < 3) return setError("Username must be at least 3 characters long");
     
-    if (!cleanedFormData.password) return setError("Inserisci una password");
-    if (cleanedFormData.password.length < 6) return setError("La password deve contenere almeno 6 caratteri");
-    if (cleanedFormData.password !== cleanedFormData.confirmPassword) return setError("Le password non coincidono");
+    if (!cleanedFormData.password) return setError("Please enter a password");
+    if (cleanedFormData.password.length < 6) return setError("Password must be at least 6 characters long");
+    if (cleanedFormData.password !== cleanedFormData.confirmPassword) return setError("Passwords do not match");
 
     setLoading(true);
 
@@ -149,33 +149,33 @@ export default function Register() {
         username: cleanedFormData.username,
         email: cleanedFormData.email,
         password: cleanedFormData.password,
-        first_name: cleanedFormData.firstName, // Rispetta la regola first_name
-        last_name: cleanedFormData.lastName,   // Rispetta la regola last_name
+        first_name: cleanedFormData.firstName, // Respects first_name convention
+        last_name: cleanedFormData.lastName,   // Respects last_name convention
         role: "Citizen",
       };
 
       await registerCitizen(payload);
-      setSuccess("Account creato con successo! Reindirizzamento al login...");
+      setSuccess("Account created successfully! Redirecting to login...");
       setTimeout(() => navigate("/login"), 2000);
     } catch (err) {
       console.error("Registration failed:", err);
       setFormData(prev => ({ ...prev, password: "", confirmPassword: "" }));
       setPasswordStrength(0); // Reset strength on error
 
-      // GESTIONE ERRORI AVANZATA (Identica al Login)
+      // ADVANCED ERROR HANDLING (Identical to Login)
       if (!err.status && (err.message === "Failed to fetch" || err.message.includes("Network"))) {
-        // Caso specifico: Il server è giù
-        setError("Impossibile contattare il server. Verifica la tua connessione o riprova più tardi.");
+        // Specific case: Server is down
+        setError("Unable to contact the server. Check your connection or try again later.");
       } else if (err.status === 409) {
-        setError("Username o email già esistenti. Scegline altri.");
+        setError("Username or email already exists. Please choose another.");
       } else if (err.status === 400) {
-        setError(err.message || "Dati non validi. Controlla i campi inseriti.");
+        setError(err.message || "Invalid data. Check the entered fields.");
       } else if (err.status >= 500) {
         setError("Internal server error.");
       } else if (typeof navigator !== 'undefined' && !navigator.onLine) {
-        setError("Nessuna connessione internet rilevata.");
+        setError("No internet connection detected.");
       } else {
-        setError(err.message || "Registrazione fallita. Si prega di riprovare.");
+        setError(err.message || "Registration failed. Please try again.");
       }
     } finally {
       setLoading(false);
@@ -198,7 +198,7 @@ export default function Register() {
                 disabled={loading}
               >
                 <FaArrowLeft className="me-2" />
-                Torna alla Home
+                Back to Home
               </Button>
 
               <div className="reg-header">
@@ -209,11 +209,11 @@ export default function Register() {
                     className="reg-logo"
                   />
                 </div>
-                <h1 className="reg-title">Unisciti a Participium</h1>
-                <p className="reg-subtitle">Crea il tuo account</p>
+                <h1 className="reg-title">Join Participium</h1>
+                <p className="reg-subtitle">Create your account</p>
               </div>
 
-              {/* Error Alert migliorato */}
+              {/* Improved Error Alert */}
               {error && (
                 <Alert variant="danger" dismissible onClose={() => setError("")} className="reg-alert">
                   {error}
@@ -235,7 +235,7 @@ export default function Register() {
                           <FaUser className="reg-input-icon" />
                           <Form.Control
                             type="text"
-                            placeholder={isFieldActive(field) ? '' : field === "firstName" ? "nome" : "cognome"}
+                            placeholder={isFieldActive(field) ? '' : field === "firstName" ? "first name" : "last name"}
                             value={formData[field]}
                             onChange={(e) => handleInputChange(field, e.target.value)}
                             onFocus={() => setFocusedField(field)}
@@ -244,7 +244,7 @@ export default function Register() {
                             className="reg-modern-input"
                           />
                           <Form.Label className="reg-floating-label">
-                            {field === "firstName" ? "Nome" : "Cognome"}
+                            {field === "firstName" ? "First Name" : "Last Name"}
                           </Form.Label>
                         </div>
                       </Form.Group>
@@ -281,7 +281,7 @@ export default function Register() {
                       <FaLock className="reg-input-icon" />
                       <Form.Control
                         type={field === "password" ? (showPassword ? "text" : "password") : (showConfirmPassword ? "text" : "password")}
-                        placeholder={isFieldActive(field) ? '' : field === "password" ? "password" : "conferma password"}
+                        placeholder={isFieldActive(field) ? '' : field === "password" ? "password" : "confirm password"}
                         value={formData[field]}
                         onChange={(e) => handleInputChange(field, e.target.value)}
                         onFocus={() => setFocusedField(field)}
@@ -290,7 +290,7 @@ export default function Register() {
                         className="reg-modern-input reg-password-input"
                       />
                       <Form.Label className="reg-floating-label">
-                        {field === "password" ? "Password" : "Conferma Password"}
+                        {field === "password" ? "Password" : "Confirm Password"}
                       </Form.Label>
                       <Button
                         variant="outline-secondary"
@@ -314,8 +314,8 @@ export default function Register() {
                           />
                         </div>
                         <div className="reg-strength-labels">
-                          <span>Debole</span>
-                          <span>Forte</span>
+                          <span>Weak</span>
+                          <span>Strong</span>
                         </div>
                       </div>
                     )}
@@ -330,23 +330,23 @@ export default function Register() {
                   {loading ? (
                     <>
                       <Spinner animation="border" size="sm" className="me-2" />
-                      Registrazione in corso...
+                      Registering...
                     </>
                   ) : (
-                    "Crea account"
+                    "Create Account"
                   )}
                 </button>
               </Form>
 
               <div className="reg-footer">
-                <span className="reg-footer-text">Hai già un account? </span>
+                <span className="reg-footer-text">Already have an account? </span>
                 <Button
                   variant="link"
                   className="reg-link-btn"
                   onClick={() => !loading && navigate("/login")}
                   disabled={loading}
                 >
-                  Accedi
+                  Sign In
                 </Button>
               </div>
             </Card.Body>

@@ -85,7 +85,7 @@ const userDepartmentCategory = isStaffMember
       (user.role_name === "Administrator" ||
         user.role_name.toLowerCase() === "municipal public relations officer")
     ) {
-      console.log("👑 Admin/PR Officer detected - showing Pending Approval");
+      console.log("Admin/PR Officer detected - showing Pending Approval");
       setStatusFilter("Pending Approval");
     }
   }, [user, isStaffMember, userDepartmentCategory]);
@@ -127,7 +127,7 @@ const fetchData = async () => {
     setApiError(null);
   } catch (err) {
     console.error("Error fetching data:", err);
-    setApiError("Impossibile caricare i dati.  Riprova più tardi.");
+    setApiError("Unable to load data. Please try again later.");
   } finally {
     setIsLoading(false);
   }
@@ -139,7 +139,7 @@ const fetchData = async () => {
 
   // --- Helpers ---
   const formatLocation = (loc) => {
-    if (!loc) return "Posizione non disponibile";
+    if (!loc) return "Location not available";
     if (
       typeof loc === "object" &&
       loc.type === "Point" &&
@@ -149,7 +149,7 @@ const fetchData = async () => {
       return `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
     }
     if (typeof loc === "string") return loc;
-    return "Dati posizione non validi";
+    return "Invalid location data";
   };
 
   const getStatusBadge = (status) => {
@@ -225,7 +225,7 @@ const filteredReports = reports.filter((report) => {
     } catch (error) {
       console.error("Error approving report:", error);
       triggerError(
-        error.message || "Errore sconosciuto durante l'approvazione."
+        error.message || "Unknown error during approval."
       );
     }
   };
@@ -254,7 +254,7 @@ const filteredReports = reports.filter((report) => {
       handleClose();
     } catch (error) {
       console.error("Error rejecting report:", error);
-      triggerError(error.message || "Errore sconosciuto durante il rifiuto.");
+      triggerError(error.message || "Unknown error during rejection.");
     }
   };
 
