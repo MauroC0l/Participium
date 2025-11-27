@@ -438,8 +438,7 @@ const filteredReports = reports.filter((report) => {
                   <h6 className="text-danger fw-bold mt-2">Description</h6>
                   <p>{selectedReport.description}</p>
                 </Col>
-                {/* Only show photos to Admin/PR Officer, hide from staff */}
-{! isStaffMember && (
+
   <Col xs={12}>
     <h6 className="text-primary fw-bold">
       Attached Photos ({selectedReport.images.length})
@@ -467,7 +466,6 @@ const filteredReports = reports.filter((report) => {
             <p className="text-muted fst-italic small">No images.</p>
           )}
         </Col>
-          )}
 
                 {/* Error Message Area */}
                 {errorMsg && (
