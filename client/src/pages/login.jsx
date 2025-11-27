@@ -3,7 +3,7 @@ import { Alert, Card, Form, Button, Container, Row, Col, Spinner } from "react-b
 import { login } from "../api/authApi";
 import { useNavigate, useLocation } from "react-router-dom";
 import { FaEye, FaEyeSlash, FaUser, FaLock, FaArrowLeft } from "react-icons/fa";
-import "../css/login.css";
+import "../css/Login.css";
 
 export default function Login({ onLoginSuccess }) {
   const navigate = useNavigate();

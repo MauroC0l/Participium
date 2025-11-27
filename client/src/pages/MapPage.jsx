@@ -28,7 +28,7 @@ import { Dropdown } from 'react-bootstrap';
 import { getAllCategories, createReport, getReports } from '../api/reportApi';
 
 import '../css/MapPage.css';
-import ReportDetails from "../components/reportDetails";
+import ReportDetails from "../components/ReportDetails";
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 
