@@ -28,7 +28,7 @@ export const AppDataSource = new DataSource({
     database: process.env.DB_NAME,
     synchronize: false,
     logging: false,
-    entities: [__dirname + '/../models/entity/**/*.ts'],
+    entities: [__dirname + '/../models/entity/**/*.{ts,js}'],
     migrations: [],
     subscribers: [],
     namingStrategy: new SnakeCaseNamingStrategy(),

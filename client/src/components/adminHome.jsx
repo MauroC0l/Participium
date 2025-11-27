@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Container, Row, Col, Alert, Tabs, Tab } from 'react-bootstrap';
 import { BsPersonFillGear, BsPersonFillAdd, BsGearFill } from 'react-icons/bs';
-import MunicipalityUserForm from './municipalityUserForm';
+import MunicipalityUserForm from './MunicipalityUserForm';
 import MunicipalityUserList from './MunicipalityUserList';
 import '../css/AdminHome.css';
 
