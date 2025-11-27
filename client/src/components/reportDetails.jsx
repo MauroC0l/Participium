@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Modal } from "react-bootstrap";
 import { FaTimes, FaUser, FaMapMarkerAlt } from "react-icons/fa";
-import "../css/reportDetails.css";
+import "../css/ReportDetails.css";
 
 const ReportDetails = ({ show, onHide, report }) => {
   const [selectedImage, setSelectedImage] = useState(null);
