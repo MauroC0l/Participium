@@ -28,11 +28,11 @@ import { Dropdown } from 'react-bootstrap';
 import { getAllCategories, createReport, getReports } from '../api/reportApi';
 
 import '../css/MapPage.css';
-
+import ReportDetails from "../components/reportDetails";
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 
-// --- CONFIGURAZIONE ICONE ---
+// --- ICON CONFIGURATION ---
 let DefaultIcon = L.icon({
   iconUrl: icon,
   shadowUrl: iconShadow,
@@ -118,6 +118,8 @@ const MapPage = () => {
   const [isLoadingMap, setIsLoadingMap] = useState(true);
   const [photos, setPhotos] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedReport, setSelectedReport] = useState(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -162,7 +164,7 @@ const MapPage = () => {
     return null;
   };
 
-  // 1. Caricamento Categorie
+  // 1. Load Categories
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -174,9 +176,9 @@ const MapPage = () => {
           setCategories([]);
         }
       } catch (error) {
-        console.error("Errore categorie:", error);
+        console.error("Category error:", error);
         setNotification({
-          message: 'Impossibile caricare le categorie.',
+          message: 'Unable to load categories.',
           type: 'error'
         });
       } finally {
@@ -186,7 +188,7 @@ const MapPage = () => {
     fetchCategories();
   }, []);
 
-  // 2. Caricamento Report dell'Utente Loggato
+  // 2. Load Logged-in User's Reports
   useEffect(() => {
     const fetchUserReports = async () => {
       try {
@@ -195,9 +197,9 @@ const MapPage = () => {
           setExistingReports(data);
         }
       } catch (error) {
-        console.error("Errore fetch user reports:", error);
+        console.error("Error fetch user reports:", error);
         setNotification({
-          message: 'Impossibile caricare i tuoi report sulla mappa.',
+          message: 'Unable to load your reports on the map.',
           type: 'warning'
         });
         setTimeout(() => setNotification(null), 5000);
@@ -206,7 +208,7 @@ const MapPage = () => {
     fetchUserReports();
   }, []);
 
-  // 3. Caricamento GeoJSON Confini
+  // 3. Load GeoJSON Boundaries
   useEffect(() => {
     const loadBoundaries = async () => {
       try {
@@ -284,12 +286,12 @@ const MapPage = () => {
       setFormErrors(prev => ({ ...prev, location: '' }));
 
       setNotification({
-        message: 'Posizione impostata. Compila il form per inviare.',
+        message: 'Position set. Fill out the form to submit.',
         type: 'success'
       });
     } else {
       setNotification({
-        message: 'Puoi segnalare problemi solo all\'interno dei confini di Torino.',
+        message: 'You can only report issues within the boundaries of Turin.',
         type: 'error'
       });
     }
@@ -316,7 +318,7 @@ const MapPage = () => {
     if (fileInput) fileInput.value = '';
 
     if (showNotification) {
-      setNotification({ message: 'Form resettato.', type: 'info' });
+      setNotification({ message: 'Form reset.', type: 'info' });
       setTimeout(() => setNotification(null), 5000);
     }
   };
@@ -339,8 +341,8 @@ const MapPage = () => {
     if (files.length === 0) return;
 
     if (photos.length + files.length > 3) {
-      setFormErrors(prev => ({ ...prev, photos: 'Massimo 3 foto consentite.' }));
-      // Importante: resetta l'input anche in caso di errore
+      setFormErrors(prev => ({ ...prev, photos: 'Maximum 3 photos allowed.' }));
+      // Important: reset input even on error
       e.target.value = null; 
       return;
     }
@@ -354,7 +356,7 @@ const MapPage = () => {
     setPhotos(prev => [...prev, ...newPhotos]);
     setFormErrors(prev => ({ ...prev, photos: '' }));
     
-    // Resetta il valore dell'input per permettere di caricare lo stesso file se viene rimosso
+    // Reset input value to allow uploading the same file if removed
     e.target.value = null;
   };
 
@@ -370,16 +372,16 @@ const MapPage = () => {
     const errors = {};
     const maxDescLength = 250;
 
-    if (!formData.title.trim()) errors.title = 'Titolo richiesto.';
-    else if (formData.title.trim().length < 5) errors.title = 'Minimo 5 caratteri.';
+    if (!formData.title.trim()) errors.title = 'Title required.';
+    else if (formData.title.trim().length < 5) errors.title = 'Minimum 5 characters.';
 
-    if (!formData.description.trim()) errors.description = 'Descrizione richiesta.';
-    else if (formData.description.trim().length < 10) errors.description = 'Minimo 10 caratteri.';
-    else if (formData.description.length > maxDescLength) errors.description = `Max ${maxDescLength} caratteri.`;
+    if (!formData.description.trim()) errors.description = 'Description required.';
+    else if (formData.description.trim().length < 10) errors.description = 'Minimum 10 characters.';
+    else if (formData.description.length > maxDescLength) errors.description = `Max ${maxDescLength} characters.`;
 
-    if (!formData.category) errors.category = 'Seleziona una categoria.';
-    if (photos.length === 0) errors.photos = 'Carica almeno una foto.';
-    if (!marker) errors.location = 'Posiziona un marker sulla mappa.';
+    if (!formData.category) errors.category = 'Select a category.';
+    if (photos.length === 0) errors.photos = 'Upload at least one photo.';
+    if (!marker) errors.location = 'Place a marker on the map.';
 
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -388,7 +390,7 @@ const MapPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) {
-      setNotification({ message: 'Correggi gli errori prima di inviare.', type: 'error' });
+      setNotification({ message: 'Correct errors before submitting.', type: 'error' });
       return;
     }
 
@@ -397,8 +399,8 @@ const MapPage = () => {
     try {
       const base64Photos = await Promise.all(photos.map(photo => convertToBase64(photo.file)));
 
-      // --- CORREZIONE 1: Gestione corretta del payload per evitare l'errore DB ---
-      // Assicuriamoci che il backend riceva il formato che si aspetta (spesso snake_case)
+      // --- CORRECTION 1: Correct payload handling to avoid DB error ---
+      // Make sure the backend receives the expected format (often snake_case)
       const reportData = {
         title: formData.title.trim(),
         description: formData.description.trim(),
@@ -408,9 +410,9 @@ const MapPage = () => {
           longitude: parseFloat(formData.longitude)
         },
         photos: base64Photos,
-        // Invia il flag in snake_case per compatibilità col database/backend
+        // Send flag in snake_case for database/backend compatibility
         is_anonymous: formData.is_anonymous,
-        // Mantieni anche camelCase se il backend è ibrido, ma is_anonymous è cruciale per i DB
+        // Also keep camelCase if backend is hybrid, but is_anonymous is crucial for DBs
         isAnonymous: formData.is_anonymous 
       };
 
@@ -419,19 +421,19 @@ const MapPage = () => {
       await createReport(reportData);
       
 
-      // 1. Pulisci il form SENZA mostrare la notifica di reset
+      // 1. Clear form WITHOUT showing reset notification
       handleClear(false);
 
-      // 2. Imposta la notifica di successo
-      setNotification({ message: 'Segnalazione inviata con successo!', type: 'success' });
+      // 2. Set success notification
+      setNotification({ message: 'Report submitted successfully!', type: 'success' });
 
-      // Ricarica la lista per vedere il nuovo report sulla mappa
+      // Reload list to see new report on map
       const updatedReports = await getReports();
       if (Array.isArray(updatedReports)) setExistingReports(updatedReports);
 
     } catch (error) {
       console.error('Submit error:', error);
-      setNotification({ message: error.message || 'Errore durante l\'invio.', type: 'error' });
+      setNotification({ message: error.message || 'Error during submission.', type: 'error' });
     } finally {
       setIsSubmitting(false);
       setTimeout(() => setNotification(null), 5000);
@@ -473,15 +475,15 @@ const MapPage = () => {
     });
   };
 
-  const getSelectedCategoryName = () => formData.category || "Seleziona Categoria";
+  const getSelectedCategoryName = () => formData.category || "Select Category";
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'Resolved': return '#28a745'; // Verde
-      case 'Rejected': return '#dc3545'; // Rosso
-      case 'Assigned': return '#007bff'; // Blu
-      case 'Pending Approval': return '#ffc107'; // Giallo
-      default: return '#fd7e14'; // Arancione
+      case 'Resolved': return '#28a745'; // Green
+      case 'Rejected': return '#dc3545'; // Red
+      case 'Assigned': return '#007bff'; // Blue
+      case 'Pending Approval': return '#ffc107'; // Yellow
+      default: return '#fd7e14'; // Orange
     }
   };
 
@@ -492,10 +494,10 @@ const MapPage = () => {
         <div className="mp-header-content">
           <h1 className="mp-header-title">
             <FaMap className="mp-title-icon" />
-            Torino Map - Le Tue Segnalazioni
+            Turin Map - Your Reports
           </h1>
           <p className="mp-header-subtitle">
-            Visualizza lo stato delle tue segnalazioni o creane una nuova.
+            View the status of your reports or create a new one.
           </p>
         </div>
       </header>
@@ -518,7 +520,7 @@ const MapPage = () => {
             {isLoadingMap ? (
               <div className="mp-loading">
                 <div className="mp-loading-spinner"></div>
-                <p>Caricamento mappa...</p>
+                <p>Loading map...</p>
               </div>
             ) : (
               <MapContainer
@@ -541,13 +543,20 @@ const MapPage = () => {
 
                 {renderPolygons()}
 
-                {/* --- CLUSTERING DEI REPORT ESISTENTI --- */}
+                {/* --- CLUSTERING OF EXISTING REPORTS --- */}
                 <MarkerClusterGroup
                   chunkedLoading
                   spiderfyOnMaxZoom={true}
                   maxClusterRadius={40}
-                >
-                  {existingReports.map((report) => {
+                  iconCreateFunction={(cluster) => {
+                    const count = cluster.getChildCount();
+                    return L.divIcon({
+                      html: `<div class="mp-cluster-icon">${count}</div>`,
+                       className: 'mp-cluster-marker', 
+                       iconSize: L.point(50, 50)});
+                  }}>
+                  {existingReports.filter((report) => 
+                  report.status !== 'Pending Approval' && report.status !== 'Rejected').map((report) => {
                     const position = getLatLngFromReport(report);
                     if (!position) return null;
 
@@ -558,7 +567,8 @@ const MapPage = () => {
                         icon={DefaultIcon}
                         eventHandlers={{
                           click: () => {
-                            window.open(`/reports/${report.id}`, '_blank', 'noopener,noreferrer');
+                            setSelectedReport(report);
+                            setShowDetailModal(true);
                           }
                         }}
                       >
@@ -590,7 +600,7 @@ const MapPage = () => {
                               justifyContent: 'center',
                               gap: '4px'
                             }}>
-                              <FaExternalLinkAlt size={10} /> Clicca per dettagli
+                              <FaExternalLinkAlt size={10} /> Click for details
                             </div>
                           </div>
                         </Tooltip>
@@ -599,7 +609,7 @@ const MapPage = () => {
                   })}
                 </MarkerClusterGroup>
 
-                {/* --- MARKER DI CREAZIONE (Rosso) --- */}
+                {/* --- CREATION MARKER (Red) --- */}
                 {marker && (
                   <Marker
                     key={`new-${marker.id}`}
@@ -611,8 +621,8 @@ const MapPage = () => {
                     }}
                   >
                     <Tooltip permanent direction="top" offset={[0, -28]}>
-                      <b>Nuova Segnalazione</b><br />
-                      <span style={{ fontSize: '0.8em' }}>Compila il form sotto</span>
+                      <b>New Report</b><br />
+                      <span style={{ fontSize: '0.8em' }}>Fill out the form below</span>
                     </Tooltip>
                   </Marker>
                 )}
@@ -631,7 +641,7 @@ const MapPage = () => {
           <div className="mp-form-card">
             <h2 className="mp-form-title">
               <FaMapMarkerAlt className="mp-form-title-icon" />
-              Dettagli Segnalazione
+              Report Details
             </h2>
 
             <form onSubmit={handleSubmit} className="mp-location-form">
@@ -640,25 +650,25 @@ const MapPage = () => {
                 <h3 className="mp-coords-title">Coordinate Location</h3>
                 <div className="mp-coords-group">
                   <div className="mp-form-group">
-                    <label htmlFor="latitude" className="mp-form-label">Latitudine</label>
+                    <label htmlFor="latitude" className="mp-form-label">Latitude</label>
                     <input
                       type="text"
                       id="latitude"
                       className="mp-input"
                       value={formData.latitude}
                       readOnly
-                      placeholder="Clicca sulla mappa"
+                      placeholder="Click on the map"
                     />
                   </div>
                   <div className="mp-form-group">
-                    <label htmlFor="longitude" className="mp-form-label">Longitudine</label>
+                    <label htmlFor="longitude" className="mp-form-label">Longitude</label>
                     <input
                       type="text"
                       id="longitude"
                       className="mp-input"
                       value={formData.longitude}
                       readOnly
-                      placeholder="Clicca sulla mappa"
+                      placeholder="Click on the map"
                     />
                   </div>
                 </div>
@@ -667,7 +677,7 @@ const MapPage = () => {
               {/* Title */}
               <div className="mp-form-group">
                 <label htmlFor="title" className="mp-form-label">
-                  Titolo <span className="mp-required-asterisk">*</span>
+                  Title <span className="mp-required-asterisk">*</span>
                 </label>
                 {formErrors.title && <FormError message={formErrors.title} />}
                 <input
@@ -676,14 +686,14 @@ const MapPage = () => {
                   className={`mp-input ${formErrors.title ? 'is-invalid' : ''}`}
                   value={formData.title}
                   onChange={(e) => handleInputChange('title', e.target.value)}
-                  placeholder="Inserisci un titolo descrittivo..."
+                  placeholder="Enter a descriptive title..."
                 />
               </div>
 
               {/* Description */}
               <div className="mp-form-group">
                 <label htmlFor="description" className="mp-form-label">
-                  Descrizione <span className="mp-required-asterisk">*</span>
+                  Description <span className="mp-required-asterisk">*</span>
                 </label>
                 {formErrors.description && <FormError message={formErrors.description} />}
                 <div className="mp-textarea-wrapper">
@@ -692,7 +702,7 @@ const MapPage = () => {
                     className={`mp-input mp-textarea ${formErrors.description ? 'is-invalid' : ''}`}
                     value={formData.description}
                     onChange={(e) => handleInputChange('description', e.target.value)}
-                    placeholder="Descrivi il problema in dettaglio..."
+                    placeholder="Describe the problem in detail..."
                     rows="4"
                     maxLength={250}
                   />
@@ -705,7 +715,7 @@ const MapPage = () => {
               {/* CATEGORY DROPDOWN */}
               <div className="mp-form-group">
                 <label htmlFor="category-dropdown" className="mp-form-label">
-                  Categoria <span className="mp-required-asterisk">*</span>
+                  Category <span className="mp-required-asterisk">*</span>
                 </label>
                 {formErrors.category && <FormError message={formErrors.category} />}
                 <Dropdown onSelect={(value) => handleSelect('category', value)}>
@@ -716,7 +726,7 @@ const MapPage = () => {
                   >
                     <FaListUl className="mp-dropdown-icon" />
                     <span className="mp-dropdown-toggle-text">
-                      {isLoadingCategories ? "Caricamento..." : getSelectedCategoryName()}
+                      {isLoadingCategories ? "Loading..." : getSelectedCategoryName()}
                     </span>
                   </Dropdown.Toggle>
 
@@ -733,7 +743,7 @@ const MapPage = () => {
                         </Dropdown.Item>
                       ))
                     ) : (
-                      <Dropdown.Item disabled>Nessuna categoria</Dropdown.Item>
+                      <Dropdown.Item disabled>No categories</Dropdown.Item>
                     )}
                   </Dropdown.Menu>
                 </Dropdown>
@@ -742,7 +752,7 @@ const MapPage = () => {
               {/* Photo Upload */}
               <div className="mp-form-group">
                 <label className="mp-form-label">
-                  Foto <span className="mp-required-asterisk">*</span> ({photos.length}/3)
+                  Photos <span className="mp-required-asterisk">*</span> ({photos.length}/3)
                 </label>
                 {formErrors.photos && <FormError message={formErrors.photos} />}
                 <div className="mp-photo-upload-area">
@@ -757,7 +767,7 @@ const MapPage = () => {
                   />
                   <label htmlFor="photos" className={`mp-photo-upload-label ${photos.length >= 3 ? 'is-disabled' : ''}`}>
                     <FaCamera className="mp-photo-upload-icon" />
-                    <span>{photos.length >= 3 ? 'Max 3 foto raggiunte' : 'Aggiungi Foto'}</span>
+                    <span>{photos.length >= 3 ? 'Max 3 photos reached' : 'Add Photo'}</span>
                   </label>
                 </div>
 
@@ -778,7 +788,7 @@ const MapPage = () => {
                   </div>
                 )}
                 <small className="mp-help-text">
-                  Richiesta almeno 1 foto, massimo 3.
+                  At least 1 photo required, maximum 3.
                 </small>
               </div>
 
@@ -794,7 +804,7 @@ const MapPage = () => {
                   <span className="mp-checkbox-icon">
                     {formData.is_anonymous ? <FaUserSecret /> : <FaUser />}
                   </span>
-                  <span className="mp-checkbox-text">Invia in anonimo</span>
+                  <span className="mp-checkbox-text">Submit anonymously</span>
                 </label>
               </div> */}
 
@@ -807,7 +817,7 @@ const MapPage = () => {
                   disabled={isSubmitting}
                 >
                   <FaTrash className="mp-btn-icon" />
-                  Svuota
+                  Clear
                 </button>
 
                 <button
@@ -816,13 +826,19 @@ const MapPage = () => {
                   disabled={!marker || isSubmitting}
                 >
                   <FaSave className="mp-btn-icon" />
-                  {isSubmitting ? 'Invio in corso...' : 'Invia Segnalazione'}
+                  {isSubmitting ? 'Submitting...' : 'Submit Report'}
                 </button>
               </div>
             </form>
           </div>
         </div>
       </main>
+       {/* Report Detail Modal */}
+      <ReportDetails 
+        show={showDetailModal}
+        onHide={() => setShowDetailModal(false)}
+        report={selectedReport}
+      />
     </div>
   );
 };

@@ -7,7 +7,7 @@ import "../css/Login.css";
 
 export default function Login({ onLoginSuccess }) {
   const navigate = useNavigate();
-  const location = useLocation(); // Hook per leggere lo stato della navigazione (errori in arrivo)
+  const location = useLocation(); // Hook to read navigation state (incoming errors)
   
   const [formData, setFormData] = useState({
     username: "",
@@ -22,12 +22,12 @@ export default function Login({ onLoginSuccess }) {
     password: false
   });
 
-  // EFFETTO: Controlla se ci sono errori passati al caricamento della pagina
-  // (es. redirect da un interceptor axios o da un'altra pagina per errore server)
+  // EFFECT: Check if there are errors passed on page load
+  // (e.g. redirect from an axios interceptor or another page for server error)
   useEffect(() => {
     if (location.state?.error) {
       setError(location.state.error);
-      // Puliamo lo stato della history per non mostrare l'errore se l'utente aggiorna la pagina
+      // Clear history state to avoid showing error if user refreshes the page
       window.history.replaceState({}, document.title);
     }
   }, [location]);
@@ -37,7 +37,7 @@ export default function Login({ onLoginSuccess }) {
       ...prev,
       [field]: value
     }));
-    // Nascondi l'errore appena l'utente inizia a scrivere per correggere
+    // Hide error as soon as user starts typing to correct
     if (error) setError("");
   };
 
@@ -61,18 +61,18 @@ export default function Login({ onLoginSuccess }) {
 
     const trimmedUsername = formData.username.trim();
 
-    // Aggiorna UI se necessario
+    // Update UI if necessary
     if (trimmedUsername !== formData.username) {
       setFormData(prev => ({ ...prev, username: trimmedUsername }));
     }
 
-    // Validazione Client-side
+    // Client-side Validation
     if (!trimmedUsername) {
-      setError("Inserisci il tuo username.");
+      setError("Please enter your username.");
       return;
     }
     if (!formData.password.trim()) {
-      setError("Inserisci la tua password.");
+      setError("Please enter your password.");
       return;
     }
 
@@ -89,29 +89,29 @@ export default function Login({ onLoginSuccess }) {
     } catch (err) {
       console.error("Login failed:", err);
       
-      // Resetta la password in caso di errore per sicurezza
+      // Reset password on error for security
       setFormData(prev => ({ ...prev, password: "" }));
 
-      // GESTIONE ERRORI AVANZATA
-      // Priorità: Status Code -> Messaggio Network -> Messaggio Generico
+      // ADVANCED ERROR HANDLING
+      // Priority: Status Code -> Network Message -> Generic Message
       
       if (!err.status && (err.message === "Failed to fetch" || err.message.includes("Network"))) {
-        // Caso specifico: Il server è giù o non raggiungibile (Errore di caricamento/connessione)
-        setError("Impossibile contattare il server. Verifica la tua connessione o riprova più tardi.");
+        // Specific case: Server is down or unreachable (Loading/connection error)
+        setError("Unable to contact the server. Check your connection or try again later.");
       } else if (err.status === 401) {
-        setError("Username o password non validi.");
+        setError("Invalid username or password.");
       } else if (err.status === 400) {
-        setError("Dati mancanti o non validi. Controlla i campi.");
+        setError("Missing or invalid data. Check the fields.");
       } else if (err.status === 403) {
-        setError("Account temporaneamente bloccato o non attivo.");
+        setError("Account temporarily blocked or inactive.");
       } else if (err.status >= 500) {
-        // Errori interni del server mostrati come errori del form
+        // Internal server errors shown as form errors
         setError("Internal server error.");
       } else if (typeof navigator !== 'undefined' && !navigator.onLine) {
-        setError("Nessuna connessione internet rilevata.");
+        setError("No internet connection detected.");
       } else {
-        // Fallback sul messaggio dell'errore o messaggio generico
-        setError(err.message || "Login fallito. Si prega di riprovare.");
+        // Fallback to error message or generic message
+        setError(err.message || "Login failed. Please try again.");
       }
     } finally {
       setLoading(false);
@@ -133,7 +133,7 @@ export default function Login({ onLoginSuccess }) {
                 disabled={loading}
               >
                 <FaArrowLeft className="me-2" />
-                Torna alla Home
+                Back to Home
               </Button>
 
               {/* Header */}
@@ -145,13 +145,13 @@ export default function Login({ onLoginSuccess }) {
                     className="log-logo"
                   />
                 </div>
-                <h1 className="log-title">Bentornato</h1>
+                <h1 className="log-title">Welcome Back</h1>
                 <p className="log-subtitle">
-                  Accedi al tuo account
+                  Sign in to your account
                 </p>
               </div>
 
-              {/* Error Alert - Ora mostra anche errori server e di caricamento */}
+              {/* Error Alert - Now also shows server and loading errors */}
               {error && (
                 <Alert
                   variant="danger"
@@ -228,10 +228,10 @@ export default function Login({ onLoginSuccess }) {
                         size="sm"
                         className="me-2"
                       />
-                      Accesso in corso...
+                      Signing in...
                     </>
                   ) : (
-                    "Accedi"
+                    "Sign In"
                   )}
                 </button>
               </Form>
@@ -239,7 +239,7 @@ export default function Login({ onLoginSuccess }) {
               {/* Footer */}
               <div className="log-footer">
                 <span className="log-footer-text">
-                  Non hai un account?{" "}
+                  Don't have an account?{" "}
                 </span>
                 <Button
                   variant="link"
@@ -247,7 +247,7 @@ export default function Login({ onLoginSuccess }) {
                   onClick={() => !loading && navigate("/register")}
                   disabled={loading}
                 >
-                  Registrati
+                  Sign Up
                 </Button>
               </div>
             </Card.Body>
