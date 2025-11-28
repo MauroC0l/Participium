@@ -82,12 +82,12 @@ Total number of tests: 744
 ## ASSESSMENT
 
 - What went wrong in the sprint?
-  - We underestimated the hours for implementing some stories (we underestimated Sprint Planning and Feature implementation while we overestimated Code Reviews).
+  - We underestimated Sprint Planning and Feature implementation while we overestimated Code Reviews.
   - We spent more hours on Story 5, which has 2 Story Points, while for Story 4, which has more Story Points (5), we spent fewer hours.
   - We were in a rush to finish in the last days.
 
 - What caused your errors in estimation (if any)?
-  - We had some internal role changes from back-end to front-end and vice versa. It took more time for the new roles to adapt to the tasks they were assigned.
+  - Since we had several internal role changes between back-end and front-end, we had to think more carefully about the tasks and how to assign them.
   
 - What lessons did you learn (both positive and negative) in this sprint?
   - We can do more than three tasks per Sprint, so we will keep this pace.
