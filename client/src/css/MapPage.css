@@ -1,7 +1,7 @@
 /* MapPage.css */
 
 .mp-page {
-  min-height: 100vh;
+  min-height: 90vh;
   background: var(--bg-lighter);
   font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
 
