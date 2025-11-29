@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Modal } from "react-bootstrap";
+import React, { useState, useEffect } from "react";
+import { Modal, Button, Form } from "react-bootstrap";
 import { 
   FaTimes, 
   FaUser, 
@@ -8,13 +8,35 @@ import {
   FaCalendarAlt, 
   FaTag, 
   FaInfoCircle,
-  FaCamera
+  FaCamera,
+  FaCheckCircle,
+  FaTimesCircle,
+  FaExclamationTriangle,
+  FaExclamationCircle
 } from "react-icons/fa";
 import "../css/ReportDetails.css";
 
-const ReportDetails = ({ show, onHide, report }) => {
+const ReportDetails = ({ show, onHide, report, user, onApprove, onReject }) => {
   const [selectedImage, setSelectedImage] = useState(null);
   const [showImageModal, setShowImageModal] = useState(false);
+  
+  // Stati per la gestione azioni
+  const [isRejecting, setIsRejecting] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
+  
+  // Stati messaggi
+  const [errorMsg, setErrorMsg] = useState(""); 
+  const [assignmentWarning, setAssignmentWarning] = useState(""); 
+
+  // --- 1. RESET LOGIC ---
+  useEffect(() => {
+    if (show) {
+      setIsRejecting(false);
+      setRejectionReason("");
+      setErrorMsg("");
+      setAssignmentWarning("");
+    }
+  }, [show]);
 
   if (!report) return null;
 
@@ -30,7 +52,7 @@ const ReportDetails = ({ show, onHide, report }) => {
       return `${loc.latitude.toFixed(5)}, ${loc.longitude.toFixed(5)}`;
     }
     if (loc.type === "Point" && Array.isArray(loc.coordinates)) {
-      const [lng, lat] = loc.coordinates; // GeoJSON is [lng, lat]
+      const [lng, lat] = loc.coordinates; 
       return `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
     }
     return "N/A";
@@ -51,41 +73,88 @@ const ReportDetails = ({ show, onHide, report }) => {
     return "Unknown User";
   };
 
-  const getAssigneeName = () => {
-    if (report.assignee) return `${report.assignee.first_name} ${report.assignee.last_name}`;
-    return "Unassigned";
-  };
-
-  // Status Color Logic
   const getStatusClass = (status) => {
     switch (status?.toLowerCase()) {
       case 'resolved': return 'status-success';
       case 'rejected': return 'status-danger';
-      case 'assigned': return 'status-primary'; // Blueish for assigned
+      case 'assigned': return 'status-primary';
       case 'pending approval': return 'status-warning';
       default: return 'status-default';
     }
   };
 
-  // Parse photos safely
+  const canManage = user && (
+    user.role_name === "Administrator" || 
+    user.role_name.toLowerCase() === "municipal public relations officer"
+  );
+
   const photos = report.photos
     ? report.photos.map((p) => (typeof p === "string" ? p : p.storageUrl))
     : report.images || [];
+
+  // --- Action Handlers ---
+
+  const handleRejectClick = () => {
+    setIsRejecting(true);
+    setErrorMsg("");
+    setAssignmentWarning("");
+  };
+
+  const handleCancelReject = () => {
+    setIsRejecting(false);
+    setRejectionReason("");
+    setErrorMsg("");
+  };
+
+  const handleSubmitReject = async () => {
+    if (!rejectionReason.trim()) {
+      setErrorMsg("Please provide a reason for rejection.");
+      return;
+    }
+    
+    try {
+        const success = await onReject(report.id, rejectionReason);
+        // --- 2. CLOSE LOGIC ---
+        if (success) {
+            onHide(); 
+        }
+    } catch (err) {
+        setErrorMsg(err.message || "Error rejecting report");
+    }
+  };
+
+  const handleApproveClick = async () => {
+    setAssignmentWarning(""); 
+    setErrorMsg(""); 
+
+    try {
+      const result = await onApprove(report.id);
+
+      if (result && result.error) {
+         setErrorMsg(result.error);
+         return;
+      }
+
+      onHide();
+      
+    } catch (error) {
+      console.error("Approval error in modal:", error);
+      setErrorMsg(error.message || "An unexpected error occurred while approving the report.");
+    }
+  };
 
   return (
     <>
       <Modal
         show={show}
         onHide={onHide}
-        size="xl" // Extra large per un look dashboard
+        size="xl"
         centered
         scrollable
         className="rdm-modal"
       >
-        {/* HEADER: Brand Gradient with Title & ID */}
         <Modal.Header className="rdm-header">
           <div className="rdm-header-content">
-            <div className="rdm-id-badge">#{report.id}</div>
             <h2 className="rdm-title">{report.title}</h2>
             <div className="rdm-header-meta">
               <span className={`rdm-badge ${getStatusClass(report.status)}`}>
@@ -104,7 +173,7 @@ const ReportDetails = ({ show, onHide, report }) => {
         <Modal.Body className="rdm-body">
           <div className="rdm-grid-layout">
             
-            {/* LEFT COLUMN: Main Content (Description & Photos) */}
+            {/* LEFT COLUMN */}
             <div className="rdm-main-content">
               
               <div className="rdm-section">
@@ -116,7 +185,7 @@ const ReportDetails = ({ show, onHide, report }) => {
                 </div>
               </div>
 
-              {photos.length > 0 && (
+              {photos.length > 0 ? (
                 <div className="rdm-section">
                   <h3 className="rdm-section-title">
                     <FaCamera /> Evidence ({photos.length})
@@ -130,19 +199,108 @@ const ReportDetails = ({ show, onHide, report }) => {
                       >
                         <img src={photo} alt={`Evidence ${index}`} loading="lazy" />
                         <div className="rdm-photo-overlay">
-                          <span>View</span>
+                          <span>View Fullscreen</span>
                         </div>
                       </div>
                     ))}
                   </div>
                 </div>
+              ) : (
+                <div className="rdm-section">
+                    <p className="text-muted fst-italic mt-3">No images attached to this report.</p>
+                </div>
               )}
+
+              {/* ACTION AREA */}
+              {canManage && report.status === "Pending Approval" && (
+                <div className="rdm-actions-area">
+                  
+                  {/* WARNING ALERT */}
+                  {assignmentWarning && (
+                    <div className="rdm-alert rdm-alert-warning animate-shake">
+                      <div className="rdm-alert-icon-box">
+                        <FaExclamationTriangle />
+                      </div>
+                      <div className="rdm-alert-content">
+                        <h6 className="rdm-alert-title">Assignment Warning</h6>
+                        <p className="rdm-alert-msg">{assignmentWarning}</p>
+                      </div>
+                      <Button size="sm" variant="outline-warning" className="rdm-alert-btn" onClick={() => setAssignmentWarning("")}>
+                        Understood
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* ERROR ALERT */}
+                  {errorMsg && !isRejecting && (
+                    <div className="rdm-alert rdm-alert-error animate-shake">
+                      <div className="rdm-alert-icon-box">
+                        <FaExclamationCircle />
+                      </div>
+                      <div className="rdm-alert-content">
+                        <h6 className="rdm-alert-title">Error</h6>
+                        <p className="rdm-alert-msg">{errorMsg}</p>
+                      </div>
+                      <Button size="sm" variant="outline-danger" className="rdm-alert-btn" onClick={() => setErrorMsg("")}>
+                        Dismiss
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* PULSANTI E FORM */}
+                  {!isRejecting ? (
+                    <div className="d-flex justify-content-end gap-3 mt-3">
+                      <Button variant="outline-danger" className="rdm-btn-reject" onClick={handleRejectClick}>
+                        <FaTimesCircle className="me-2"/> Reject Report
+                      </Button>
+                      <Button variant="success" className="rdm-btn-approve" onClick={handleApproveClick}>
+                        <FaCheckCircle className="me-2"/> Accept & Assign
+                      </Button>
+                    </div>
+                  ) : (
+                    // --- 3. MARKUP RIVISTO (Stile più classico) ---
+                    <div className="rdm-reject-wrapper">
+                      <div className="rdm-reject-header">
+                        <FaExclamationTriangle /> Reject Report
+                      </div>
+                      
+                      <Form.Group className="mb-3">
+                        <Form.Label className="rdm-reject-label">Reason for rejection (Required)</Form.Label>
+                        <Form.Control
+                          as="textarea"
+                          className={`rdm-reject-textarea ${errorMsg ? 'is-invalid' : ''}`}
+                          rows={3}
+                          placeholder="Please describe why this report is being rejected..."
+                          value={rejectionReason}
+                          onChange={(e) => setRejectionReason(e.target.value)}
+                        />
+                         <Form.Control.Feedback type="invalid">
+                          {errorMsg}
+                        </Form.Control.Feedback>
+                      </Form.Group>
+
+                      <div className="rdm-reject-actions">
+                        <Button variant="secondary" className="rdm-btn-cancel" onClick={handleCancelReject}>
+                          Cancel
+                        </Button>
+                        <Button variant="danger" className="rdm-btn-confirm-reject" onClick={handleSubmitReject}>
+                          Confirm Rejection
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="rdm-id-footer">
+                Report ID: #{report.id}
+              </div>
+
             </div>
 
-            {/* RIGHT COLUMN: Meta Data Sidebar */}
+            {/* RIGHT COLUMN: Sidebar */}
             <div className="rdm-sidebar">
               
-              {/* Card 1: Timeline */}
               <div className="rdm-info-card">
                 <h4 className="rdm-card-label">Timeline</h4>
                 <div className="rdm-info-row">
@@ -152,22 +310,11 @@ const ReportDetails = ({ show, onHide, report }) => {
                     <div className="rdm-value">{formatDate(report.createdAt)}</div>
                   </div>
                 </div>
-                {report.updatedAt && report.updatedAt !== report.createdAt && (
-                   <div className="rdm-info-row">
-                   <div className="rdm-icon-box secondary"><FaCalendarAlt /></div>
-                   <div>
-                     <span className="rdm-label">Last Update</span>
-                     <div className="rdm-value">{formatDate(report.updatedAt)}</div>
-                   </div>
-                 </div>
-                )}
               </div>
 
-              {/* Card 2: People */}
               <div className="rdm-info-card">
                 <h4 className="rdm-card-label">Involved Parties</h4>
                 
-                {/* Reporter */}
                 <div className="rdm-info-row">
                   <div className="rdm-icon-box"><FaUser /></div>
                   <div>
@@ -176,19 +323,17 @@ const ReportDetails = ({ show, onHide, report }) => {
                   </div>
                 </div>
 
-                {/* Assignee (New!) */}
                 <div className="rdm-info-row">
                   <div className="rdm-icon-box assignee"><FaHardHat /></div>
                   <div>
                     <span className="rdm-label">Technician ID:</span>
                     <div className="rdm-value highlight">
-                      {report.assignee ? report.assignee.id : <span className="text-muted">Not assigned yet</span>}
+                      {report.assignee ? `${report.assignee.id}` : <span className="text-muted">Not assigned yet</span>}
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Card 3: Location */}
               <div className="rdm-info-card">
                 <h4 className="rdm-card-label">Location Data</h4>
                 <div className="rdm-info-row">
@@ -207,12 +352,18 @@ const ReportDetails = ({ show, onHide, report }) => {
         </Modal.Body>
       </Modal>
 
-      {/* Lightbox (Cleaned up) */}
-      <Modal show={showImageModal} onHide={() => setShowImageModal(false)} centered size="xl" className="rdm-lightbox">
-        <Modal.Body className="rdm-lightbox-body" onClick={() => setShowImageModal(false)}>
-          <button className="rdm-lightbox-close"><FaTimes /></button>
-          <img src={selectedImage} alt="Full Detail" onClick={(e) => e.stopPropagation()} />
-        </Modal.Body>
+      {/* Lightbox */}
+      <Modal 
+        show={showImageModal} 
+        onHide={() => setShowImageModal(false)} 
+        centered 
+        className="rdm-lightbox"
+        backdropClassName="rdm-lightbox-backdrop"
+      >
+        <div className="rdm-lightbox-container" onClick={() => setShowImageModal(false)}>
+            <button className="rdm-lightbox-close" onClick={() => setShowImageModal(false)}><FaTimes /></button>
+            <img src={selectedImage} alt="Full Detail" className="rdm-lightbox-img" onClick={(e) => e.stopPropagation()} />
+        </div>
       </Modal>
     </>
   );
