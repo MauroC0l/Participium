@@ -15,28 +15,34 @@ class PhotoRepository {
     }
 
     /**
-     * Saves multiple photos associated with a report.
+     * Saves the relative paths of report images (es. /uploads/reports/{reportId}/{filename}) to the DB.
      * @param reportId The ID of the report.
-     * @param filePaths Array of file paths where photos are stored.
+     * @param filePaths Array of relative file paths where photos are stored.
      * @returns Array of saved photo entities.
      */
     public async savePhotosForReport(reportId: number, filePaths: string[]): Promise<photoEntity[]> {
-        const photos: photoEntity[] = filePaths.map((pathStorage) => {
+        const photos: photoEntity[] = filePaths.map((relativePath) => {
             const photo = new photoEntity();
             photo.reportId = reportId;
-            photo.storageUrl = pathStorage;
+            photo.storageUrl = relativePath;
             return photo;
         });
         return this.photoRepository.save(photos);
     }
 
     /**
-     * Retrieves all photos associated with a specific report.
+     * Retrieves all photos associated with a specific report,
+     * returning both the server path and the client-accessible URL.
      * @param reportId The ID of the report.
-     * @returns Array of photo entities.
+     * @returns Array of photo objects with storageUrl and publicUrl.
      */
-    public async getPhotosByReportId(reportId: number): Promise<photoEntity[]> {
-        return this.photoRepository.find({ where: { reportId } });
+    public async getPhotosByReportId(reportId: number): Promise<Array<{ storageUrl: string, publicUrl: string }>> {
+        const photos = await this.photoRepository.find({ where: { reportId } });
+        const baseUrl = process.env.PUBLIC_BASE_URL || 'http://localhost:3001';
+        return photos.map(photo => ({
+            storageUrl: photo.storageUrl,
+            publicUrl: `${baseUrl}${photo.storageUrl}`
+        }));
     }
 }
 

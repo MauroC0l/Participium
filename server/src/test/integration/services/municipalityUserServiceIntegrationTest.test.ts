@@ -239,7 +239,7 @@ describe('MunicipalityUserService', () => {
   });
 
   describe('updateMunicipalityUser', () => {
-    const updateData = { firstName: 'Updated' };
+    const updateData = { first_name: 'Updated' };
     const updatedEntity = { ...mockStaffEntity, firstName: 'Updated' };
 
     it('should update a user successfully', async () => {

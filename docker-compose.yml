@@ -42,9 +42,6 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    volumes:
-      # Persistenza delle foto caricate (collega la cartella del container a quella locale)
-      - ./server/uploads:/app/uploads
 
   # 3. Frontend (Nginx + React)
   client:

@@ -14,7 +14,6 @@ import { Report } from "@dto/Report";
 import { CategoryRoleMapping } from '../models/dto/CategoryRoleMapping';
 import { categoryRoleEntity } from '../models/entity/categoryRoleEntity';
 import { ReportStatus } from "@models/dto/ReportStatus";
-import { storageConfig } from '../config/storage';
 
 
 export function createErrorDTO(
@@ -31,20 +30,8 @@ export function createErrorDTO(
 
 /**
  * Generate full URL for photo storage path
- * For local storage: prepends /uploads/ prefix
- * For R2: returns the URL as-is (already complete)
- */
+ */ 
 function getPhotoUrl(storageUrl: string): string {
-  if (storageConfig.provider === 'local') {
-    // For local storage, prepend /uploads/ if not already present
-    if (storageUrl.startsWith('/uploads/')) {
-      return storageUrl;
-    }
-    // Remove leading slash if present, then prepend /uploads/
-    const cleanPath = storageUrl.startsWith('/') ? storageUrl.slice(1) : storageUrl;
-    return `/${storageConfig.local.uploadDir}/${cleanPath}`;
-  }
-  // For R2, the URL is already complete
   return storageUrl;
 }
 
@@ -165,11 +152,11 @@ export function mapReportEntityToReportResponse(entity: reportEntity): ReportRes
   
   if (typeof entity.location === 'string') {
     // Parse WKT format: "POINT(lng lat)"
-    const match = entity.location.match(/POINT\(([^ ]+) ([^ ]+)\)/);
+    const match = new RegExp(/POINT\(([^ ]+) ([^ ]+)\)/).exec(entity.location);
     if (match) {
       location = {
-        longitude: parseFloat(match[1]),
-        latitude: parseFloat(match[2])
+        longitude: Number.parseFloat(match[1]),
+        latitude: Number.parseFloat(match[2])
       };
     }
   } else if (entity.location && typeof entity.location === 'object') {

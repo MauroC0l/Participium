@@ -71,33 +71,22 @@ The backend will start on **`http://localhost:3001`**
 
 **OpenAPI Specification:** [`server/openapi.yaml`](server/openapi.yaml)
 
-#### Configure Storage Provider:
 
-Participium supports two storage options for uploaded photos:
+#### Photo Storage
 
-**Local Storage (Default - Development):**
-```bash
-npm run storage:local
-```
-Photos are stored in `server/uploads/reports/`
+**How it works:**
+- Every photo uploaded via the app is saved inside the backend container, in `/app/uploads/reports/{reportId}/`.
+- There is **no synchronization** with your local filesystem and **no cloud storage**: all images live only in the container.
+- The backend automatically serves images via the API endpoint:
 
-**Cloudflare R2 (Production):**
-```bash
-npm run storage:r2
-```
-Photos are uploaded to Cloudflare R2 (requires configuration)
+  `http://localhost:3001/uploads/reports/{reportId}/{filename}`
 
-**Check current storage configuration:**
-```bash
-npm run storage:status
-```
+**Usage:**
+- To display a photo in the frontend, use the above URL format (replace `{reportId}` and `{filename}` with actual values).
+- No extra configuration is needed: the backend handles all file management and access.
 
-**Setup Cloudflare R2:** See [`server/CLOUDFLARE_R2_SETUP.md`](server/CLOUDFLARE_R2_SETUP.md) for detailed instructions.
-
-**Typical Workflow:**
-- **Development:** Use `npm run storage:local` for local file storage
-- **Production:** Configure R2 credentials and run `npm run storage:r2` before deployment
-
+**Notes:**
+- If you remove the backend container, all uploaded photos will be deleted unless because no Docker volume is set up for persistence.
 
 ### 4. Default Administrator Account
 
