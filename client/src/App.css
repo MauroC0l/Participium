@@ -18,11 +18,8 @@
 }
 
 html {
-  /* CALCOLO DI PRECISIONE:
-     Vogliamo che 1rem = 16px quando la larghezza è 2048px (il tuo schermo zoomato).
-     Formula: (16 / 2048) * 100 = 0.78125
-  */
-  font-size: 0.78125vw; 
+  /* Sintassi: clamp(MINIMO, FLUIDO, MASSIMO) */
+  font-size: clamp(16px, 0.78125vw, 100px);
 }
 
 /* OPZIONALE MA CONSIGLIATO:
@@ -32,8 +29,11 @@ html {
 */
 @media (max-width: 768px) {
   html {
-    /* Blocca la riduzione minima a circa 12px per leggibilità su mobile */
-    font-size: max(0.78125vw, 12px); 
+    /* Ho cambiato 12px con 16px.
+       La funzione max() userà il valore più grande tra i due:
+       se il calcolo vw scende sotto i 16px, il browser userà 16px fissi.
+    */
+    font-size: max(0.78125vw, 16px); 
   }
 }
 
