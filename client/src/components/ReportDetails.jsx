@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { Modal, Button, Form } from "react-bootstrap";
-import { 
-  FaTimes, 
-  FaUser, 
-  FaMapMarkerAlt, 
-  FaHardHat, 
-  FaCalendarAlt, 
-  FaTag, 
+import {
+  FaTimes,
+  FaUser,
+  FaMapMarkerAlt,
+  FaHardHat,
+  FaCalendarAlt,
+  FaTag,
   FaInfoCircle,
   FaCamera,
   FaCheckCircle,
@@ -19,14 +19,14 @@ import "../css/ReportDetails.css";
 const ReportDetails = ({ show, onHide, report, user, onApprove, onReject }) => {
   const [selectedImage, setSelectedImage] = useState(null);
   const [showImageModal, setShowImageModal] = useState(false);
-  
+
   // Stati per la gestione azioni
   const [isRejecting, setIsRejecting] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
-  
+
   // Stati messaggi
-  const [errorMsg, setErrorMsg] = useState(""); 
-  const [assignmentWarning, setAssignmentWarning] = useState(""); 
+  const [errorMsg, setErrorMsg] = useState("");
+  const [assignmentWarning, setAssignmentWarning] = useState("");
 
   // --- 1. RESET LOGIC ---
   useEffect(() => {
@@ -52,7 +52,7 @@ const ReportDetails = ({ show, onHide, report, user, onApprove, onReject }) => {
       return `${loc.latitude.toFixed(5)}, ${loc.longitude.toFixed(5)}`;
     }
     if (loc.type === "Point" && Array.isArray(loc.coordinates)) {
-      const [lng, lat] = loc.coordinates; 
+      const [lng, lat] = loc.coordinates;
       return `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
     }
     return "N/A";
@@ -84,7 +84,7 @@ const ReportDetails = ({ show, onHide, report, user, onApprove, onReject }) => {
   };
 
   const canManage = user && (
-    user.role_name === "Administrator" || 
+    user.role_name === "Administrator" ||
     user.role_name.toLowerCase() === "municipal public relations officer"
   );
 
@@ -111,31 +111,31 @@ const ReportDetails = ({ show, onHide, report, user, onApprove, onReject }) => {
       setErrorMsg("Please provide a reason for rejection.");
       return;
     }
-    
+
     try {
-        const success = await onReject(report.id, rejectionReason);
-        if (success) {
-            onHide(); 
-        }
+      const success = await onReject(report.id, rejectionReason);
+      if (success) {
+        onHide();
+      }
     } catch (err) {
-        setErrorMsg(err.message || "Error rejecting report");
+      setErrorMsg(err.message || "Error rejecting report");
     }
   };
 
   const handleApproveClick = async () => {
-    setAssignmentWarning(""); 
-    setErrorMsg(""); 
+    setAssignmentWarning("");
+    setErrorMsg("");
 
     try {
       const result = await onApprove(report.id);
 
       if (result && result.error) {
-         setErrorMsg(result.error);
-         return;
+        setErrorMsg(result.error);
+        return;
       }
 
       onHide();
-      
+
     } catch (error) {
       console.error("Approval error in modal:", error);
       setErrorMsg(error.message || "An unexpected error occurred while approving the report.");
@@ -160,7 +160,7 @@ const ReportDetails = ({ show, onHide, report, user, onApprove, onReject }) => {
                 {report.status || "Open"}
               </span>
               <span className="rdm-badge category">
-                <FaTag className="rdm-badge-icon"/> {report.category}
+                <FaTag className="rdm-badge-icon" /> {report.category}
               </span>
             </div>
           </div>
@@ -171,140 +171,140 @@ const ReportDetails = ({ show, onHide, report, user, onApprove, onReject }) => {
 
         <Modal.Body className="rdm-body">
           <div className="rdm-grid-layout">
-            
+
             {/* LEFT COLUMN */}
             <div className="rdm-main-content d-flex flex-column">
-              
+
               {/* Content Scroll Area */}
               <div className="flex-grow-1">
                 <div className="rdm-section mt-0">
-                    <h3 className="rdm-section-title">
+                  <h3 className="rdm-section-title">
                     <FaInfoCircle /> Description
-                    </h3>
-                    <div className="rdm-description-box">
+                  </h3>
+                  <div className="rdm-description-box">
                     {report.description || "No description provided."}
-                    </div>
+                  </div>
                 </div>
 
                 {photos.length > 0 ? (
-                    <div className="rdm-section">
+                  <div className="rdm-section">
                     <h3 className="rdm-section-title">
-                        <FaCamera /> Evidence ({photos.length})
+                      <FaCamera /> Evidence ({photos.length})
                     </h3>
                     <div className="rdm-photo-grid">
-                        {photos.map((photo, index) => (
+                      {photos.map((photo, index) => (
                         <div
-                            key={index}
-                            className="rdm-photo-card"
-                            onClick={() => openImage(photo)}
+                          key={index}
+                          className="rdm-photo-card"
+                          onClick={() => openImage(photo)}
                         >
-                            <img src={photo} alt={`Evidence ${index}`} loading="lazy" />
-                            <div className="rdm-photo-overlay">
+                          <img src={photo} alt={`Evidence ${index}`} loading="lazy" />
+                          <div className="rdm-photo-overlay">
                             <span>View Fullscreen</span>
-                            </div>
+                          </div>
                         </div>
-                        ))}
+                      ))}
                     </div>
-                    </div>
+                  </div>
                 ) : (
-                    <div className="rdm-section">
-                        <p className="text-muted fst-italic mt-3">No images attached to this report.</p>
-                    </div>
+                  <div className="rdm-section">
+                    <p className="text-muted fst-italic mt-3">No images attached to this report.</p>
+                  </div>
                 )}
               </div>
 
               {/* MESSAGES (Warnings/Errors) */}
               <div className="mt-3">
                 {assignmentWarning && (
-                    <div className="rdm-alert rdm-alert-warning mb-2 py-2 px-3">
-                        <div className="d-flex align-items-center gap-2">
-                             <FaExclamationTriangle />
-                             <span className="small">{assignmentWarning}</span>
-                        </div>
+                  <div className="rdm-alert rdm-alert-warning mb-2 py-2 px-3">
+                    <div className="d-flex align-items-center gap-2">
+                      <FaExclamationTriangle />
+                      <span className="small">{assignmentWarning}</span>
                     </div>
+                  </div>
                 )}
                 {errorMsg && (
-                    <div className="rdm-alert rdm-alert-error mb-2 py-2 px-3">
-                        <div className="d-flex align-items-center gap-2">
-                             <FaExclamationCircle />
-                             <span className="small">{errorMsg}</span>
-                        </div>
+                  <div className="rdm-alert rdm-alert-error mb-2 py-2 px-3">
+                    <div className="d-flex align-items-center gap-2">
+                      <FaExclamationCircle />
+                      <span className="small">{errorMsg}</span>
                     </div>
+                  </div>
                 )}
               </div>
 
               {/* FOOTER SECTION: ID & ACTIONS */}
               <div className="rdm-footer-section mt-4 pt-3 border-top">
-                
+
                 {/* STATE A: NORMAL VIEW (Buttons Right, ID Left) */}
                 {!isRejecting ? (
-                    <div className="d-flex justify-content-between align-items-center flex-wrap gap-3">
-                        <div className="rdm-id-text text-muted font-monospace fw-bold">
-                            ID: #{report.id}
-                        </div>
-                        
-                        {canManage && report.status === "Pending Approval" && (
-                            <div className="d-flex gap-2">
-                                <Button 
-                                    variant="outline-danger" 
-                                    className="rdm-btn-action" 
-                                    onClick={handleRejectClick}
-                                >
-                                    <FaTimesCircle className="me-2"/> Reject
-                                </Button>
-                                <Button 
-                                    variant="success" 
-                                    className="rdm-btn-action" 
-                                    onClick={handleApproveClick}
-                                >
-                                    <FaCheckCircle className="me-2"/> Accept & Assign
-                                </Button>
-                            </div>
-                        )}
+                  <div className="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                    <div className="rdm-id-text text-muted font-monospace fw-bold">
+                      ID: #{report.id}
                     </div>
-                ) : (
-                /* STATE B: REJECTION FORM (Replaces Buttons) */
-                    <div className="rdm-rejection-inline-container w-100 animate-fadeIn">
-                        <div className="d-flex align-items-center mb-2 text-danger fw-bold small">
-                            <FaExclamationTriangle className="me-2"/> Rejecting Report
-                        </div>
-                        
-                        <Form.Group className="mb-2">
-                            <Form.Control
-                                as="textarea"
-                                className={`rdm-reject-textarea ${errorMsg ? 'is-invalid' : ''}`}
-                                rows={2}
-                                placeholder="Enter reason for rejection..."
-                                value={rejectionReason}
-                                onChange={(e) => setRejectionReason(e.target.value)}
-                                autoFocus
-                            />
-                        </Form.Group>
 
-                        <div className="d-flex justify-content-between align-items-center mt-2">
-                            <div className="rdm-id-text text-muted font-monospace fw-bold small">
-                                ID: #{report.id}
-                            </div>
-                            <div className="d-flex gap-2">
-                                <Button 
-                                    variant="secondary" 
-                                    size="sm"
-                                    className="rdm-btn-action px-3" 
-                                    onClick={handleCancelReject}
-                                >
-                                    Cancel
-                                </Button>
-                                <Button 
-                                    variant="danger" 
-                                    size="sm"
-                                    className="rdm-btn-action px-3" 
-                                    onClick={handleSubmitReject}
-                                >
-                                    Confirm Reject
-                                </Button>
-                            </div>
-                        </div>
+                    {canManage && report.status === "Pending Approval" && (
+                      <div className="d-flex gap-2">
+                        <Button
+                          variant="outline-danger"
+                          className="rdm-btn-action"
+                          onClick={handleRejectClick}
+                        >
+                          <FaTimesCircle className="me-2" /> Reject
+                        </Button>
+                        <Button
+                          variant="success"
+                          className="rdm-btn-action"
+                          onClick={handleApproveClick}
+                        >
+                          <FaCheckCircle className="me-2" /> Accept & Assign
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  /* STATE B: REJECTION FORM (Replaces Buttons) */
+                  <div className="rdm-rejection-inline-container w-100 animate-fadeIn">
+                    <div className="d-flex align-items-center mb-2 text-danger fw-bold small">
+                      <FaExclamationTriangle className="me-2" /> Rejecting Report
                     </div>
+
+                    <Form.Group className="mb-2">
+                      <Form.Control
+                        as="textarea"
+                        className={`rdm-reject-textarea ${errorMsg ? 'is-invalid' : ''}`}
+                        rows={2}
+                        placeholder="Enter reason for rejection..."
+                        value={rejectionReason}
+                        onChange={(e) => setRejectionReason(e.target.value)}
+                        autoFocus
+                      />
+                    </Form.Group>
+
+                    <div className="d-flex justify-content-between align-items-center mt-2">
+                      <div className="rdm-id-text text-muted font-monospace fw-bold small">
+                        ID: #{report.id}
+                      </div>
+                      <div className="d-flex gap-2">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          className="rdm-btn-action px-3"
+                          onClick={handleCancelReject}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          className="rdm-btn-action px-3"
+                          onClick={handleSubmitReject}
+                        >
+                          Confirm Reject
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
                 )}
               </div>
 
@@ -312,7 +312,7 @@ const ReportDetails = ({ show, onHide, report, user, onApprove, onReject }) => {
 
             {/* RIGHT COLUMN: Sidebar */}
             <div className="rdm-sidebar">
-              
+
               <div className="rdm-info-card">
                 <h4 className="rdm-card-label">Timeline</h4>
                 <div className="rdm-info-row">
@@ -326,7 +326,7 @@ const ReportDetails = ({ show, onHide, report, user, onApprove, onReject }) => {
 
               <div className="rdm-info-card">
                 <h4 className="rdm-card-label">Involved Parties</h4>
-                
+
                 <div className="rdm-info-row">
                   <div className="rdm-icon-box"><FaUser /></div>
                   <div>
@@ -365,16 +365,25 @@ const ReportDetails = ({ show, onHide, report, user, onApprove, onReject }) => {
       </Modal>
 
       {/* Lightbox */}
-      <Modal 
-        show={showImageModal} 
-        onHide={() => setShowImageModal(false)} 
-        centered 
+      <Modal
+        show={showImageModal}
+        onHide={() => setShowImageModal(false)}
+        centered
         className="rdm-lightbox"
         backdropClassName="rdm-lightbox-backdrop"
       >
         <div className="rdm-lightbox-container" onClick={() => setShowImageModal(false)}>
-            <button className="rdm-lightbox-close" onClick={() => setShowImageModal(false)}><FaTimes /></button>
-            <img src={selectedImage} alt="Full Detail" className="rdm-lightbox-img" onClick={(e) => e.stopPropagation()} />
+
+          {/* --- RIMUOVI QUESTA RIGA QUI SOTTO --- */}
+          {/* <button className="rdm-lightbox-close" onClick={() => setShowImageModal(false)}><FaTimes /></button> */}
+
+          {/* Mantieni solo l'immagine */}
+          <img
+            src={selectedImage}
+            alt="Full Detail"
+            className="rdm-lightbox-img"
+            onClick={(e) => e.stopPropagation()}
+          />
         </div>
       </Modal>
     </>

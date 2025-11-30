@@ -317,11 +317,38 @@
 
 /* --- Lightbox & Responsive --- */
 .rdm-lightbox .modal-content { background: transparent; box-shadow: none; border: none; }
-.rdm-lightbox-backdrop { opacity: 0.9 !important; background-color: #000 !important; }
+.rdm-lightbox-backdrop {
+    /* Rimuovi l'opacità forzata e il nero solido */
+    /* opacity: 0.9 !important;  <-- RIMOSSO */
+    /* background-color: #000 !important; <-- RIMOSSO */
+
+    /* Usa uno sfondo semi-trasparente per far passare i colori sottostanti */
+    background-color: rgba(0, 0, 0, 0.6) !important;
+
+    /* Applica la sfocatura a tutto ciò che si trova dietro questo overlay */
+    backdrop-filter: blur(10px);
+    /* Per compatibilità con browser più vecchi (es. Safari datati) */
+    -webkit-backdrop-filter: blur(10px);
+}
 .rdm-lightbox-container { width: 100%; height: 100vh; display: flex; align-items: center; justify-content: center; position: relative; }
 .rdm-lightbox-img { max-height: 90vh; max-width: 90vw; border-radius: 4px; box-shadow: 0 0 50px rgba(0, 0, 0, 0.8); object-fit: contain; }
-.rdm-lightbox-close { position: absolute; top: 20px; right: 20px; background: rgba(255, 255, 255, 0.2); color: white; border: none; width: 50px; height: 50px; border-radius: 50%; font-size: 1.5rem; cursor: pointer; z-index: 1060; }
-.rdm-lightbox-close:hover { background: rgba(255, 255, 255, 0.4); }
+.rdm-lightbox-close { 
+  position: absolute; 
+  top: 20px; 
+  right: 20px; 
+  background: rgba(255, 255, 255, 0.2); 
+  color: white; 
+  border: none; 
+  width: 50px; 
+  height: 50px; 
+  border-radius: 50%; 
+  font-size: 1.5rem; 
+  cursor: pointer; 
+  z-index: 1060; 
+}
+.rdm-lightbox-close:hover { 
+  background: rgba(255, 255, 255, 0.4); 
+}
 
 @media (max-width: 992px) {
   .rdm-grid-layout { grid-template-columns: 1fr; gap: 20px; }
