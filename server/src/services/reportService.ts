@@ -251,85 +251,21 @@ class ReportService {
   }
 
   /**
-   * Approve a report and automatically assign to technical staff
-   * based on category-role mapping with load balancing
-   * Only Municipal Public Relations Officers can approve reports
+   * Update the status of a report
+   * @param reportId - The ID of the report to update
+   * @param status - The new status of the report
+   * @param reason - The reason for rejecting the report (if applicable)
+   * @param userId - The ID of the user updating the report
+   * @returns The updated report
    */
-  async approveReport(
-    reportId: number, 
-    userId: number, 
-    newCategory?: ReportCategory
-  ): Promise<Report> {
-
-    if (Number.isNaN(reportId)) {
-      throw new BadRequestError('Invalid report ID');
-    }
-
-    const report = await reportRepository.findReportById(reportId);
-    if (!report) {
-      throw new NotFoundError('Report not found');
-    }
-
-    if (report.status !== ReportStatus.PENDING_APPROVAL) {
-      throw new BadRequestError(
-        `Cannot approve report with status ${report.status}. Only reports with status Pending Approval can be approved.`
-      );
-    }
-
-    if (newCategory) {
-      if (!Object.values(ReportCategory).includes(newCategory)) {
-        throw new BadRequestError(
-          `Invalid category. Must be one of: ${Object.values(ReportCategory).join(', ')}`
-        );
-      }
-      report.category = newCategory;
-    }
-
-    const categoryToAssign = report.category as ReportCategory;
-
-    const roleId = await categoryRoleRepository.findRoleIdByCategory(categoryToAssign);
-    
-    if (!roleId) {
-      throw new BadRequestError(
-        `No role mapping found for category: ${categoryToAssign}. Please contact system administrator.`
-      );
-    }
-
-    const availableStaff = await userRepository.findAvailableStaffByRoleId(roleId);
-    
-    if (!availableStaff) {
-      throw new BadRequestError(
-        `No available technical staff found for category: ${categoryToAssign}. All staff members may be overloaded or the role has no assigned users.`
-      );
-    }
-
-    report.status = ReportStatus.ASSIGNED;
-    report.rejectionReason = undefined;
-    report.assignee = availableStaff;
-    report.assigneeId = availableStaff.id;
-    report.updatedAt = new Date();
-
-    const updatedReport = await reportRepository.save(report);
-
-    return mapReportEntityToDTO(updatedReport);
-  }
-
-  /**
-   * Reject a report (change status from Pending Approval to Rejected)
-   * Only Municipal Public Relations Officers can reject reports
-   */
-  async rejectReport(
-    reportId: number, 
-    rejectionReason: string, 
+  async updateReportStatus(
+    reportId: number,
+    status: ReportStatus,
+    reason: string | undefined,
     userId: number
   ): Promise<Report> {
-
     if (Number.isNaN(reportId)) {
       throw new BadRequestError('Invalid report ID');
-    }
-
-    if (!rejectionReason || rejectionReason.trim().length === 0) {
-      throw new BadRequestError('Rejection reason is required');
     }
 
     const report = await reportRepository.findReportById(reportId);
@@ -337,18 +273,85 @@ class ReportService {
       throw new NotFoundError('Report not found');
     }
 
-    if (report.status !== ReportStatus.PENDING_APPROVAL) {
-      throw new BadRequestError(
-        `Cannot reject report with status ${report.status}. Only reports with status Pending Approval can be rejected.`
-      );
+    const user = await userRepository.findUserById(userId);
+    if (!user) {
+      throw new UnauthorizedError('User not found');
     }
 
-    report.status = ReportStatus.REJECTED;
-    report.rejectionReason = rejectionReason;
+    const userRole = user.departmentRole?.role?.name;
+
+    switch (status) {
+      case ReportStatus.ASSIGNED:
+        if (report.status !== ReportStatus.PENDING_APPROVAL) {
+          throw new BadRequestError(
+            `Cannot approve report with status ${report.status}. Only reports with status Pending Approval can be approved.`
+          );
+        }
+        if (userRole !== 'Municipal Public Relations Officer') {
+          throw new InsufficientRightsError(
+            'Only Municipal Public Relations Officers can approve reports'
+          );
+        }
+        
+        const categoryToAssign = report.category as ReportCategory;
+        const roleId = await categoryRoleRepository.findRoleIdByCategory(categoryToAssign);
+        if (!roleId) {
+          throw new BadRequestError(
+            `No role mapping found for category: ${categoryToAssign}. Please contact system administrator.`
+          );
+        }
+
+        const availableStaff = await userRepository.findAvailableStaffByRoleId(roleId);
+        if (!availableStaff) {
+          throw new BadRequestError(
+            `No available technical staff found for category: ${categoryToAssign}. All staff members may be overloaded or the role has no assigned users.`
+          );
+        }
+
+        report.status = ReportStatus.ASSIGNED;
+        report.rejectionReason = undefined;
+        report.assignee = availableStaff;
+        report.assigneeId = availableStaff.id;
+        break;
+
+      case ReportStatus.REJECTED:
+        if (report.status !== ReportStatus.PENDING_APPROVAL) {
+          throw new BadRequestError(
+            `Cannot reject report with status ${report.status}. Only reports with status Pending Approval can be rejected.`
+          );
+        }
+        if (userRole !== 'Municipal Public Relations Officer') {
+          throw new InsufficientRightsError(
+            'Only Municipal Public Relations Officers can reject reports'
+          );
+        }
+        if (!reason || reason.trim().length === 0) {
+          throw new BadRequestError('Rejection reason is required');
+        }
+        report.status = ReportStatus.REJECTED;
+        report.rejectionReason = reason;
+        break;
+
+      case ReportStatus.RESOLVED:
+        if (report.status !== ReportStatus.ASSIGNED && report.status !== ReportStatus.IN_PROGRESS) {
+          throw new BadRequestError(
+            `Cannot resolve report with status ${report.status}. Only reports with status Assigned or In Progress can be resolved.`
+          );
+        }
+        if (userRole !== 'Technical Manager' && userRole !== 'Technical Assistant') {
+          throw new InsufficientRightsError(
+            'Only Technical Office Staff can resolve reports'
+          );
+        }
+        report.status = ReportStatus.RESOLVED;
+        break;
+        
+      default:
+        throw new BadRequestError(`Invalid status: ${status}`);
+    }
+
     report.updatedAt = new Date();
-
     const updatedReport = await reportRepository.save(report);
-
     return mapReportEntityToDTO(updatedReport);
   }
 }

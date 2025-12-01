@@ -1,7 +1,7 @@
 import express from 'express';
 import { reportController } from '@controllers/reportController';
 import { isLoggedIn, requireRole } from '@middleware/authMiddleware';
-import { validateCreateReport } from '@middleware/reportMiddleware';
+import { validateCreateReport, validateReportUpdate } from '@middleware/reportMiddleware';
 import { validateId } from '@middleware/validateId';
 import { validateMapQuery } from '@middleware/validateMapQuery';
 import { validateReportStatus, validateReportCategory } from '@middleware/validateReportQueryParams';
@@ -224,136 +224,88 @@ router.get('/assigned/me', isLoggedIn, reportController.getMyAssignedReports);
 
 /**
  * @swagger
- * /api/reports/{id}/approve:
+ * /api/reports/{id}/status:
  *   put:
- *     summary: Approve a report
+ *     summary: Update the status of a report
  *     description: |
- *       Municipal Public Relations Officer can approve a report in "Pending Approval" status.
- *       Upon approval, the report is automatically assigned to the technical office
- *       responsible for the report category and status changes to "Assigned".
- *     tags: [Reports]
+ *       Allows a Municipal Public Relations Officer to update the status of a report.
+ *       Supported status transitions:
+ *       - Assigned: Approves the report and assigns it to the technical office.
+ *       - Rejected: Rejects the report. A rejection reason is required.
+ *       
+ *       Allows a Technical Office Staff to update the status of a report.
+ *       Supported status transitions:
+ *       - Resolved: Marks the report as resolved.
+ *     tags:
+ *       - Reports
  *     security:
  *       - sessionAuth: []
  *     parameters:
- *       - in: path
- *         name: id
+ *       - name: id
+ *         in: path
  *         required: true
  *         schema:
  *           type: integer
- *         description: Report ID to approve
- *     requestBody:
- *       description: Optional body to modify report category during approval
- *       required: false
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               category:
- *                 $ref: '#/components/schemas/ReportCategory'
+ *         description: ID of the report to update
+     requestBody:
+       required: true
+       content:
+         application/json:
+           schema:
+             $ref: '#/components/schemas/UpdateReportStatusRequest'
+           examples:
+             approve:
+               summary: Approve a report
+               value:
+                 status: Assigned
+             reject:
+               summary: Reject a report
+               value:
+                 status: Rejected
+                 reason: "Duplicate report"
+             resolve:
+               summary: Resolve a report
+               value:
+                 status: Resolved
  *     responses:
- *       200:
- *         description: Report approved successfully
+ *       '200':
+ *         description: Report status updated successfully
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ReportResponse'
- *       400:
- *         description: Invalid request
+ *       '400':
+ *         description: Invalid request or missing fields
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
- *       401:
+ *       '401':
  *         description: Not authenticated
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
- *       403:
+ *       '403':
  *         description: Insufficient permissions
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
- *       404:
+ *       '404':
  *         description: Report not found
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
- *       500:
+ *       '500':
  *         description: Internal server error
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.put('/:id/approve', requireRole(UserRole.PUBLIC_RELATIONS_OFFICER), validateId('id', 'report'), reportController.approveReport);
-
-/**
- * @swagger
- * /api/reports/{id}/reject:
- *   put:
- *     summary: Reject a report
- *     description: |
- *       Municipal Public Relations Officer can reject a report in "Pending Approval" status.
- *       A rejection reason must be provided to explain why the report is not valid.
- *     tags: [Reports]
- *     security:
- *       - sessionAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *         description: Report ID to reject
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/RejectReportRequest'
- *     responses:
- *       200:
- *         description: Report rejected successfully
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ReportResponse'
- *       400:
- *         description: Invalid request
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *       401:
- *         description: Not authenticated
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *       403:
- *         description: Insufficient permissions
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *       404:
- *         description: Report not found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *       500:
- *         description: Internal server error
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- */
-router.put('/:id/reject', requireRole(UserRole.PUBLIC_RELATIONS_OFFICER), validateId('id', 'report'), reportController.rejectReport);
+router.put('/:id/status', requireRole([UserRole.PUBLIC_RELATIONS_OFFICER, UserRole.TECHNICAL_MANAGER, UserRole.TECHNICAL_ASSISTANT]), validateId(), validateReportUpdate, reportController.updateReportStatus);
 
 /**
  * @swagger
