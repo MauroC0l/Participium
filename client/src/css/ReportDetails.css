@@ -361,3 +361,21 @@
   .rdm-footer-section > div { flex-direction: column; align-items: flex-start !important; gap: 1rem; }
   .rdm-btn-action { width: 100%; justify-content: center; }
 }
+
+.rdm-rejection-display {
+  background-color: var(--rdm-danger-bg); /* Sfondo rosso chiaro */
+  border: 1px solid #fecaca;              /* Bordo rosso leggero */
+  color: #7f1d1d;                         /* Testo rosso scuro */
+  padding: 20px;
+  border-radius: 12px;
+  font-size: 1rem;
+  line-height: 1.6;
+  font-weight: 500;
+  box-shadow: 0 1px 2px rgba(239, 68, 68, 0.05);
+}
+
+/* Opzionale: Se vuoi che l'icona del titolo sia rossa specificamente in questo caso */
+.rdm-section-title svg {
+  /* Questo è già gestito dalla regola generale, ma se il titolo ha un colore custom inline, l'SVG eredita quello */
+  color: inherit; 
+}

@@ -145,9 +145,17 @@ export default function MunicipalityUserHome({ user }) {
 
   const handleAcceptReport = async (reportId) => {
     try {
-      await updateReportStatus(selectedReport.id, 'Assigned');
-      await fetchData();
-      handleClose();
+      const result = await updateReportStatus(reportId, "Assigned");
+      
+      // Refresh data silently
+      await fetchData(); 
+
+      if (result?.error) throw new Error(result.error);
+      
+      // Return logic required by ReportDetails component
+      if (!result?.assignee) return { noOfficerFound: true };
+      return { success: true };
+      
     } catch (error) {
       console.error("Error approving report:", error);
       throw error; // Propagate to modal for UI feedback
@@ -156,29 +164,81 @@ export default function MunicipalityUserHome({ user }) {
 
   const handleRejectReport = async (reportId, reason) => {
     try {
-      await updateReportStatus(selectedReport.id, 'Rejected', rejectionReason);
+      await updateReportStatus(reportId, "Rejected", reason);
       await fetchData();
       return true;
     } catch (error) {
       console.error("Error rejecting report:", error);
-      triggerError(error.message || "Unknown error during rejection.");
+      // Optional: setApiError(error.message); 
+      return false;
     }
   };
 
-  const handleStatusUpdate = async (newStatus) => {
-    if (!selectedReport) return;
-    clearError();
-
-    try {
-      await updateReportStatus(selectedReport.id, newStatus);
-      await fetchData();
-      handleClose();
-    } catch (error) {
-      console.error(`Error updating status to ${newStatus}:`, error);
-      triggerError(error.message || `Failed to update status.`);
+  // --- RENDER CONTENT HELPER ---
+  // Estrazione della logica per evitare nested ternary operation
+  const renderContent = () => {
+    if (isLoading) {
+      return (
+        <div className="text-center p-5">
+          <Spinner animation="border" variant="primary" />
+          <p className="mt-2 text-muted">Loading reports...</p>
+        </div>
+      );
     }
+
+    if (filteredReports.length === 0) {
+      return (
+        <div className="text-center p-5 text-muted">
+          <h5>No reports found</h5>
+          <p className="mb-0">Try adjusting your filters or check back later.</p>
+        </div>
+      );
+    }
+
+    return (
+      <Table responsive hover className="mu-table mb-0 align-middle">
+        <thead className="bg-light text-uppercase small text-muted">
+          <tr>
+            <th className="ps-4">Category</th>
+            <th>Title</th>
+            <th>Date</th>
+            <th>Status</th>
+            <th className="text-end pe-4">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {filteredReports.map((report) => (
+            <tr key={report.id}>
+              <td className="ps-4">
+                <span className="fw-semibold text-dark">
+                  {report.category}
+                </span>
+              </td>
+              <td>{report.title}</td>
+              <td>{report.createdAt.toLocaleDateString()}</td>
+              <td>
+                <Badge bg={getStatusBadgeVariant(report.status)} className="fw-normal">
+                  {report.status}
+                </Badge>
+              </td>
+              <td className="text-end pe-4">
+                <Button
+                  variant="outline-primary"
+                  size="sm"
+                  className="rounded-pill px-3 d-inline-flex align-items-center"
+                  onClick={() => handleShow(report)}
+                >
+                  <BsEye className="me-2" /> View
+                </Button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </Table>
+    );
   };
 
+  // --- MAIN RENDER ---
   return (
     <Container className="mu-home-container">
       {/* Header Section */}
@@ -242,285 +302,22 @@ export default function MunicipalityUserHome({ user }) {
         </Alert>
       )}
 
-      {/* Extracted report content logic */}
-      {(() => {
-        if (isLoading) {
-          return (
-            <Card className="mu-home-card">
-              <Card.Body className="p-0">
-                <div className="text-center p-5">
-                  <Spinner animation="border" variant="primary" />
-                  <p className="mt-2 text-muted">Loading reports...</p>
-                </div>
-              </Card.Body>
-            </Card>
-          );
-        } else if (filteredReports.length === 0) {
-          return (
-            <Card className="mu-home-card">
-              <Card.Body className="p-0">
-                <div className="text-center p-5 text-muted">
-                  <h5>No reports found</h5>
-                  <p>Try adjusting your filters or check back later.</p>
-                </div>
-              </Card.Body>
-            </Card>
-          );
-        } else {
-          return (
-            <Card className="mu-home-card">
-              <Card.Body className="p-0">
-                <Table responsive hover className="mu-table mb-0">
-                  <thead className="bg-light">
-                    <tr>
-                      <th>Category</th>
-                      <th>Title</th>
-                      <th>Date</th>
-                      <th>Status</th>
-                      <th className="text-end">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredReports.map((report) => (
-                      <tr key={report.id}>
-                        <td>
-                          <span className="fw-bold text-secondary">
-                            {report.category}
-                          </span>
-                        </td>
-                        <td>{report.title}</td>
-                        <td>{report.createdAt.toLocaleDateString()}</td>
-                        <td>
-                          <Badge bg={getStatusBadge(report.status)}>
-                            {report.status}
-                          </Badge>
-                        </td>
-                        <td className="text-end">
-                          <Button
-                            variant="outline-primary"
-                            size="sm"
-                            className="rounded-pill px-3"
-                            onClick={() => handleShow(report)}
-                          >
-                            <BsEye className="me-1" /> View
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              </Card.Body>
-            </Card>
-          );
-        }
-      })()}
+      {/* Table Card */}
+      <Card className="mu-home-card border-0 shadow-sm">
+        <Card.Body className="p-0">
+          {renderContent()}
+        </Card.Body>
+      </Card>
 
       {/* Report Detail Modal */}
       <ReportDetails
         show={showModal}
         onHide={handleClose}
-        size="lg"
-        centered
-        scrollable
-      >
-        {selectedReport && (
-          <>
-            <Modal.Header closeButton className="bg-light">
-              <div>
-                <Modal.Title className="text-danger mb-1">
-                  {selectedReport.title}
-                </Modal.Title>
-                <small className="text-muted">
-                  Report ID: #{selectedReport.id}
-                </small>
-              </div>
-            </Modal.Header>
-            <Modal.Body>
-              <Row className="g-3">
-                <Col md={6}>
-                  <div className="p-3 border rounded bg-light h-100">
-                    <h6 className="text-muted small text-uppercase mb-2">
-                      Status
-                    </h6>
-                    <Badge
-                      bg={getStatusBadge(selectedReport.status)}
-                      className="fs-6 mb-2"
-                    >
-                      {selectedReport.status}
-                    </Badge>
-                    <div className="small text-muted d-flex align-items-center gap-2">
-                      <BsCalendar3 />{" "}
-                      {selectedReport.createdAt.toLocaleDateString()}
-                    </div>
-                  </div>
-                </Col>
-                <Col md={6}>
-                  <div className="p-3 border rounded bg-light h-100">
-                    <h6 className="text-muted small text-uppercase mb-2">
-                      Reporter Info
-                    </h6>
-                    <div className="d-flex align-items-center gap-2 mb-1">
-                      <BsPerson className="text-primary" />
-                      <span className="fw-bold">
-                        {selectedReport.isAnonymous
-                          ? "Anonymous User"
-                          : selectedReport.reporter
-                          ? `${selectedReport.reporter.first_name} ${selectedReport.reporter.last_name}`
-                          : "Unknown User"}
-                      </span>
-                    </div>
-                    <div className="d-flex align-items-center gap-2 text-muted small text-truncate">
-                      <BsGeoAlt /> {formatLocation(selectedReport.location)}
-                    </div>
-                  </div>
-                </Col>
-                <Col xs={12}>
-                  <h6 className="text-danger fw-bold mt-2">Description</h6>
-                  <p>{selectedReport.description}</p>
-                </Col>
-
-  <Col xs={12}>
-    <h6 className="text-primary fw-bold">
-      Attached Photos ({selectedReport.images.length})
-    </h6>
-    {selectedReport.images.length > 0 ? (
-      <div className="d-flex flex-wrap gap-3">
-        {selectedReport.images. map((img, index) => (
-          <div
-            key={index}
-            className="mu-report-img-container"
-            onClick={() => openImage(img)}
-          >
-            <img
-              src={img}
-              alt={`Attachment ${index}`}
-              className="mu-report-img"
-            />
-            <div className="mu-img-overlay">
-              <BsEye className="text-white fs-3" />
-            </div>
-          </div>
-        ))}
-      </div>
-          ) : (
-            <p className="text-muted fst-italic small">No images.</p>
-          )}
-        </Col>
-
-                {/* Error Message Area */}
-                {errorMsg && (
-                  <Col xs={12}>
-                    <div
-                      key={shakeKey}
-                      className="mu-alert-error animate-shake"
-                    >
-                      <BsExclamationTriangle className="mu-alert-icon" />
-                      <span>{errorMsg}</span>
-                    </div>
-                  </Col>
-                )}
-
-                {/* Staff Actions */}
-                {isStaffMember && ['Assigned', 'In Progress', 'Suspended'].includes(selectedReport.status) && (
-                  <Col xs={12} className="mt-4 pt-3 border-top">
-                    <h6 className="text-primary fw-bold">Update Report Status</h6>
-                    <DropdownButton
-                      id="dropdown-basic-button"
-                      title="Set Status To..."
-                      onSelect={handleStatusUpdate}
-                    >
-                      {selectedReport.status === 'Assigned' && (
-                        <>
-                          <Dropdown.Item eventKey="In Progress">In Progress</Dropdown.Item>
-                          <Dropdown.Item eventKey="Resolved">Resolved</Dropdown.Item>
-                        </>
-                      )}
-                      {selectedReport.status === 'In Progress' && (
-                        <>
-                          <Dropdown.Item eventKey="Suspended">Suspended</Dropdown.Item>
-                          <Dropdown.Item eventKey="Resolved">Resolved</Dropdown.Item>
-                        </>
-                      )}
-                      {selectedReport.status === 'Suspended' && (
-                        <Dropdown.Item eventKey="In Progress">Back to In Progress</Dropdown.Item>
-                      )}
-                    </DropdownButton>
-                  </Col>
-                )}
-              </Row>
-
-              {/* Actions */}
-              {selectedReport.status === "Pending Approval" && (
-                <div className="mt-4 pt-3 border-top">
-                  {!isRejecting ? (
-                    <div className="d-flex gap-2 justify-content-end">
-                      <Button
-                        variant="outline-danger"
-                        onClick={handleRejectClick}
-                      >
-                        <BsXCircle className="me-2" /> Reject Report
-                      </Button>
-                      <Button
-                        variant="success"
-                        onClick={handleAccept}
-                        className="text-white"
-                      >
-                        <BsCheckCircle className="me-2" /> Accept & Assign
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="rejection-form animate-fade-in">
-                      <Form.Group className="mb-3">
-                        <Form.Label className="text-danger fw-bold">
-                          Reason for Rejection (Required)
-                        </Form.Label>
-                        <Form.Control
-                          as="textarea"
-                          rows={3}
-                          placeholder="Explain why this report is being rejected..."
-                          value={rejectionReason}
-                          onChange={(e) => setRejectionReason(e.target.value)}
-                          isInvalid={!!errorMsg && !rejectionReason}
-                        />
-                      </Form.Group>
-                      <div className="d-flex gap-2 justify-content-end">
-                        <Button
-                          variant="secondary"
-                          onClick={handleCancelReject}
-                        >
-                          Cancel
-                        </Button>
-                        <Button variant="danger" onClick={confirmReject}>
-                          Confirm Rejection
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </Modal.Body>
-          </>
-        )}
-      </Modal>
-
-      {/* Lightbox */}
-      <Modal
-        show={showImageModal}
-        onHide={() => setShowImageModal(false)}
-        size="xl"
-        centered
-        className="mu-lightbox-modal"
-      >
-        <Modal.Body className="text-center p-0 bg-transparent">
-          <img
-            src={selectedImage}
-            alt="Detail"
-            className="img-fluid"
-            style={{ maxHeight: "85vh" }}
-            onClick={(e) => e.stopPropagation()}
-          />
-        </Modal.Body>
-      </Modal>
+        report={selectedReport}
+        user={user}
+        onApprove={handleAcceptReport}
+        onReject={handleRejectReport}
+      />
     </Container>
   );
 }

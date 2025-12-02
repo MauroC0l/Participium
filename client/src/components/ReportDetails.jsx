@@ -177,6 +177,20 @@ const ReportDetails = ({ show, onHide, report, user, onApprove, onReject }) => {
 
               {/* Content Scroll Area */}
               <div className="flex-grow-1">
+
+                {/* --- NUOVO BLOCCO: MOSTRA MOTIVO RIFIUTO --- */}
+                {report.status === 'Rejected' && (report.rejectionReason || report.rejection_reason) && (
+                  <div className="rdm-section mt-0 mb-4">
+                    <h3 className="rdm-section-title" style={{ color: 'var(--rdm-danger)' }}>
+                      <FaExclamationTriangle /> Reason for Rejection
+                    </h3>
+                    <div className="rdm-rejection-display">
+                      {report.rejectionReason || report.rejection_reason}
+                    </div>
+                  </div>
+                )}
+                {/* ------------------------------------------- */}
+
                 <div className="rdm-section mt-0">
                   <h3 className="rdm-section-title">
                     <FaInfoCircle /> Description
@@ -185,7 +199,6 @@ const ReportDetails = ({ show, onHide, report, user, onApprove, onReject }) => {
                     {report.description || "No description provided."}
                   </div>
                 </div>
-
                 {photos.length > 0 ? (
                   <div className="rdm-section">
                     <h3 className="rdm-section-title">
