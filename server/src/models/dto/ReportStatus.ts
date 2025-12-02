@@ -11,6 +11,7 @@
  *         - Suspended
  *         - Rejected
  *         - Resolved
+ *         - In External Maintenance
  *       description: Report status
  *       example: "Pending Approval"
  */
@@ -21,5 +22,6 @@ export enum ReportStatus {
   IN_PROGRESS = 'In Progress',
   SUSPENDED = 'Suspended',
   REJECTED = 'Rejected',
-  RESOLVED = 'Resolved'
+  RESOLVED = 'Resolved',
+  IN_EXTERNAL_MAINTENANCE = 'In External Maintenance'
 }

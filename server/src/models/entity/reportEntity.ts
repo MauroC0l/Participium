@@ -59,7 +59,8 @@ export class reportEntity {
       "In Progress", 
       "Suspended", 
       "Rejected", 
-      "Resolved"
+      "Resolved",
+      "In External Maintenance"
     ],
     default: "Pending Approval"
   })
