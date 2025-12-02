@@ -1,3 +1,5 @@
+import { calculateAddress } from '../utils/retriveAddressUtils'; 
+
 /**
  * Handle API response and errors
  */
@@ -88,4 +90,18 @@ export const getReportsAssignedToMe = async () => {
     credentials: "include",
   });
   return handleResponse(response);
+};
+
+
+/**
+ * Get address from coordinates using the utility function
+ * @param {number} latitude 
+ * @param {number} longitude 
+ * @returns {Promise<string>} The formatted address or coordinates fallback
+ */
+export const getAddressFromCoordinates = async (latitude, longitude) => {
+    // Utilizza direttamente la logica già definita in retriveAddressUtilis
+    // Non è necessario usare handleResponse qui perché calculateAddress 
+    // gestisce già il try/catch e restituisce una stringa pulita.
+    return await calculateAddress(latitude, longitude);
 };

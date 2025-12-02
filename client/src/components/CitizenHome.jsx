@@ -103,7 +103,7 @@ const ActionsSection = ({ onNewReport, onMyReports }) => (
     <h2 className="ch-section-title">Quick Actions</h2>
     <ActionCard
       icon={FaArrowRight}
-      title="New Report"
+      title="Go to the Map"
       description="Submit a new issue (pothole, lighting, waste, etc.)."
       onClick={onNewReport}
     />

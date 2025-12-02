@@ -11,7 +11,7 @@
   --brand-red-light: rgba(161, 43, 50, 0.08);
   --brand-navy: #1e293b;
   --brand-light: #f8fafc;
-  
+   
   --primary: var(--brand-red);
   --primary-hover: var(--brand-red-hover);
   --bg-lighter: #f8f9fa;
@@ -27,9 +27,9 @@
   --gradient-primary: linear-gradient(135deg, var(--brand-red) 0%, #c44569 100%);
   --gradient-glass: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(253, 246, 246, 0.95) 100%);
   --error-color: #dc3545;
-  
+   
   /* MISURE FISSE IN REM (Scaleranno col browser grazie al CSS globale) 
-     Ho convertito le misure clamp in misure fisse proporzionali per coerenza
+      Ho convertito le misure clamp in misure fisse proporzionali per coerenza
   */
   --space-xs: 0.5rem;   /* ~8px */
   --space-sm: 0.75rem;  /* ~12px */
@@ -37,19 +37,19 @@
   --space-lg: 1.25rem;  /* ~20px */
   --space-xl: 1.5rem;   /* ~24px */
   --space-2xl: 2rem;    /* ~32px */
-  
+   
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
   --text-base: 1rem;
   --text-lg: 1.25rem;
   --text-xl: 1.5rem;
   --text-2xl: 2rem;
-  
+   
   --radius-sm: 0.5rem;
   --radius-md: 0.75rem;
   --radius-lg: 1rem;
   --radius-xl: 1.25rem;
-  
+   
   /* NUOVA VARIABILE: Altezza unificata per Input, Button e Dropdown */
   --control-height: 3rem; /* Equivale a 48px */
 
@@ -352,13 +352,13 @@
   background: white !important; 
   border: 0.0625rem solid var(--border-light) !important; 
   border-radius: var(--radius-md) !important;
-  
+   
   /* Altezza fissa identica ai bottoni */
   height: var(--control-height) !important; 
-  
+   
   /* Padding laterale per allineamento testo */
   padding: 0 0.75rem !important;
-  
+   
   color: var(--brand-navy) !important; font-weight: 500 !important; font-size: 0.9rem !important;
   display: flex; align-items: center; justify-content: space-between; box-shadow: var(--shadow-soft); width: 100%;
 }

@@ -31,7 +31,12 @@ import {
 import { Dropdown } from 'react-bootstrap';
 
 // IMPORT API
-import { getAllCategories, createReport, getReports } from '../api/reportApi';
+import { 
+  getAllCategories, 
+  createReport, 
+  getReports, 
+  getAddressFromCoordinates 
+} from '../api/reportApi';
 import { getCurrentUser } from '../api/authApi';
 
 import '../css/MapPage.css';
@@ -143,6 +148,10 @@ const MapPage = () => {
   const [isLoadingMap, setIsLoadingMap] = useState(true);
   const [photos, setPhotos] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // New State for Address Loading
+  const [isLoadingAddress, setIsLoadingAddress] = useState(false);
+
   const [selectedReport, setSelectedReport] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
 
@@ -152,7 +161,8 @@ const MapPage = () => {
     category: '',
     is_anonymous: false,
     latitude: '',
-    longitude: ''
+    longitude: '',
+    address: '' 
   });
 
   const [formErrors, setFormErrors] = useState({
@@ -186,7 +196,7 @@ const MapPage = () => {
       try {
         const parsed = JSON.parse(report.location);
         if (parsed.coordinates) return [parsed.coordinates[1], parsed.coordinates[0]];
-      } catch (e) { return null; }
+      } catch { return null; }
     }
     return null;
   };
@@ -223,7 +233,7 @@ const MapPage = () => {
         const data = await getAllCategories();
         if (Array.isArray(data)) setCategories(data);
         else setCategories([]);
-      } catch (error) {
+      } catch {
         setNotification({ message: 'Unable to load categories.', type: 'error' });
       } finally { setIsLoadingCategories(false); }
     };
@@ -235,7 +245,7 @@ const MapPage = () => {
       try {
         const data = await getReports();
         if (Array.isArray(data)) setExistingReports(data);
-      } catch (error) {
+      } catch {
         setNotification({ message: 'Unable to load reports on the map.', type: 'warning' });
       }
     };
@@ -279,18 +289,40 @@ const MapPage = () => {
           const bounds = L.latLngBounds(allLatLngs);
           setTurinBounds(bounds);
         }
-      } catch (err) {
+      } catch {
         setNotification({ message: 'Unable to load city boundaries.', type: 'warning' });
       } finally { setIsLoadingMap(false); }
     };
     loadBoundaries();
   }, []);
 
+  // --- NUOVO: Effect per calcolare l'indirizzo appena il marker cambia ---
+  useEffect(() => {
+    if (marker) {
+      const fetchAddress = async () => {
+        setIsLoadingAddress(true);
+        // Resetta l'indirizzo precedente per mostrare feedback visivo di caricamento
+        setFormData(prev => ({ ...prev, address: '' }));
+        
+        try {
+          const addressFound = await getAddressFromCoordinates(marker.lat, marker.lng);
+          setFormData(prev => ({ ...prev, address: addressFound }));
+        } catch (error) {
+          console.error("Failed to retrieve address", error);
+          setFormData(prev => ({ ...prev, address: 'Address not found' }));
+        } finally {
+          setIsLoadingAddress(false);
+        }
+      };
+      
+      fetchAddress();
+    }
+  }, [marker]);
+
   const torinoCenter = [45.0703, 7.6869];
 
   // --- MAP INTERACTION LOGIC ---
   const handleMapClick = (latlng, isInside = true) => {
-    // MODIFICA CRUCIALE: Se il form è aperto, ignora i click. Il marker è bloccato.
     if (showForm) return;
 
     const { lat, lng } = latlng;
@@ -307,6 +339,7 @@ const MapPage = () => {
         ...prev,
         latitude: lat.toFixed(6),
         longitude: lng.toFixed(6)
+        // address viene gestito dall'useEffect
       }));
 
       setFormErrors(prev => ({ ...prev, location: '' }));
@@ -319,6 +352,7 @@ const MapPage = () => {
     }
   };
 
+  // --- MODIFICATO: Semplificato perché l'indirizzo è già calcolato ---
   const handleStartReport = () => {
     setShowForm(true);
   };
@@ -332,11 +366,13 @@ const MapPage = () => {
       category: '',
       is_anonymous: false,
       latitude: '',
-      longitude: ''
+      longitude: '',
+      address: '' 
     });
     setFormErrors({});
     photos.forEach(photo => URL.revokeObjectURL(photo.preview));
     setPhotos([]);
+    setIsLoadingAddress(false);
 
     const fileInput = document.getElementById('photos');
     if (fileInput) fileInput.value = '';
@@ -388,7 +424,7 @@ const MapPage = () => {
 
   const validateForm = () => {
     const errors = {};
-    const maxDescLength = 200; // <--- MODIFICATO: Limite a 200
+    const maxDescLength = 200; 
 
     if (!formData.title.trim()) errors.title = 'Title required.';
     else if (formData.title.trim().length < 5) errors.title = 'Minimum 5 characters.';
@@ -402,6 +438,7 @@ const MapPage = () => {
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) {
@@ -420,7 +457,8 @@ const MapPage = () => {
         category: formData.category,
         location: {
           latitude: parseFloat(formData.latitude),
-          longitude: parseFloat(formData.longitude)
+          longitude: parseFloat(formData.longitude),
+          address: formData.address 
         },
         photos: base64Photos,
         is_anonymous: formData.is_anonymous,
@@ -514,7 +552,7 @@ const MapPage = () => {
             Turin Map - Your Reports
           </h1>
           <p className="mp-header-subtitle">
-            View the status of your reports or create a new one.
+            View the status of your reports or create a new one by selecting on the map.
           </p>
         </div>
       </header>
@@ -732,17 +770,20 @@ const MapPage = () => {
                         zIndexOffset={1000}
                         eventHandlers={{
                           click: () => {
-                            // MODIFICA QUI:
-                            // Prima: if(!showForm) handleStartReport();
-                            // Adesso: Rimuove il marker se cliccato
+                            // Rimuove il marker se cliccato
                             handleClear(false);
                           }
                         }}
                       >
                         <Tooltip permanent direction="top" offset={[0, -28]}>
-                          <b>New Location</b><br />
+                          {/* MODIFICA: Visualizzazione Address nel Tooltip */}
+                          <b>
+                            {isLoadingAddress 
+                              ? "Locating..." 
+                              : (formData.address || "Location Selected")}
+                          </b>
+                          <br />
                           {!showForm ? (
-                            // Aggiorniamo anche il testo del tooltip per coerenza
                             <span style={{ fontSize: '0.8em', color: '#666' }}>Click marker to remove</span>
                           ) : (
                             <span style={{ fontSize: '0.8em', color: 'var(--brand-red)' }}>Position Locked</span>
@@ -813,6 +854,18 @@ const MapPage = () => {
                     </div>
                   </div>
 
+                  {/* Address Field (UNIFICATO) */}
+                  <div className="mp-form-group">
+                    <label className="mp-form-label">Address</label>
+                    <input 
+                      type="text" 
+                      className="mp-input" 
+                      value={isLoadingAddress ? "Calculating address..." : formData.address} 
+                      readOnly 
+                      style={{ backgroundColor: 'var(--bg-lighter)', color: 'var(--text-muted)' }}
+                    />
+                  </div>
+
                   {/* Title */}
                   <div className="mp-form-group">
                     <label htmlFor="title" className="mp-form-label">Title <span className="mp-required-asterisk">*</span></label>
@@ -859,7 +912,7 @@ const MapPage = () => {
                         onChange={(e) => handleInputChange('description', e.target.value)}
                         placeholder="Describe the problem in detail..."
                         rows="3"
-                        maxLength={200} // <--- MODIFICATO: Limite HTML
+                        maxLength={200}
                       />
                       {/* CONTATORE POSIZIONATO */}
                       <span className={`mp-char-counter ${formData.description.length >= 200 ? 'is-limit' : ''}`}>
