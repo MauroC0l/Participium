@@ -79,10 +79,12 @@ describe('MunicipalityUserController Integration Tests', () => {
 
         createdAdmin = await userRepository.createUserWithPassword({
             ...ADMIN_CREDENTIALS,
+            isVerified: true,
             emailNotificationsEnabled: true
         });
         createdCitizen = await userRepository.createUserWithPassword({
             ...CITIZEN_CREDENTIALS,
+            isVerified: true,
             emailNotificationsEnabled: true
         });
         createdEmployee = await userRepository.createUserWithPassword({
@@ -92,6 +94,7 @@ describe('MunicipalityUserController Integration Tests', () => {
             firstName: EMPLOYEE_PAYLOAD.first_name, 
             lastName: EMPLOYEE_PAYLOAD.last_name,
             departmentRoleId: employeeDeptRole.id,
+            isVerified: true,
             emailNotificationsEnabled: true
         });
 

@@ -3,7 +3,7 @@
 import express from 'express';
 import { reportController } from '@controllers/reportController';
 import { isLoggedIn, requireRole } from '@middleware/authMiddleware';
-import { validateCreateReport, validateReportUpdate } from '@middleware/reportMiddleware';
+import { validateCreateReport } from '@middleware/reportMiddleware';
 import { validateId } from '@middleware/validateId';
 import { validateMapQuery } from '@middleware/validateMapQuery';
 import { validateReportStatus, validateReportCategory } from '@middleware/validateReportQueryParams';
@@ -470,25 +470,8 @@ router.get('/assigned/me', isLoggedIn, reportController.getMyAssignedReports);
  *               name: "InternalServerError"
  *               message: "An unexpected error occurred"
  */
-const allowedToUpdateRoles = [
-  'Municipal Public Relations Officer',
-  'Department Director',
-  'Water Network staff member',
-  'Sewer System staff member',
-  'Road Maintenance staff member',
-  'Accessibility staff member',
-  'Electrical staff member',
-  'Recycling Program staff member',
-  'Traffic management staff member',
-  'Parks Maintenance staff member',
-  'Customer Service staff member',
-  'Building Maintenance staff member',
-  'Support Officer'
-];
 
-router.put('/:id/status', requireRole(allowedToUpdateRoles), validateId(), validateReportUpdate, reportController.updateReportStatus);
-// TODO: Uncomment when reportController.updateReportStatus is implemented
-// router.put('/:id/status', isLoggedIn, validateId('id', 'report'), validateStatusUpdate, reportController.updateReportStatus);
+router.put('/:id/status', isLoggedIn, validateId('id', 'report'), validateStatusUpdate, reportController.updateReportStatus);
 
 /**
  * @swagger
