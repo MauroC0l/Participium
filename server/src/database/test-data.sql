@@ -1,5 +1,5 @@
 -- ============================================
--- Test Data for E2E Testing - V3 (with relational roles)
+-- Test Data for E2E Testing - V4.2 (with email verification)
 -- ============================================
 
 -- Clear existing data (safety check)
@@ -48,6 +48,7 @@ INSERT INTO users (
   last_name, 
   department_role_id,
   email_notifications_enabled,
+  is_verified,
   created_at
 ) VALUES (
   'testmunicipality',
@@ -60,6 +61,7 @@ INSERT INTO users (
    JOIN roles r ON dr.role_id = r.id
    WHERE d.name = 'Public Infrastructure and Accessibility Department' AND r.name = 'Department Director'),
   true,
+  true,  -- Test users are pre-verified
   CURRENT_TIMESTAMP
 );
 
@@ -152,7 +154,7 @@ INSERT INTO users (
 -- VERIFY DATA
 -- ============================================
 
--- Display inserted test users (excluding password hash)
+-- Display inserted test users (excluding password hash and verification code)
 SELECT 
   u.id,
   u.username,
@@ -162,6 +164,20 @@ SELECT
   r.name AS role_name,
   d.name AS department_name,
   u.email_notifications_enabled,
+  u.company_name,
+  u.is_verified,
+  CASE 
+    WHEN u.verification_code IS NOT NULL THEN 'HAS_CODE'
+    ELSE NULL
+  END AS verification_status,
+  CASE 
+    WHEN u.verification_code_expires_at IS NOT NULL THEN 
+      CASE 
+        WHEN u.verification_code_expires_at > CURRENT_TIMESTAMP THEN 'VALID'
+        ELSE 'EXPIRED'
+      END
+    ELSE NULL
+  END AS code_validity,
   u.created_at
 FROM users u
 JOIN department_roles dr ON u.department_role_id = dr.id
