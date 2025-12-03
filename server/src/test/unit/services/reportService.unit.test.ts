@@ -39,6 +39,7 @@ const createMockReport = (overrides?: Partial<reportEntity>): reportEntity => {
     description: 'Test Description',
     category: ReportCategory.ROADS,
     location: 'POINT(7.6869005 45.0703393)',
+    address: undefined,
     status: ReportStatus.ASSIGNED,
     isAnonymous: false,
     assigneeId: 50,
@@ -672,6 +673,7 @@ describe('ReportService additional unit tests', () => {
       lastName: 'User',
       departmentRoleId: 1,
       emailNotificationsEnabled: true,
+      isVerified: true,
       createdAt: new Date(),
       departmentRole: {
         id: 1,
@@ -881,6 +883,7 @@ describe('ReportService additional unit tests', () => {
       username: 'testuser',
       firstName: 'Test',
       lastName: 'User',
+      isVerified: true, 
       passwordHash: 'hashedpassword',
       departmentRoleId: 1,
       departmentRole: null as any,
