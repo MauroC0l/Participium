@@ -277,7 +277,7 @@ class ReportService {
   async updateReportStatus(
     reportId: number,
     newStatus: ReportStatus,
-    body: { rejectionReason?: string; resolutionNotes?: string; category?: ReportCategory },
+    body: { rejectionReason?: string; resolutionNotes?: string; category?: ReportCategory; externalAssigneeId?: number },
     userId: number
   ): Promise<Report> {
     if (isNaN(reportId) || reportId <= 0) {
@@ -302,7 +302,7 @@ class ReportService {
         if (currentStatus !== ReportStatus.PENDING_APPROVAL) {
           throw new BadRequestError(`Cannot approve report with status ${currentStatus}. Only reports with status Pending Approval can be approved.`);
         }
-        if (userRole !== UserRole.PUBLIC_RELATIONS_OFFICER) {
+        if (userRole !== SystemRoles.PUBLIC_RELATIONS_OFFICER) {
           throw new InsufficientRightsError('Only Public Relations Officers can approve reports.');
         }
         if (body.externalAssigneeId) {
@@ -310,7 +310,7 @@ class ReportService {
           if (!assignee) {
             throw new NotFoundError('External assignee not found');
           }
-          if (assignee.departmentRole?.role?.name !== UserRole.EXTERNAL_MAINTAINER) {
+          if (assignee.departmentRole?.role?.name !== SystemRoles.EXTERNAL_MAINTAINER) {
             throw new BadRequestError('User is not an external maintainer');
           }
           report.assignee = assignee;
@@ -337,7 +337,7 @@ class ReportService {
         if (currentStatus !== ReportStatus.PENDING_APPROVAL) {
             throw new BadRequestError(`Cannot reject report with status ${currentStatus}. Only reports with status Pending Approval can be rejected.`);
         }
-        if (userRole !== UserRole.PUBLIC_RELATIONS_OFFICER) {
+        if (userRole !== SystemRoles.PUBLIC_RELATIONS_OFFICER) {
             throw new InsufficientRightsError('Only Public Relations Officers can reject reports.');
         }
         if (!body.rejectionReason || body.rejectionReason.trim() === '') {

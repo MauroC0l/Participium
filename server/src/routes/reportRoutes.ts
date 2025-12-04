@@ -634,7 +634,7 @@ router.patch('/:id/assign-external', isLoggedIn, validateId('id', 'report'), rep
  */
 router.get(
   '/assigned/external/:externalMaintainerId',
-  requireRole([UserRole.TECHNICAL_MANAGER, UserRole.TECHNICAL_ASSISTANT, UserRole.PUBLIC_RELATIONS_OFFICER]),
+  requireRole(['Technical Manager', 'Technical Assistant', SystemRoles.PUBLIC_RELATIONS_OFFICER]),
   validateId('externalMaintainerId', 'external maintainer'),
   reportController.getAssignedReportsToExternalMaintainer
 );

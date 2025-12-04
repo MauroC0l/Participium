@@ -16,6 +16,7 @@ jest.mock('@controllers/reportController', () => ({
     getMyAssignedReports: jest.fn((req, res) => res.status(200).json([])),
     getAssignedReportsToExternalMaintainer: jest.fn((req, res) => res.status(200).json([])),
     updateReportStatus: jest.fn((req, res) => res.status(200).json({})),
+    assignToExternalMaintainer: jest.fn((req, res) => res.status(200).json({})),
   },
 }));
 jest.mock('@middleware/reportMiddleware', () => ({
@@ -57,7 +58,7 @@ import { validateCreateReport } from '@middleware/reportMiddleware';
 import { ReportStatus } from '@dto/ReportStatus';
 import { ReportCategory } from '@dto/ReportCategory';
 
-import { UserRole } from '@dto/UserRole';
+import { SystemRoles } from '@dto/UserRole';
 
 const app: Express = express();
 
@@ -112,12 +113,12 @@ describe('Report Routes Integration Tests', () => {
     mockIsLoggedIn.mockImplementation((req: any, res: any, next: any) => {
       const userType = req.headers['x-test-user-type'];
 
-      const roleMap: { [key: string]: UserRole } = {
-        PRO: UserRole.PUBLIC_RELATIONS_OFFICER,
-        TECHNICIAN: UserRole.TECHNICAL_ASSISTANT,
-        TECHNICAL_MANAGER: UserRole.TECHNICAL_MANAGER,
-        EXTERNAL_MAINTAINER: UserRole.EXTERNAL_MAINTAINER,
-        CITIZEN: UserRole.CITIZEN,
+      const roleMap: { [key: string]: string } = {
+        PRO: SystemRoles.PUBLIC_RELATIONS_OFFICER,
+        TECHNICIAN: 'Technical Assistant',
+        TECHNICAL_MANAGER: 'Technical Manager',
+        EXTERNAL_MAINTAINER: SystemRoles.EXTERNAL_MAINTAINER,
+        CITIZEN: SystemRoles.CITIZEN,
       };
       
       const role = roleMap[userType];
@@ -151,11 +152,11 @@ describe('Report Routes Integration Tests', () => {
         if (!userType) return res.status(401).json({ error: 'Not authenticated' });
         const rolesArray = Array.isArray(roles) ? roles : [roles];
         const roleMap: { [key: string]: string[] } = {
-          PRO: [UserRole.PUBLIC_RELATIONS_OFFICER],
-          TECHNICIAN: [UserRole.TECHNICAL_ASSISTANT],
-          TECHNICAL_MANAGER: [UserRole.TECHNICAL_MANAGER],
-          EXTERNAL_MAINTAINER: [UserRole.EXTERNAL_MAINTAINER],
-          CITIZEN: [UserRole.CITIZEN],
+          PRO: [SystemRoles.PUBLIC_RELATIONS_OFFICER],
+          TECHNICIAN: ['Technical Assistant'],
+          TECHNICAL_MANAGER: ['Technical Manager'],
+          EXTERNAL_MAINTAINER: [SystemRoles.EXTERNAL_MAINTAINER],
+          CITIZEN: [SystemRoles.CITIZEN],
         };
         const userRoles = roleMap[userType] || [];
         if (rolesArray.some(role => userRoles.includes(role))) {
