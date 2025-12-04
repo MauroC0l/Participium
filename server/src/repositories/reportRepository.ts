@@ -297,6 +297,29 @@ class ReportRepository {
   }
 
   /**
+   * Find reports assigned to a specific external maintainer
+   * @param externalAssigneeId - ID of the external maintainer to whom reports are assigned
+   * @param status - Optional status filter
+   * @returns Array of report entities
+   */
+  public async findByExternalAssigneeId(externalAssigneeId: number, status?: ReportStatus): Promise<reportEntity[]> {
+    const queryBuilder = this.repository
+      .createQueryBuilder('report')
+      .leftJoinAndSelect('report.reporter', 'reporter')
+      .leftJoinAndSelect('report.assignee', 'assignee')
+      .leftJoinAndSelect('report.photos', 'photos')
+      .where('report.externalAssigneeId = :externalAssigneeId', { externalAssigneeId });
+
+    if (status) {
+      queryBuilder.andWhere('report.status = :status', { status });
+    }
+
+    return queryBuilder
+      .orderBy('report.createdAt', 'DESC')
+      .getMany();
+  }
+
+  /**
    * Save a report entity (create or update)
    * @param report - The report entity to save
    * @returns The saved report entity

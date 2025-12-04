@@ -244,6 +244,20 @@ class ReportService {
   }
 
   /**
+   * Get reports assigned to a specific external maintainer
+   * @param externalMaintainerId - ID of the external maintainer to whom reports are assigned
+   * @param status - Optional status filter
+   * @returns Array of reports assigned to the external maintainer
+   */
+  async getAssignedReportsToExternalMaintainer(
+    externalMaintainerId: number,
+    status?: ReportStatus
+  ): Promise<ReportResponse[]> {
+    const reports = await reportRepository.findByExternalAssigneeId(externalMaintainerId, status);
+    return reports.map(report => mapReportEntityToReportResponse(report));
+  }
+
+  /**
    * Get a specific report by ID
    * Not yet implemented
    */
