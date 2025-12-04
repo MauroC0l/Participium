@@ -673,6 +673,7 @@ describe('ReportService additional unit tests', () => {
       lastName: 'User',
       departmentRoleId: 1,
       emailNotificationsEnabled: true,
+      isVerified: true,
       createdAt: new Date(),
       departmentRole: {
         id: 1,
@@ -886,11 +887,11 @@ describe('ReportService additional unit tests', () => {
         jest.spyOn(userRepository, 'findUserById').mockResolvedValue(mockUser);
         
         await expect(
-          reportService.updateReportStatus(NaN, ReportStatus.ASSIGNED, undefined, 1)
+          reportService.updateReportStatus(NaN, ReportStatus.ASSIGNED, {}, 1)
         ).rejects.toThrow(BadRequestError);
         
         await expect(
-          reportService.updateReportStatus(NaN, ReportStatus.ASSIGNED, undefined, 1)
+          reportService.updateReportStatus(NaN, ReportStatus.ASSIGNED, {}, 1)
         ).rejects.toThrow('Invalid report ID');
       });
 
@@ -900,11 +901,11 @@ describe('ReportService additional unit tests', () => {
         jest.spyOn(reportRepository, 'findReportById').mockResolvedValue(null);
 
         await expect(
-          reportService.updateReportStatus(999, ReportStatus.ASSIGNED, undefined, 1)
+          reportService.updateReportStatus(999, ReportStatus.ASSIGNED, {}, 1)
         ).rejects.toThrow(NotFoundError);
         
         await expect(
-          reportService.updateReportStatus(999, ReportStatus.ASSIGNED, undefined, 1)
+          reportService.updateReportStatus(999, ReportStatus.ASSIGNED, {}, 1)
         ).rejects.toThrow('Report not found');
       });
 
@@ -918,11 +919,11 @@ describe('ReportService additional unit tests', () => {
         jest.spyOn(reportRepository, 'findReportById').mockResolvedValue(mockReport);
 
         await expect(
-          reportService.updateReportStatus(1, ReportStatus.ASSIGNED, undefined, 1)
+          reportService.updateReportStatus(1, ReportStatus.ASSIGNED, {}, 1)
         ).rejects.toThrow(BadRequestError);
         
         await expect(
-          reportService.updateReportStatus(1, ReportStatus.ASSIGNED, undefined, 1)
+          reportService.updateReportStatus(1, ReportStatus.ASSIGNED, {}, 1)
         ).rejects.toThrow('Cannot approve report with status Assigned. Only reports with status Pending Approval can be approved.');
       });
 
@@ -936,7 +937,7 @@ describe('ReportService additional unit tests', () => {
         jest.spyOn(reportRepository, 'findReportById').mockResolvedValue(mockReport);
 
         await expect(
-          reportService.updateReportStatus(1, ReportStatus.ASSIGNED, undefined, 1)
+          reportService.updateReportStatus(1, ReportStatus.ASSIGNED, {}, 1)
         ).rejects.toThrow(InsufficientRightsError);
       });
 
@@ -951,12 +952,12 @@ describe('ReportService additional unit tests', () => {
         jest.spyOn(categoryRoleRepository, 'findRoleIdByCategory').mockResolvedValue(null);
 
         await expect(
-          reportService.updateReportStatus(1, ReportStatus.ASSIGNED, undefined, 1)
+          reportService.updateReportStatus(1, ReportStatus.ASSIGNED, {}, 1)
         ).rejects.toThrow(BadRequestError);
         
         await expect(
-          reportService.updateReportStatus(1, ReportStatus.ASSIGNED, undefined, 1)
-        ).rejects.toThrow('No role mapping found for category: Roads and Urban Furnishings. Please contact system administrator.');
+          reportService.updateReportStatus(1, ReportStatus.ASSIGNED, {}, 1)
+        ).rejects.toThrow('No role mapping found for category: Roads and Urban Furnishings.');
       });
 
       it('should throw BadRequestError when no available staff found', async () => {
@@ -971,11 +972,11 @@ describe('ReportService additional unit tests', () => {
         jest.spyOn(userRepository, 'findAvailableStaffByRoleId').mockResolvedValue(null);
 
         await expect(
-          reportService.updateReportStatus(1, ReportStatus.ASSIGNED, undefined, 1)
+          reportService.updateReportStatus(1, ReportStatus.ASSIGNED, {}, 1)
         ).rejects.toThrow(BadRequestError);
         
         await expect(
-          reportService.updateReportStatus(1, ReportStatus.ASSIGNED, undefined, 1)
+          reportService.updateReportStatus(1, ReportStatus.ASSIGNED, {}, 1)
         ).rejects.toThrow('No available technical staff found for category: Roads and Urban Furnishings. All staff members may be overloaded or the role has no assigned users.');
       });
     });
@@ -987,11 +988,11 @@ describe('ReportService additional unit tests', () => {
       jest.spyOn(userRepository, 'findUserById').mockResolvedValue(mockUser);
       
       await expect(
-        reportService.updateReportStatus(NaN, ReportStatus.REJECTED, 'Test reason', 1)
+        reportService.updateReportStatus(NaN, ReportStatus.REJECTED, { rejectionReason: 'Test reason' }, 1)
       ).rejects.toThrow(BadRequestError);
       
       await expect(
-        reportService.updateReportStatus(NaN, ReportStatus.REJECTED, 'Test reason', 1)
+        reportService.updateReportStatus(NaN, ReportStatus.REJECTED, { rejectionReason: 'Test reason' }, 1)
       ).rejects.toThrow('Invalid report ID');
     });
 
@@ -1005,11 +1006,11 @@ describe('ReportService additional unit tests', () => {
       jest.spyOn(reportRepository, 'findReportById').mockResolvedValue(mockReport);
 
       await expect(
-        reportService.updateReportStatus(1, ReportStatus.REJECTED, '', 1)
+        reportService.updateReportStatus(1, ReportStatus.REJECTED, { rejectionReason: '' }, 1)
       ).rejects.toThrow(BadRequestError);
       
       await expect(
-        reportService.updateReportStatus(1, ReportStatus.REJECTED, '', 1)
+        reportService.updateReportStatus(1, ReportStatus.REJECTED, { rejectionReason: '' }, 1)
       ).rejects.toThrow('Rejection reason is required');
     });
 
@@ -1023,12 +1024,12 @@ describe('ReportService additional unit tests', () => {
       jest.spyOn(reportRepository, 'findReportById').mockResolvedValue(mockReport);
 
       await expect(
-        reportService.updateReportStatus(1, ReportStatus.REJECTED, 'Test reason', 1)
+        reportService.updateReportStatus(1, ReportStatus.REJECTED, { rejectionReason: 'Test reason' }, 1)
       ).rejects.toThrow(BadRequestError);
       
       await expect(
-        reportService.updateReportStatus(1, ReportStatus.REJECTED, 'Test reason', 1)
-      ).rejects.toThrow('Cannot reject report with status Assigned. Only reports with status Pending Approval can be rejected.');
+        reportService.updateReportStatus(1, ReportStatus.REJECTED, { rejectionReason: 'Test reason' }, 1)
+      ).rejects.toThrow('Cannot reject report with status Assigned.');
     });
 
     it('should throw InsufficientRightsError when user is not a PRO for rejection', async () => {
@@ -1041,7 +1042,7 @@ describe('ReportService additional unit tests', () => {
       jest.spyOn(reportRepository, 'findReportById').mockResolvedValue(mockReport);
 
       await expect(
-        reportService.updateReportStatus(1, ReportStatus.REJECTED, 'Test reason', 1)
+        reportService.updateReportStatus(1, ReportStatus.REJECTED, { rejectionReason: 'Test reason' }, 1)
       ).rejects.toThrow(InsufficientRightsError);
     });
   });

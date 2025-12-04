@@ -16,6 +16,7 @@ import { categoryRoleRepository } from '../repositories/categoryRoleRepository';
 import { userRepository } from '../repositories/userRepository';
 import { CreateReportRequest } from '../models/dto/input/CreateReportRequest';
 import { ReportResponse } from '../models/dto/output/ReportResponse';
+import { UserRole } from '@models/dto/UserRole';
 import { reportEntity } from '../models/entity/reportEntity';
 import { Report } from '@models/dto/Report'; 
 import { mapReportEntityToResponse, mapReportEntityToDTO, mapReportEntityToReportResponse } from './mapperService';
@@ -253,19 +254,19 @@ class ReportService {
   /**
    * Update the status of a report
    * @param reportId - The ID of the report to update
-   * @param status - The new status of the report
-   * @param reason - The reason for rejecting the report (if applicable)
+   * @param newStatus - The new status of the report
+   * @param body - The request body, containing additional data like reason or assignee
    * @param userId - The ID of the user updating the report
    * @returns The updated report
    */
   async updateReportStatus(
     reportId: number,
-    status: ReportStatus,
-    reason: string | undefined,
+    newStatus: ReportStatus,
+    body: { rejectionReason?: string; externalAssigneeId?: number; resolutionNotes?: string; category?: ReportCategory },
     userId: number
   ): Promise<Report> {
-    if (Number.isNaN(reportId)) {
-      throw new BadRequestError('Invalid report ID');
+    if (isNaN(reportId) || reportId <= 0) {
+      throw new BadRequestError('Invalid report ID.');
     }
 
     const report = await reportRepository.findReportById(reportId);
@@ -277,107 +278,92 @@ class ReportService {
     if (!user) {
       throw new UnauthorizedError('User not found');
     }
-
     const userRole = user.departmentRole?.role?.name;
 
-    switch (status) {
+    const currentStatus = report.status;
+
+    switch (newStatus) {
       case ReportStatus.ASSIGNED:
-        if (report.status !== ReportStatus.PENDING_APPROVAL) {
-          throw new BadRequestError(
-            `Cannot approve report with status ${report.status}. Only reports with status Pending Approval can be approved.`
-          );
+        if (currentStatus !== ReportStatus.PENDING_APPROVAL) {
+          throw new BadRequestError(`Cannot approve report with status ${currentStatus}. Only reports with status Pending Approval can be approved.`);
         }
-        if (userRole !== 'Municipal Public Relations Officer') {
-          throw new InsufficientRightsError(
-            'Only Municipal Public Relations Officers can approve reports'
-          );
+        if (userRole !== UserRole.PUBLIC_RELATIONS_OFFICER) {
+          throw new InsufficientRightsError('Only Public Relations Officers can approve reports.');
         }
-        
-        const categoryToAssign = report.category as ReportCategory;
-        const roleId = await categoryRoleRepository.findRoleIdByCategory(categoryToAssign);
-        if (!roleId) {
-          throw new BadRequestError(
-            `No role mapping found for category: ${categoryToAssign}. Please contact system administrator.`
-          );
+        if (body.externalAssigneeId) {
+          const assignee = await userRepository.findUserById(body.externalAssigneeId);
+          if (!assignee) {
+            throw new NotFoundError('External assignee not found');
+          }
+          if (assignee.departmentRole?.role?.name !== UserRole.EXTERNAL_MAINTAINER) {
+            throw new BadRequestError('User is not an external maintainer');
+          }
+          report.assignee = assignee;
+          report.assigneeId = assignee.id;
+        } else {
+          const categoryToAssign = body.category || report.category as ReportCategory;
+          const roleId = await categoryRoleRepository.findRoleIdByCategory(categoryToAssign);
+          if (!roleId) {
+            throw new BadRequestError(`No role mapping found for category: ${categoryToAssign}. Please contact system administrator.`);
+          }
+          const availableStaff = await userRepository.findAvailableStaffByRoleId(roleId);
+          if (!availableStaff) {
+            throw new BadRequestError(`No available technical staff found for category: ${categoryToAssign}. All staff members may be overloaded or the role has no assigned users.`);
+          }
+          report.assignee = availableStaff;
+          report.assigneeId = availableStaff.id;
+          if (body.category) {
+            report.category = body.category;
+          }
         }
-
-        const availableStaff = await userRepository.findAvailableStaffByRoleId(roleId);
-        if (!availableStaff) {
-          throw new BadRequestError(
-            `No available technical staff found for category: ${categoryToAssign}. All staff members may be overloaded or the role has no assigned users.`
-          );
-        }
-
-        report.status = ReportStatus.ASSIGNED;
-        report.rejectionReason = undefined;
-        report.assignee = availableStaff;
-        report.assigneeId = availableStaff.id;
         break;
-
+      
       case ReportStatus.REJECTED:
-        if (report.status !== ReportStatus.PENDING_APPROVAL) {
-          throw new BadRequestError(
-            `Cannot reject report with status ${report.status}. Only reports with status Pending Approval can be rejected.`
-          );
+        if (currentStatus !== ReportStatus.PENDING_APPROVAL) {
+            throw new BadRequestError(`Cannot reject report with status ${currentStatus}. Only reports with status Pending Approval can be rejected.`);
         }
-        if (userRole !== 'Municipal Public Relations Officer') {
-          throw new InsufficientRightsError(
-            'Only Municipal Public Relations Officers can reject reports'
-          );
+        if (userRole !== UserRole.PUBLIC_RELATIONS_OFFICER) {
+            throw new InsufficientRightsError('Only Public Relations Officers can reject reports.');
         }
-        if (!reason || reason.trim().length === 0) {
-          throw new BadRequestError('Rejection reason is required');
+        if (!body.rejectionReason || body.rejectionReason.trim() === '') {
+          throw new BadRequestError('Rejection reason is required when rejecting a report.');
         }
-        report.status = ReportStatus.REJECTED;
-        report.rejectionReason = reason;
-        break;
-
-      case ReportStatus.IN_PROGRESS:
-        if (report.status !== ReportStatus.ASSIGNED) {
-          throw new BadRequestError(
-            `Cannot start progress on report with status ${report.status}. Only assigned reports can be started.`
-          );
-        }
-        if (report.assigneeId !== userId) {
-          throw new InsufficientRightsError(
-            'Only the assigned technical staff can start progress on this report'
-          );
-        }
-        report.status = ReportStatus.IN_PROGRESS;
-        break;
-
-      case ReportStatus.SUSPENDED:
-        if (report.status !== ReportStatus.IN_PROGRESS) {
-          throw new BadRequestError(
-            `Cannot suspend report with status ${report.status}. Only reports in progress can be suspended.`
-          );
-        }
-        if (report.assigneeId !== userId) {
-          throw new InsufficientRightsError(
-            'Only the assigned technical staff can suspend this report'
-          );
-        }
-        report.status = ReportStatus.SUSPENDED;
+        report.rejectionReason = body.rejectionReason;
         break;
 
       case ReportStatus.RESOLVED:
-        if (report.status !== ReportStatus.ASSIGNED && report.status !== ReportStatus.IN_PROGRESS) {
-          throw new BadRequestError(
-            `Cannot resolve report with status ${report.status}. Only reports with status Assigned or In Progress can be resolved.`
-          );
+        if (![ReportStatus.ASSIGNED, ReportStatus.IN_PROGRESS, ReportStatus.SUSPENDED].includes(currentStatus as ReportStatus)) {
+          throw new BadRequestError(`Cannot resolve a report with status ${currentStatus}.`);
         }
-        if (report.assigneeId !== userId) {
-          throw new InsufficientRightsError(
-            'Only the assigned technical staff can resolve this report'
-          );
+        if (userRole === UserRole.EXTERNAL_MAINTAINER) {
+          if (report.assigneeId !== userId) {
+            throw new InsufficientRightsError('You can only resolve reports assigned to you.');
+          }
+        } else if (![UserRole.TECHNICAL_MANAGER, UserRole.TECHNICAL_ASSISTANT].includes(userRole as UserRole)) {
+          throw new InsufficientRightsError('You are not authorized to resolve reports.');
         }
-        report.status = ReportStatus.RESOLVED;
+        if (body.resolutionNotes) {
+          // In a real application, you would save the resolution notes
+        }
         break;
-        
+
+      case ReportStatus.IN_PROGRESS:
+        if (currentStatus !== ReportStatus.ASSIGNED || ![UserRole.TECHNICAL_MANAGER, UserRole.TECHNICAL_ASSISTANT].includes(userRole as UserRole)) {
+          throw new InsufficientRightsError('Only Technical Managers or Assistants can mark reports as in progress.');
+        }
+        break;
+
+      case ReportStatus.SUSPENDED:
+        if (currentStatus !== ReportStatus.IN_PROGRESS || ![UserRole.TECHNICAL_MANAGER, UserRole.TECHNICAL_ASSISTANT].includes(userRole as UserRole)) {
+          throw new InsufficientRightsError('Only Technical Managers or Assistants can suspend reports.');
+        }
+        break;
+
       default:
-        throw new BadRequestError(`Invalid status update: ${status}`);
+        throw new BadRequestError(`Invalid status transition to ${newStatus}.`);
     }
 
+    report.status = newStatus;
     report.updatedAt = new Date();
     const updatedReport = await reportRepository.save(report);
     return mapReportEntityToDTO(updatedReport);

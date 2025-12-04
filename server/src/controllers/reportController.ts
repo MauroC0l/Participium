@@ -141,14 +141,15 @@ class ReportController {
         throw new UnauthorizedError('Not authenticated');
       }
 
-      const userId = (req.user as User).id;
+      const userId = (req.user as any).id;
       const reportId = parseAndValidateId(req.params.id, 'report');
-      const { status, reason }: UpdateReportStatusRequest = req.body;
+      const { newStatus, status, ...body } = req.body;
+      const finalStatus = newStatus || status;
 
       const updatedReport = await reportService.updateReportStatus(
         reportId, 
-        status as ReportStatus, 
-        reason as string | undefined, 
+        finalStatus as ReportStatus, 
+        body, 
         userId
       );
       

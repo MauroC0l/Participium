@@ -53,6 +53,8 @@ import { validateCreateReport } from '@middleware/reportMiddleware';
 import { ReportStatus } from '@dto/ReportStatus';
 import { ReportCategory } from '@dto/ReportCategory';
 
+import { UserRole } from '@dto/UserRole';
+
 const app: Express = express();
 
 app.use(express.json());
@@ -104,11 +106,23 @@ describe('Report Routes Integration Tests - Approve/Reject/GetAll', () => {
     // Mock isLoggedIn middleware
     mockIsLoggedIn.mockImplementation((req: any, res: any, next: any) => {
       const userType = req.headers['x-test-user-type'];
+
+      const roleMap: { [key: string]: UserRole } = {
+        PRO: UserRole.PUBLIC_RELATIONS_OFFICER,
+        TECHNICIAN: UserRole.TECHNICAL_ASSISTANT,
+        CITIZEN: UserRole.CITIZEN,
+      };
       
-      if (userType === 'PRO' || userType === 'CITIZEN' || userType === 'TECHNICIAN') {
-        req.user = { 
+      const role = roleMap[userType];
+
+      if (role) {
+        req.user = {
           id: userType === 'PRO' ? 1 : userType === 'CITIZEN' ? 2 : 3,
-          role: userType 
+          departmentRole: {
+            role: {
+              name: role,
+            },
+          },
         };
         next();
       } else {
@@ -154,7 +168,7 @@ describe('Report Routes Integration Tests - Approve/Reject/GetAll', () => {
     // Mock updateReportStatus controller
     mockUpdateReportStatus.mockImplementation((req, res) => {
         const id = parseInt(req.params.id, 10);
-        const { status, reason } = req.body;
+        const { newStatus, ...body } = req.body;
 
         if (isNaN(id)) {
             return res.status(400).json({ error: 'Invalid report ID' });
@@ -164,19 +178,19 @@ describe('Report Routes Integration Tests - Approve/Reject/GetAll', () => {
             return res.status(404).json({ error: 'Report not found' });
         }
 
-        if (!status) {
+        if (!newStatus) {
             return res.status(400).json({ error: 'Status is required' });
         }
 
-        if (status === ReportStatus.REJECTED && (!reason || reason.trim().length === 0)) {
+        if (newStatus === ReportStatus.REJECTED && (!body.reason || body.reason.trim().length === 0)) {
             return res.status(400).json({ error: 'Rejection reason is required' });
         }
 
         res.status(200).json({
             id,
             title: 'Updated Report',
-            status,
-            rejection_reason: reason,
+            status: newStatus,
+            rejection_reason: body.reason,
             message: 'Report status updated successfully',
         });
     });
@@ -237,7 +251,7 @@ describe('Report Routes Integration Tests - Approve/Reject/GetAll', () => {
       const res = await request(app)
         .put('/api/reports/1/status')
         .set('x-test-user-type', 'PRO')
-        .send({ status: ReportStatus.ASSIGNED });
+        .send({ newStatus: ReportStatus.ASSIGNED });
 
       expect(res.status).toBe(200);
       expect(mockUpdateReportStatus).toHaveBeenCalledTimes(1);
@@ -247,7 +261,7 @@ describe('Report Routes Integration Tests - Approve/Reject/GetAll', () => {
       const res = await request(app)
         .put('/api/reports/1/status')
         .set('x-test-user-type', 'PRO')
-        .send({ status: ReportStatus.REJECTED, reason: 'Report does not meet criteria' });
+        .send({ newStatus: ReportStatus.REJECTED, reason: 'Report does not meet criteria' });
 
       expect(res.status).toBe(200);
       expect(mockUpdateReportStatus).toHaveBeenCalledTimes(1);
@@ -257,7 +271,7 @@ describe('Report Routes Integration Tests - Approve/Reject/GetAll', () => {
         const res = await request(app)
             .put('/api/reports/1/status')
             .set('x-test-user-type', 'TECHNICIAN')
-            .send({ status: ReportStatus.RESOLVED });
+            .send({ newStatus: ReportStatus.RESOLVED });
 
         expect(res.status).toBe(200);
         expect(mockUpdateReportStatus).toHaveBeenCalledTimes(1);
@@ -276,7 +290,7 @@ describe('Report Routes Integration Tests - Approve/Reject/GetAll', () => {
         const res = await request(app)
             .put('/api/reports/1/status')
             .set('x-test-user-type', 'PRO')
-            .send({ status: ReportStatus.REJECTED });
+            .send({ newStatus: ReportStatus.REJECTED });
 
         expect(res.status).toBe(400);
     });
@@ -285,7 +299,7 @@ describe('Report Routes Integration Tests - Approve/Reject/GetAll', () => {
         const res = await request(app)
             .put('/api/reports/999/status')
             .set('x-test-user-type', 'PRO')
-            .send({ status: ReportStatus.ASSIGNED });
+            .send({ newStatus: ReportStatus.ASSIGNED });
 
         expect(res.status).toBe(404);
     });
@@ -294,7 +308,7 @@ describe('Report Routes Integration Tests - Approve/Reject/GetAll', () => {
         const res = await request(app)
             .put('/api/reports/invalid/status')
             .set('x-test-user-type', 'PRO')
-            .send({ status: ReportStatus.ASSIGNED });
+            .send({ newStatus: ReportStatus.ASSIGNED });
 
         expect(res.status).toBe(400);
     });
