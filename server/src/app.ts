@@ -12,7 +12,7 @@ import reportRoutes from '@routes/reportRoutes';
 import departmentRoutes from "@routes/departmentRoutes";
 import municipalityUserRoutes from "@routes/municipalityUserRoutes";
 import companyRoutes from "@routes/companyRoutes";
-import {errorHandler} from "@middleware/errorMiddelware";
+import {errorHandler} from "@middleware/errorMiddleware";
 
 const app: Application = express();
 
