@@ -64,20 +64,26 @@ export const getReports = async () => {
  * @param {string} [reason] - The reason for rejection (if applicable)
  */
 export const updateReportStatus = async (reportId, status, reason = null) => {
-  const bodyData = { status };
+  const bodyData = { newStatus: status }; 
+  
   if (reason) {
-    bodyData.reason = reason;
+    if (status === 'Rejected') {
+        bodyData.rejectionReason = reason;
+    } else {
+        bodyData.reason = reason; // Fallback per altri stati se necessario
+    }
   }
 
   const response = await fetch(`/api/reports/${reportId}/status`, {
     method: "PUT",
-    credentials: "include",
+    credentials: "include", // Importante per i cookie di sessione
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify(bodyData),
   });
 
+  // Assumo tu abbia una funzione helper handleResponse definita da qualche parte
   return handleResponse(response);
 };
 
