@@ -2,8 +2,8 @@
 import { reportService } from '../../../services/reportService';
 import { BadRequestError } from '../../../models/errors/BadRequestError';
 import { ReportCategory } from '../../../models/dto/ReportCategory';
-import { reportEntity } from '@models/entity/reportEntity';
-import { userEntity } from '@models/entity/userEntity';
+import { ReportEntity } from '@models/entity/reportEntity';
+import { UserEntity } from '@models/entity/userEntity';
 import { ReportStatus } from '@models/dto/ReportStatus';
 import { UnauthorizedError } from '@models/errors/UnauthorizedError';
 import { InsufficientRightsError } from '@models/errors/InsufficientRightsError';
@@ -28,8 +28,8 @@ jest.mock('@utils/photoValidationUtils');
 
 
 // Helper function to create mock report entities
-const createMockReport = (overrides?: Partial<reportEntity>): reportEntity => {
-  const mockReport: reportEntity = {
+const createMockReport = (overrides?: Partial<ReportEntity>): ReportEntity => {
+  const mockReport: ReportEntity = {
     id: 1,
     reporterId: 100,
     title: 'Test Report',
@@ -43,8 +43,8 @@ const createMockReport = (overrides?: Partial<reportEntity>): reportEntity => {
     rejectionReason: '',
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-02'),
-    reporter: {} as userEntity,
-    assignee: {} as userEntity,
+    reporter: {} as UserEntity,
+    assignee: {} as UserEntity,
     photos: [],
     ...overrides,
   };
@@ -235,7 +235,7 @@ describe('ReportService', () => {
         // Arrange
         const userId = 50;
         const mockUser = createMockUser('Water Network staff member');
-        const mockReports: reportEntity[] = [
+        const mockReports: ReportEntity[] = [
           createMockReport({ id: 1, assigneeId: userId, status: ReportStatus.ASSIGNED }),
           createMockReport({ id: 2, assigneeId: userId, status: ReportStatus.IN_PROGRESS }),
           createMockReport({ id: 3, assigneeId: userId, status: ReportStatus.RESOLVED }),
@@ -304,7 +304,7 @@ describe('ReportService', () => {
         const userId = 50;
         const mockUser = createMockUser('Water Network staff member');
         const status = ReportStatus.ASSIGNED;
-        const mockReports: reportEntity[] = [
+        const mockReports: ReportEntity[] = [
           createMockReport({ id: 1, assigneeId: userId, status: ReportStatus.ASSIGNED }),
           createMockReport({ id: 2, assigneeId: userId, status: ReportStatus.ASSIGNED }),
         ];
@@ -331,7 +331,7 @@ describe('ReportService', () => {
         const userId = 50;
         const mockUser = createMockUser('Water Network staff member');
         const status = ReportStatus.IN_PROGRESS;
-        const mockReports: reportEntity[] = [
+        const mockReports: ReportEntity[] = [
           createMockReport({ id: 1, assigneeId: userId, status: ReportStatus.IN_PROGRESS }),
           createMockReport({ id: 3, assigneeId: userId, status: ReportStatus.IN_PROGRESS }),
         ];
@@ -358,7 +358,7 @@ describe('ReportService', () => {
         const userId = 50;
         const mockUser = createMockUser('Water Network staff member');
         const status = ReportStatus.RESOLVED;
-        const mockReports: reportEntity[] = [
+        const mockReports: ReportEntity[] = [
           createMockReport({ id: 1, assigneeId: userId, status: ReportStatus.RESOLVED }),
           createMockReport({ id: 2, assigneeId: userId, status: ReportStatus.RESOLVED }),
         ];
@@ -403,7 +403,7 @@ describe('ReportService', () => {
         // Arrange
         const userId = 50;
         const mockUser = createMockUser('Water Network staff member');
-        const mockReports: reportEntity[] = [
+        const mockReports: ReportEntity[] = [
           createMockReport({ id: 1, assigneeId: userId, category: ReportCategory.ROADS }),
           createMockReport({ id: 2, assigneeId: userId, category: ReportCategory.ROADS }),
         ];
@@ -430,7 +430,7 @@ describe('ReportService', () => {
         // Arrange
         const userId = 50;
         const mockUser = createMockUser('Water Network staff member');
-        const mockReports: reportEntity[] = [
+        const mockReports: ReportEntity[] = [
           createMockReport({ id: 1, assigneeId: userId }),
           createMockReport({ id: 2, assigneeId: userId }),
           createMockReport({ id: 3, assigneeId: userId }),
@@ -454,7 +454,7 @@ describe('ReportService', () => {
         // Arrange
         const userId = 50;
         const mockUser = createMockUser('Water Network staff member');
-        const mockReports: reportEntity[] = [
+        const mockReports: ReportEntity[] = [
           createMockReport({ id: 1, assigneeId: userId, title: 'Report 1' }),
         ];
 
@@ -496,7 +496,7 @@ describe('ReportService', () => {
         // Arrange
         const userId = 50;
         const mockUser = createMockUser('Water Network staff member');
-        const mockReports: reportEntity[] = [createMockReport({ id: 1, assigneeId: userId })];
+        const mockReports: ReportEntity[] = [createMockReport({ id: 1, assigneeId: userId })];
 
         (userRepository.findUserById as jest.Mock).mockResolvedValue(mockUser);
         jest.spyOn(reportRepository, 'findByAssigneeId').mockResolvedValue(mockReports);
@@ -527,7 +527,7 @@ describe('ReportService', () => {
         // Arrange
         const userId = 50;
         const mockUser = createMockUser('Water Network staff member');
-        const mockReports: reportEntity[] = [
+        const mockReports: ReportEntity[] = [
           createMockReport({
             id: 1,
             assigneeId: userId,
@@ -558,7 +558,7 @@ describe('ReportService', () => {
         const anotherUserId = 99;
 
         // Mock should only return reports for the requested user
-        const mockReports: reportEntity[] = [
+        const mockReports: ReportEntity[] = [
           createMockReport({ id: 1, assigneeId: userId }),
           createMockReport({ id: 2, assigneeId: userId }),
         ];
@@ -582,7 +582,7 @@ describe('ReportService', () => {
         // Arrange
         const userId = 50;
         const mockUser = createMockUser('Water Network staff member');
-        const mockReports: reportEntity[] = Array.from({ length: 100 }, (_, i) =>
+        const mockReports: ReportEntity[] = Array.from({ length: 100 }, (_, i) =>
           createMockReport({ id: i + 1, assigneeId: userId })
         );
 
@@ -609,7 +609,7 @@ describe('ReportService', () => {
           id: userId
         });
 
-        const mockReports: reportEntity[] = [
+        const mockReports: ReportEntity[] = [
           createMockReport({ id: 1, assigneeId: userId }),
           createMockReport({ id: 2, assigneeId: userId })
         ];
@@ -638,17 +638,17 @@ describe('ReportService', () => {
 
   describe('getAssignedReportsToExternalMaintainer', () => {
     const externalMaintainerId = 50;
-    const mockReportAssigned: reportEntity = createMockReport({ 
+    const mockReportAssigned: ReportEntity = createMockReport({ 
       id: 1, 
       assigneeId: externalMaintainerId, 
       status: ReportStatus.ASSIGNED 
     });
-    const mockReportInProgress: reportEntity = createMockReport({ 
+    const mockReportInProgress: ReportEntity = createMockReport({ 
       id: 2, 
       assigneeId: externalMaintainerId, 
       status: ReportStatus.IN_PROGRESS 
     });
-    const mockReportResolved: reportEntity = createMockReport({ 
+    const mockReportResolved: ReportEntity = createMockReport({ 
       id: 3, 
       assigneeId: externalMaintainerId, 
       status: ReportStatus.RESOLVED 
@@ -665,7 +665,7 @@ describe('ReportService', () => {
 
     it('should return all reports assigned to the external maintainer without status filter', async () => {
       // Arrange
-      const mockReports: reportEntity[] = [mockReportAssigned, mockReportInProgress, mockReportResolved];
+      const mockReports: ReportEntity[] = [mockReportAssigned, mockReportInProgress, mockReportResolved];
       jest.spyOn(reportRepository, 'findByExternalAssigneeId').mockResolvedValue(mockReports);
       (mapReportEntityToReportResponse as jest.Mock).mockImplementation((report) => {
         if (report.id === 1) return mockMappedReportAssigned;
@@ -686,7 +686,7 @@ describe('ReportService', () => {
 
     it('should return only ASSIGNED reports when status filter is ASSIGNED', async () => {
       // Arrange
-      const mockReports: reportEntity[] = [mockReportAssigned];
+      const mockReports: ReportEntity[] = [mockReportAssigned];
       jest.spyOn(reportRepository, 'findByExternalAssigneeId').mockResolvedValue(mockReports);
       (mapReportEntityToReportResponse as jest.Mock).mockReturnValue(mockMappedReportAssigned);
 
@@ -726,7 +726,7 @@ describe('ReportService', () => {
 
     it('should propagate mapper errors', async () => {
       // Arrange
-      const mockReports: reportEntity[] = [mockReportAssigned];
+      const mockReports: ReportEntity[] = [mockReportAssigned];
       jest.spyOn(reportRepository, 'findByExternalAssigneeId').mockResolvedValue(mockReports);
       (mapReportEntityToReportResponse as jest.Mock).mockImplementation(() => {
         throw new Error('Mapping failed');
@@ -804,7 +804,7 @@ describe('ReportService additional unit tests', () => {
     const makeUser = (roleName: string) => ({
       id: 1,
       departmentRole: { role: { name: roleName } },
-    }) as userEntity;
+    }) as UserEntity;
 
     it('throws UnauthorizedError when user not found', async () => {
       (userRepository.findUserById as jest.Mock).mockResolvedValue(null);
@@ -812,7 +812,7 @@ describe('ReportService additional unit tests', () => {
     });
 
     it('throws UnauthorizedError when user role missing', async () => {
-      (userRepository.findUserById as jest.Mock).mockResolvedValue({ id: 1 } as userEntity);
+      (userRepository.findUserById as jest.Mock).mockResolvedValue({ id: 1 } as UserEntity);
       await expect(reportService.getAllReports(1)).rejects.toThrow(UnauthorizedError);
     });
 
@@ -831,7 +831,7 @@ describe('ReportService additional unit tests', () => {
     });
   });
   describe('getAllReports', () => {
-    const createMockUser = (role: string, overrides?: Partial<userEntity>): userEntity => ({
+    const createMockUser = (role: string, overrides?: Partial<UserEntity>): UserEntity => ({
       id: 1,
       email: 'test@example.com',
       username: 'testuser',

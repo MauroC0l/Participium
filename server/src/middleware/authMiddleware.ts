@@ -1,7 +1,7 @@
 import { InsufficientRightsError } from "@models/errors/InsufficientRightsError";
 import { UnauthorizedError } from "@models/errors/UnauthorizedError";
 import { NextFunction, Response, Request, RequestHandler } from "express";
-import { userEntity } from "@models/entity/userEntity";
+import { UserEntity } from "@models/entity/userEntity";
 import { isTechnicalStaff } from "@dto/UserRole";
 
 /**
@@ -11,7 +11,7 @@ function getUserRoleName(user: any): string | undefined {
   if (!user) return undefined;
   
   // If user is a userEntity with departmentRole relation
-  const userEntityData = user as userEntity;
+  const userEntityData = user as UserEntity;
   return userEntityData.departmentRole?.role?.name;
 }
 

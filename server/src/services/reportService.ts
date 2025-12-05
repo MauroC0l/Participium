@@ -18,12 +18,12 @@ import { companyRepository } from '../repositories/companyRepository';
 import { CreateReportRequest } from '../models/dto/input/CreateReportRequest';
 import { ReportResponse } from '../models/dto/output/ReportResponse';
 import { SystemRoles, isTechnicalStaff } from '@models/dto/UserRole';
-import { reportEntity } from '../models/entity/reportEntity';
+import { ReportEntity } from '../models/entity/reportEntity';
 import { Report } from '@models/dto/Report'; 
 import { mapReportEntityToResponse, mapReportEntityToDTO, mapReportEntityToReportResponse } from './mapperService';
 import { commentRepository } from '../repositories/commentRepository';
 import { CommentResponse } from '../models/dto/output/CommentResponse';
-import { commentEntity } from '../models/entity/commentEntity';
+import { CommentEntity } from '../models/entity/commentEntity';
 
 /**
  * Report Service
@@ -152,7 +152,7 @@ class ReportService {
       throw new BadRequestError(photoValidation.error!);
     }
 
-    let createdReport: reportEntity | null = null;
+    let createdReport: ReportEntity | null = null;
 
     try {
       // Prepare report data for repository
@@ -297,7 +297,7 @@ class ReportService {
     body: { rejectionReason?: string; resolutionNotes?: string; category?: ReportCategory; externalAssigneeId?: number },
     userId: number
   ): Promise<Report> {
-    if (isNaN(reportId) || reportId <= 0) {
+    if (Number.isNaN(reportId) || reportId <= 0) {
       throw new BadRequestError('Invalid report ID.');
     }
 
@@ -550,7 +550,7 @@ class ReportService {
    * @param comment - The comment entity
    * @returns Comment response DTO
    */
-  private mapCommentToResponse(comment: commentEntity): CommentResponse {
+  private mapCommentToResponse(comment: CommentEntity): CommentResponse {
     return {
       id: comment.id,
       reportId: comment.reportId,

@@ -1,5 +1,5 @@
 import { AppDataSource } from '../database/connection';
-import { reportEntity } from '@entity/reportEntity';
+import { ReportEntity } from '@entity/reportEntity';
 import { MapReportResponse } from '../models/dto/output/MapReportResponse';
 import { ClusteredReportResponse } from '../models/dto/output/ClusteredReportResponse';
 import { ReportCategory } from '../models/dto/ReportCategory';
@@ -14,10 +14,10 @@ import { photoRepository } from "./photoRepository";
  */
 class ReportRepository {
 
-    private repository : Repository<reportEntity>;
+    private readonly repository : Repository<ReportEntity>;
 
     constructor(){
-        this.repository = AppDataSource.getRepository(reportEntity);
+        this.repository = AppDataSource.getRepository(ReportEntity);
     }
 
 
@@ -84,8 +84,8 @@ class ReportRepository {
             title: row.report_title,
             category: row.report_category as ReportCategory,
             location: {
-                latitude: parseFloat(row.latitude),
-                longitude: parseFloat(row.longitude)
+                latitude: Number.parseFloat(row.latitude),
+                longitude: Number.parseFloat(row.longitude)
             },
             address: row.report_address,
             status: row.report_status as ReportStatus,
@@ -167,10 +167,10 @@ class ReportRepository {
         return rawResults.map((row: any) => ({
             clusterId: `cluster_${row.grid_lat}_${row.grid_lng}`,
             location: {
-                latitude: parseFloat(row.latitude),
-                longitude: parseFloat(row.longitude)
+                latitude: Number.parseFloat(row.latitude),
+                longitude: Number.parseFloat(row.longitude)
             },
-            reportCount: parseInt(row.report_count),
+            reportCount: Number.parseInt(row.report_count),
             reportIds: row.report_ids
         }));
     }
@@ -189,7 +189,7 @@ class ReportRepository {
         // zoom 9-10: ~0.05 degree (~5.5km)
         // zoom 11-12: ~0.01 degree (~1.1km)
 
-        if (zoom <= 5) return 1.0;
+        if (zoom <= 5) return 1;
         if (zoom <= 8) return 0.1;
         if (zoom <= 10) return 0.05;
         return 0.01;
@@ -202,9 +202,9 @@ class ReportRepository {
    * @returns The created report entity with photos saved.
    */
   public async createReport(
-        reportData: Omit<reportEntity, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'reporter' | 'assignee' | 'assigneeId' | 'photos'>,
+        reportData: Omit<ReportEntity, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'reporter' | 'assignee' | 'assigneeId' | 'photos'>,
         filePaths: string[]
-    ): Promise<reportEntity> {
+    ): Promise<ReportEntity> {
     
     // Extract location separately since it needs special handling for PostGIS
     const { location, ...otherData } = reportData;
@@ -233,7 +233,7 @@ class ReportRepository {
     
     return this.repository.findOne({
         where: { id: reportId },
-    }) as Promise<reportEntity>;
+    }) as Promise<ReportEntity>;
   }
 
   /**
@@ -241,7 +241,7 @@ class ReportRepository {
    * @param id The ID of the report.
    * @returns The report entity or null if not found.
    */
-  public async findReportById(id: number): Promise<reportEntity | null> {
+  public async findReportById(id: number): Promise<ReportEntity | null> {
     return await this.repository.findOne({
       where: { id },
       relations: ['reporter', 'assignee', 'photos']
@@ -257,7 +257,7 @@ class ReportRepository {
   public async findAllReports(
     status?: ReportStatus,
     category?: ReportCategory
-  ): Promise<reportEntity[]> {
+  ): Promise<ReportEntity[]> {
     const query = this.repository
       .createQueryBuilder('report')
       .leftJoinAndSelect('report.reporter', 'reporter')
@@ -282,7 +282,7 @@ class ReportRepository {
    * @param status - Optional status filter
    * @returns Array of report entities
    */
-  public async findByAssigneeId(assigneeId: number, status?: ReportStatus): Promise<reportEntity[]> {
+  public async findByAssigneeId(assigneeId: number, status?: ReportStatus): Promise<ReportEntity[]> {
     const queryBuilder = this.repository
       .createQueryBuilder('report')
       .leftJoinAndSelect('report.reporter', 'reporter')
@@ -305,7 +305,7 @@ class ReportRepository {
    * @param status - Optional status filter
    * @returns Array of report entities
    */
-  public async findByExternalAssigneeId(externalMaintainerId: number, status?: ReportStatus): Promise<reportEntity[]> {
+  public async findByExternalAssigneeId(externalMaintainerId: number, status?: ReportStatus): Promise<ReportEntity[]> {
     const queryBuilder = this.repository
       .createQueryBuilder('report')
       .leftJoinAndSelect('report.reporter', 'reporter')
@@ -330,7 +330,7 @@ class ReportRepository {
    * @param report - The report entity to save
    * @returns The saved report entity
    */
-  public async save(report: reportEntity): Promise<reportEntity> {
+  public async save(report: ReportEntity): Promise<ReportEntity> {
     return await this.repository.save(report);
   }
 }

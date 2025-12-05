@@ -8,20 +8,20 @@ import {
   JoinColumn, 
   OneToMany 
 } from "typeorm";
-import { userEntity } from "./userEntity";
-import { photoEntity } from "./photoEntity";
+import { UserEntity } from "./userEntity";
+import { PhotoEntity } from "./photoEntity";
 
 @Entity("reports")
-export class reportEntity {
+export class ReportEntity {
   @PrimaryGeneratedColumn()
   id!: number;
 
   @Column()
   reporterId!: number;
 
-  @ManyToOne(() => userEntity)
+  @ManyToOne(() => UserEntity)
   @JoinColumn({ name: "reporter_id" })
-  reporter!: userEntity;
+  reporter!: UserEntity;
 
   @Column({ type: "text" })
   title!: string;
@@ -74,22 +74,22 @@ export class reportEntity {
   @Column({ nullable: true })
   assigneeId?: number;
 
-  @ManyToOne(() => userEntity, { nullable: true })
+  @ManyToOne(() => UserEntity, { nullable: true })
   @JoinColumn({ name: "assignee_id" })
-  assignee?: userEntity;
+  assignee?: UserEntity;
 
   @Column({ nullable: true })
   externalAssigneeId?: number;
 
-  @ManyToOne(() => userEntity, { nullable: true })
+  @ManyToOne(() => UserEntity, { nullable: true })
   @JoinColumn({ name: "external_assignee_id" })
-  externalAssignee?: userEntity;
+  externalAssignee?: UserEntity;
 
-  @OneToMany(() => photoEntity, (photo) => photo.report, {
+  @OneToMany(() => PhotoEntity, (photo) => photo.report, {
     cascade: true,
     eager: true 
   })
-  photos!: photoEntity[];
+  photos!: PhotoEntity[];
 
   @CreateDateColumn({ type: "timestamptz" })
   createdAt!: Date;

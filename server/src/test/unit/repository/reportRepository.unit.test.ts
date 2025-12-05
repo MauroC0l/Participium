@@ -1,5 +1,5 @@
 import { reportRepository } from '../../../repositories/reportRepository';
-import { reportEntity } from '../../../models/entity/reportEntity';
+import { ReportEntity } from '../../../models/entity/reportEntity';
 import { ReportStatus } from '../../../models/dto/ReportStatus';
 import { ReportCategory } from '../../../models/dto/ReportCategory';
 
@@ -10,14 +10,14 @@ describe('ReportRepository', () => {
 
   describe('findReportById', () => {
     it('should call findReportById with correct parameters', async () => {
-      const mockReport: Partial<reportEntity> = {
+      const mockReport: Partial<ReportEntity> = {
         id: 1,
         title: 'Test Report',
         status: ReportStatus.PENDING_APPROVAL,
         category: ReportCategory.ROADS
       };
 
-      jest.spyOn(reportRepository, 'findReportById').mockResolvedValue(mockReport as reportEntity);
+      jest.spyOn(reportRepository, 'findReportById').mockResolvedValue(mockReport as ReportEntity);
 
       const result = await reportRepository.findReportById(1);
 
@@ -35,7 +35,7 @@ describe('ReportRepository', () => {
     });
 
     it('should return report with all properties', async () => {
-      const mockReport: Partial<reportEntity> = {
+      const mockReport: Partial<ReportEntity> = {
         id: 1,
         title: 'Test Report',
         reporter: {
@@ -51,7 +51,7 @@ describe('ReportRepository', () => {
         ]
       };
 
-      jest.spyOn(reportRepository, 'findReportById').mockResolvedValue(mockReport as reportEntity);
+      jest.spyOn(reportRepository, 'findReportById').mockResolvedValue(mockReport as ReportEntity);
 
       const result = await reportRepository.findReportById(1);
 
@@ -67,12 +67,12 @@ describe('ReportRepository', () => {
   describe('findAllReports', () => {
     describe('without filters', () => {
       it('should return all reports when no filters provided', async () => {
-        const mockReports: Partial<reportEntity>[] = [
+        const mockReports: Partial<ReportEntity>[] = [
           { id: 1, title: 'Report 1' },
           { id: 2, title: 'Report 2' }
         ];
 
-        jest.spyOn(reportRepository, 'findAllReports').mockResolvedValue(mockReports as reportEntity[]);
+        jest.spyOn(reportRepository, 'findAllReports').mockResolvedValue(mockReports as ReportEntity[]);
 
         const result = await reportRepository.findAllReports();
 
@@ -93,11 +93,11 @@ describe('ReportRepository', () => {
 
     describe('with status filter', () => {
       it('should filter by PENDING_APPROVAL status', async () => {
-        const mockReports: Partial<reportEntity>[] = [
+        const mockReports: Partial<ReportEntity>[] = [
           { id: 1, status: ReportStatus.PENDING_APPROVAL }
         ];
 
-        jest.spyOn(reportRepository, 'findAllReports').mockResolvedValue(mockReports as reportEntity[]);
+        jest.spyOn(reportRepository, 'findAllReports').mockResolvedValue(mockReports as ReportEntity[]);
 
         const result = await reportRepository.findAllReports(ReportStatus.PENDING_APPROVAL);
 
@@ -140,11 +140,11 @@ describe('ReportRepository', () => {
 
     describe('with category filter', () => {
       it('should filter by ROADS category', async () => {
-        const mockReports: Partial<reportEntity>[] = [
+        const mockReports: Partial<ReportEntity>[] = [
           { id: 1, category: ReportCategory.ROADS }
         ];
 
-        jest.spyOn(reportRepository, 'findAllReports').mockResolvedValue(mockReports as reportEntity[]);
+        jest.spyOn(reportRepository, 'findAllReports').mockResolvedValue(mockReports as ReportEntity[]);
 
         const result = await reportRepository.findAllReports(undefined, ReportCategory.ROADS);
 
@@ -171,7 +171,7 @@ describe('ReportRepository', () => {
 
     describe('with combined filters', () => {
       it('should filter by both status and category', async () => {
-        const mockReports: Partial<reportEntity>[] = [
+        const mockReports: Partial<ReportEntity>[] = [
           {
             id: 1,
             status: ReportStatus.ASSIGNED,
@@ -179,7 +179,7 @@ describe('ReportRepository', () => {
           }
         ];
 
-        jest.spyOn(reportRepository, 'findAllReports').mockResolvedValue(mockReports as reportEntity[]);
+        jest.spyOn(reportRepository, 'findAllReports').mockResolvedValue(mockReports as ReportEntity[]);
 
         const result = await reportRepository.findAllReports(
           ReportStatus.ASSIGNED,
@@ -199,12 +199,12 @@ describe('ReportRepository', () => {
     describe('without status filter', () => {
       it('should find all reports assigned to specific user', async () => {
         const assigneeId = 50;
-        const mockReports: Partial<reportEntity>[] = [
+        const mockReports: Partial<ReportEntity>[] = [
           { id: 1, assigneeId: 50 },
           { id: 2, assigneeId: 50 }
         ];
 
-        jest.spyOn(reportRepository, 'findByAssigneeId').mockResolvedValue(mockReports as reportEntity[]);
+        jest.spyOn(reportRepository, 'findByAssigneeId').mockResolvedValue(mockReports as ReportEntity[]);
 
         const result = await reportRepository.findByAssigneeId(assigneeId);
 
@@ -225,11 +225,11 @@ describe('ReportRepository', () => {
     describe('with status filter', () => {
       it('should filter by ASSIGNED status', async () => {
         const assigneeId = 50;
-        const mockReports: Partial<reportEntity>[] = [
+        const mockReports: Partial<ReportEntity>[] = [
           { id: 1, assigneeId: 50, status: ReportStatus.ASSIGNED }
         ];
 
-        jest.spyOn(reportRepository, 'findByAssigneeId').mockResolvedValue(mockReports as reportEntity[]);
+        jest.spyOn(reportRepository, 'findByAssigneeId').mockResolvedValue(mockReports as ReportEntity[]);
 
         const result = await reportRepository.findByAssigneeId(assigneeId, ReportStatus.ASSIGNED);
 
@@ -259,7 +259,7 @@ describe('ReportRepository', () => {
     const externalMaintainerId = 50;
     const mockExternalMaintainerRole = { id: 1, name: 'External Maintainer' };
 
-    const mockReportAssigned: reportEntity = {
+    const mockReportAssigned: ReportEntity = {
       id: 1,
       reporterId: 100,
       title: 'Report for External Maintainer',
@@ -280,7 +280,7 @@ describe('ReportRepository', () => {
       updatedAt: new Date(),
     };
 
-    const mockReportInProgress: reportEntity = {
+    const mockReportInProgress: ReportEntity = {
       ...mockReportAssigned,
       id: 2,
       status: ReportStatus.IN_PROGRESS,
@@ -354,7 +354,7 @@ describe('ReportRepository', () => {
     });
 
     it('should return empty array when assigned user is not an External Maintainer', async () => {
-      const mockNonExternalMaintainerReport: reportEntity = {
+      const mockNonExternalMaintainerReport: ReportEntity = {
         ...mockReportAssigned,
         assignee: {
           id: externalMaintainerId,
@@ -384,17 +384,17 @@ describe('ReportRepository', () => {
 
   describe('save', () => {
     it('should save a new report', async () => {
-      const newReport: Partial<reportEntity> = {
+      const newReport: Partial<ReportEntity> = {
         title: 'New Report',
         description: 'Test description',
         status: ReportStatus.PENDING_APPROVAL,
         category: ReportCategory.ROADS
       };
 
-      const savedReport = { ...newReport, id: 1 } as reportEntity;
+      const savedReport = { ...newReport, id: 1 } as ReportEntity;
       jest.spyOn(reportRepository, 'save').mockResolvedValue(savedReport);
 
-      const result = await reportRepository.save(newReport as reportEntity);
+      const result = await reportRepository.save(newReport as ReportEntity);
 
       expect(reportRepository.save).toHaveBeenCalledWith(newReport);
       expect(result).toEqual(savedReport);
@@ -402,7 +402,7 @@ describe('ReportRepository', () => {
     });
 
     it('should update an existing report', async () => {
-      const existingReport: Partial<reportEntity> = {
+      const existingReport: Partial<ReportEntity> = {
         id: 1,
         title: 'Existing Report',
         status: ReportStatus.PENDING_APPROVAL
@@ -412,7 +412,7 @@ describe('ReportRepository', () => {
         ...existingReport,
         status: ReportStatus.ASSIGNED,
         assigneeId: 50
-      } as reportEntity;
+      } as ReportEntity;
 
       jest.spyOn(reportRepository, 'save').mockResolvedValue(updatedReport);
 
@@ -424,7 +424,7 @@ describe('ReportRepository', () => {
     });
 
     it('should update report status to REJECTED', async () => {
-      const report: Partial<reportEntity> = {
+      const report: Partial<ReportEntity> = {
         id: 1,
         status: ReportStatus.PENDING_APPROVAL
       };
@@ -433,7 +433,7 @@ describe('ReportRepository', () => {
         ...report,
         status: ReportStatus.REJECTED,
         rejectionReason: 'Invalid location'
-      } as reportEntity;
+      } as ReportEntity;
 
       jest.spyOn(reportRepository, 'save').mockResolvedValue(rejectedReport);
 
@@ -444,7 +444,7 @@ describe('ReportRepository', () => {
     });
 
     it('should clear rejection reason when approving', async () => {
-      const report: Partial<reportEntity> = {
+      const report: Partial<ReportEntity> = {
         id: 1,
         status: ReportStatus.REJECTED,
         rejectionReason: 'Old reason'
@@ -455,7 +455,7 @@ describe('ReportRepository', () => {
         status: ReportStatus.ASSIGNED,
         rejectionReason: undefined,
         assigneeId: 50
-      } as reportEntity;
+      } as ReportEntity;
 
       jest.spyOn(reportRepository, 'save').mockResolvedValue(approvedReport);
 
@@ -467,7 +467,7 @@ describe('ReportRepository', () => {
     });
 
     it('should handle multiple field updates', async () => {
-      const originalReport: Partial<reportEntity> = {
+      const originalReport: Partial<ReportEntity> = {
         id: 1,
         title: 'Original Title',
         category: ReportCategory.ROADS,
@@ -480,7 +480,7 @@ describe('ReportRepository', () => {
         category: ReportCategory.PUBLIC_LIGHTING,
         status: ReportStatus.ASSIGNED,
         assigneeId: 50
-      } as reportEntity;
+      } as ReportEntity;
 
       jest.spyOn(reportRepository, 'save').mockResolvedValue(updatedReport);
 
@@ -493,7 +493,7 @@ describe('ReportRepository', () => {
     });
 
     it('should update report status to RESOLVED and set updatedAt', async () => {
-      const report: Partial<reportEntity> = {
+      const report: Partial<ReportEntity> = {
         id: 1,
         status: ReportStatus.IN_PROGRESS,
         assigneeId: 50
@@ -503,11 +503,11 @@ describe('ReportRepository', () => {
         ...report,
         status: ReportStatus.RESOLVED,
         updatedAt: new Date(),
-      } as reportEntity;
+      } as ReportEntity;
 
       jest.spyOn(reportRepository, 'save').mockResolvedValue(resolvedReport);
 
-      const result = await reportRepository.save(report as reportEntity);
+      const result = await reportRepository.save(report as ReportEntity);
 
       expect(result.status).toBe(ReportStatus.RESOLVED);
       expect(result.updatedAt).toBeInstanceOf(Date);

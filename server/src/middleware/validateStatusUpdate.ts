@@ -3,14 +3,14 @@ import { ReportStatus } from '@dto/ReportStatus';
 import { SystemRoles, isTechnicalStaff } from '@dto/UserRole';
 import { InsufficientRightsError } from '@errors/InsufficientRightsError';
 import { BadRequestError } from '@errors/BadRequestError';
-import { userEntity } from '@models/entity/userEntity';
+import { UserEntity } from '@models/entity/userEntity';
 
 /**
  * Helper function to get the role name from a user entity
  */
 function getUserRoleName(user: any): string | undefined {
   if (!user) return undefined;
-  const userEntityData = user as userEntity;
+  const userEntityData = user as UserEntity;
   return userEntityData.departmentRole?.role?.name;
 }
 

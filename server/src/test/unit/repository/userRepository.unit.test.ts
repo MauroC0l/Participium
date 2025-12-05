@@ -1,5 +1,5 @@
 import { userRepository } from '@repositories/userRepository';
-import { userEntity } from '@models/entity/userEntity';
+import { UserEntity } from '@models/entity/userEntity';
 import * as passwordUtils from '@utils/passwordUtils';
 import { createMockCitizen } from '@test/utils/mockEntities';
 
@@ -317,7 +317,7 @@ describe('UserRepository Unit Tests', () => {
   });
 
   describe('findUserByUsername', () => {
-    const mockUser: userEntity = createMockCitizen({
+    const mockUser: UserEntity = createMockCitizen({
       id: 1,
       username: 'testuser',
       email: 'test@example.com',
@@ -410,7 +410,7 @@ describe('UserRepository Unit Tests', () => {
   });
 
   describe('findUserById', () => {
-    const mockUser: userEntity = createMockCitizen({
+    const mockUser: UserEntity = createMockCitizen({
       id: 1,
       username: 'testuser',
       email: 'test@example.com',
@@ -467,7 +467,7 @@ describe('UserRepository Unit Tests', () => {
   });
 
   describe('findUserByEmail', () => {
-    const mockUser: userEntity = createMockCitizen({
+    const mockUser: UserEntity = createMockCitizen({
       id: 1,
       username: 'testuser',
       email: 'test@example.com',
@@ -524,7 +524,7 @@ describe('UserRepository Unit Tests', () => {
   });
 
   describe('findAllUsers', () => {
-    const mockUsers: userEntity[] = [
+    const mockUsers: UserEntity[] = [
       createMockCitizen({
         id: 1,
         username: 'user1',
@@ -625,7 +625,7 @@ describe('UserRepository Unit Tests', () => {
   });
 
   describe('updateUser', () => {
-    const mockUser: userEntity = createMockCitizen({
+    const mockUser: UserEntity = createMockCitizen({
       id: 1,
       username: 'testuser',
       email: 'test@example.com',
@@ -758,7 +758,7 @@ describe('UserRepository Unit Tests', () => {
   });
 
   describe('verifyCredentials', () => {
-    const mockUser: userEntity = createMockCitizen({
+    const mockUser: UserEntity = createMockCitizen({
       id: 1,
       username: 'testuser',
       email: 'test@example.com',
@@ -854,7 +854,7 @@ describe('UserRepository Unit Tests', () => {
   });
 
   describe('save', () => {
-    const mockUser: userEntity = createMockCitizen({
+    const mockUser: UserEntity = createMockCitizen({
       id: 1,
       username: 'testuser',
       email: 'test@example.com',
@@ -957,7 +957,7 @@ describe('UserRepository Unit Tests', () => {
   describe('findExternalMaintainersByCategory', () => {
     it('should find and return external maintainers for a given category', async () => {
         const categoryId = 1;
-        const expectedUsers: userEntity[] = [new userEntity(), new userEntity()];
+        const expectedUsers: UserEntity[] = [new UserEntity(), new UserEntity()];
 
         mockQueryBuilder.getMany.mockResolvedValue(expectedUsers);
 
