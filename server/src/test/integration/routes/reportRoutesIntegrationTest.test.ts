@@ -1,12 +1,8 @@
-jest.mock('@middleware/authMiddleware', () => {
-  const original = jest.requireActual('@middleware/authMiddleware');
-  return {
-    ...original,
-    isLoggedIn: jest.fn((req, res, next) => next()),
-    requireRole: jest.fn(() => (req: any, res: any, next: any) => next()),
-    requireTechnicalStaffOrRole: jest.fn(() => (req: any, res: any, next: any) => next()),
-  };
-});
+jest.mock('@middleware/authMiddleware', () => ({
+  isLoggedIn: jest.fn((req, res, next) => next()),
+  requireRole: jest.fn(() => (req: any, res: any, next: any) => next()),
+  requireTechnicalStaffOrRole: jest.fn(() => (req: any, res: any, next: any) => next()),
+}));
 
 jest.mock('@controllers/reportController', () => ({
   reportController: {
@@ -18,6 +14,9 @@ jest.mock('@controllers/reportController', () => ({
     getAssignedReportsToExternalMaintainer: jest.fn((req, res) => res.status(200).json([])),
     updateReportStatus: jest.fn((req, res) => res.status(200).json({})),
     assignToExternalMaintainer: jest.fn((req, res) => res.status(200).json({})),
+    getInternalComments: jest.fn((req, res) => res.status(200).json([])),
+    addInternalComment: jest.fn((req, res) => res.status(201).json({})),
+    deleteInternalComment: jest.fn((req, res) => res.status(204).send()),
   },
 }));
 jest.mock('@middleware/reportMiddleware', () => ({
