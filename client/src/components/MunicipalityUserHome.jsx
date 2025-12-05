@@ -1,11 +1,21 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Container, Card, Table, Badge, Button, Alert, Dropdown, Spinner, InputGroup } from 'react-bootstrap';
-import { BsEye } from 'react-icons/bs';
+import { useState, useEffect, useMemo, useCallback } from "react";
+import {
+  Container,
+  Card,
+  Table,
+  Badge,
+  Button,
+  Alert,
+  Dropdown,
+  Spinner,
+  InputGroup,
+} from "react-bootstrap";
+import { BsEye } from "react-icons/bs";
 import { FaFilter, FaList, FaChevronDown } from "react-icons/fa"; // Aggiunto FaChevronDown
-import '../css/MunicipalityUserHome.css';
+import "../css/MunicipalityUserHome.css";
 
 // Componenti
-import ReportDetails from './ReportDetails';
+import ReportDetails from "./ReportDetails";
 
 // IMPORT API
 import {
@@ -16,7 +26,14 @@ import {
 } from "../api/reportApi";
 
 // --- CONSTANTS & CONFIGURATION ---
-const ALL_STATUSES = ["Pending Approval", "Assigned", "In Progress", "Suspended", "Rejected", "Resolved"];
+const ALL_STATUSES = [
+  "Pending Approval",
+  "Assigned",
+  "In Progress",
+  "Suspended",
+  "Rejected",
+  "Resolved",
+];
 
 const ROLE_DEPARTMENT_MAPPING = {
   "water network staff member": "Water Supply - Drinking Water",
@@ -32,12 +49,18 @@ const ROLE_DEPARTMENT_MAPPING = {
 
 const getStatusBadgeVariant = (status) => {
   switch (status) {
-    case "Pending Approval": return "warning";
-    case "Assigned": return "primary";
-    case "In Progress": return "info";
-    case "Resolved": return "success";
-    case "Rejected": return "danger";
-    default: return "secondary";
+    case "Pending Approval":
+      return "warning";
+    case "Assigned":
+      return "primary";
+    case "In Progress":
+      return "info";
+    case "Resolved":
+      return "success";
+    case "Rejected":
+      return "danger";
+    default:
+      return "secondary";
   }
 };
 
@@ -63,11 +86,13 @@ export default function MunicipalityUserHome({ user }) {
 
   // --- DERIVED STATE (MEMOIZED) ---
   const userRole = user?.role_name?.toLowerCase();
-  
+
   const isStaffMember = useMemo(() => {
-    return userRole && 
-           userRole !== "administrator" && 
-           userRole !== "municipal public relations officer";
+    return (
+      userRole &&
+      userRole !== "administrator" &&
+      userRole !== "municipal public relations officer"
+    );
   }, [userRole]);
 
   const userDepartmentCategory = useMemo(() => {
@@ -75,13 +100,16 @@ export default function MunicipalityUserHome({ user }) {
   }, [isStaffMember, user?.role_name]);
 
   // --- INITIALIZATION EFFECTS ---
-  
+
   // 1. Set default filters based on role
   useEffect(() => {
     if (isStaffMember && userDepartmentCategory) {
       setCategoryFilter(userDepartmentCategory);
       setStatusFilter("Assigned");
-    } else if (userRole === "administrator" || userRole === "municipal public relations officer") {
+    } else if (
+      userRole === "administrator" ||
+      userRole === "municipal public relations officer"
+    ) {
       setStatusFilter("Pending Approval");
     }
   }, [isStaffMember, userDepartmentCategory, userRole]);
@@ -94,7 +122,7 @@ export default function MunicipalityUserHome({ user }) {
       // Parallel fetching for categories and reports
       const [categoriesData, reportsData] = await Promise.all([
         getAllCategories(),
-        isStaffMember ? getReportsAssignedToMe() : getReports()
+        isStaffMember ? getReportsAssignedToMe() : getReports(),
       ]);
 
       setAllCategories(categoriesData || []);
@@ -102,12 +130,15 @@ export default function MunicipalityUserHome({ user }) {
       const formattedReports = (reportsData || []).map((report) => ({
         ...report,
         createdAt: new Date(report.createdAt), // Ensure Date object
-        images: report.photos?.map((p) => (typeof p === "string" ? p : p.storageUrl)) || [],
+        images:
+          report.photos?.map((p) =>
+            typeof p === "string" ? p : p.storageUrl
+          ) || [],
       }));
 
       // Sort by date descending
       formattedReports.sort((a, b) => b.createdAt - a.createdAt);
-      
+
       setReports(formattedReports);
     } catch (err) {
       console.error("Error fetching data:", err);
@@ -126,8 +157,10 @@ export default function MunicipalityUserHome({ user }) {
   // --- FILTERING LOGIC (MEMOIZED) ---
   const filteredReports = useMemo(() => {
     return reports.filter((report) => {
-      const matchesCategory = categoryFilter === "" || report.category === categoryFilter;
-      const matchesStatus = statusFilter === "" || report.status === statusFilter;
+      const matchesCategory =
+        categoryFilter === "" || report.category === categoryFilter;
+      const matchesStatus =
+        statusFilter === "" || report.status === statusFilter;
       return matchesCategory && matchesStatus;
     });
   }, [reports, categoryFilter, statusFilter]);
@@ -146,16 +179,14 @@ export default function MunicipalityUserHome({ user }) {
   const handleAcceptReport = async (reportId) => {
     try {
       const result = await updateReportStatus(reportId, "Assigned");
-      
       // Refresh data silently
-      await fetchData(); 
+      await fetchData();
 
       if (result?.error) throw new Error(result.error);
-      
+
       // Return logic required by ReportDetails component
       if (!result?.assignee) return { noOfficerFound: true };
       return { success: true };
-      
     } catch (error) {
       console.error("Error approving report:", error);
       throw error; // Propagate to modal for UI feedback
@@ -169,7 +200,7 @@ export default function MunicipalityUserHome({ user }) {
       return true;
     } catch (error) {
       console.error("Error rejecting report:", error);
-      // Optional: setApiError(error.message); 
+      // Optional: setApiError(error.message);
       return false;
     }
   };
@@ -189,7 +220,9 @@ export default function MunicipalityUserHome({ user }) {
       return (
         <div className="text-center p-5 text-muted">
           <h5>No reports found</h5>
-          <p className="mb-0">Try adjusting your filters or check back later.</p>
+          <p className="mb-0">
+            Try adjusting your filters or check back later.
+          </p>
         </div>
       );
     }
@@ -209,14 +242,15 @@ export default function MunicipalityUserHome({ user }) {
           {filteredReports.map((report) => (
             <tr key={report.id}>
               <td className="ps-4">
-                <span className="fw-semibold text-dark">
-                  {report.category}
-                </span>
+                <span className="fw-semibold text-dark">{report.category}</span>
               </td>
               <td>{report.title}</td>
               <td>{report.createdAt.toLocaleDateString()}</td>
               <td>
-                <Badge bg={getStatusBadgeVariant(report.status)} className="fw-normal">
+                <Badge
+                  bg={getStatusBadgeVariant(report.status)}
+                  className="fw-normal"
+                >
                   {report.status}
                 </Badge>
               </td>
@@ -244,7 +278,9 @@ export default function MunicipalityUserHome({ user }) {
       <div className="mu-header-wrapper">
         <div>
           <h2 className="mu-home-title">Officer Dashboard</h2>
-          <p className="mu-home-subtitle">Manage and validate citizen reports.</p>
+          <p className="mu-home-subtitle">
+            Manage and validate citizen reports.
+          </p>
         </div>
 
         <div className="mu-filters">
@@ -252,53 +288,85 @@ export default function MunicipalityUserHome({ user }) {
             <>
               {/* Category Filter */}
               <InputGroup className="mu-filter-group">
-                <InputGroup.Text className="mu-filter-icon"><FaList/></InputGroup.Text>
-                <Dropdown onSelect={setCategoryFilter} className="mu-custom-dropdown">
-                    <Dropdown.Toggle variant="light" className="mu-filter-toggle" id="category-filter">
-                        <div className="d-flex align-items-center justify-content-between w-100">
-                            <span className="text-truncate">
-                                {categoryFilter || "All Categories"}
-                            </span>
-                            <FaChevronDown className="mu-dropdown-arrow ms-2"/>
-                        </div>
-                    </Dropdown.Toggle>
-                    <Dropdown.Menu className="modern-dropdown-menu">
-                        <Dropdown.Item eventKey="" active={categoryFilter === ""}>All Categories</Dropdown.Item>
-                        {allCategories.map((cat, idx) => (
-                            <Dropdown.Item key={idx} eventKey={cat} active={categoryFilter === cat}>
-                                {cat}
-                            </Dropdown.Item>
-                        ))}
-                    </Dropdown.Menu>
+                <InputGroup.Text className="mu-filter-icon">
+                  <FaList />
+                </InputGroup.Text>
+                <Dropdown
+                  onSelect={setCategoryFilter}
+                  className="mu-custom-dropdown"
+                >
+                  <Dropdown.Toggle
+                    variant="light"
+                    className="mu-filter-toggle"
+                    id="category-filter"
+                  >
+                    <div className="d-flex align-items-center justify-content-between w-100">
+                      <span className="text-truncate">
+                        {categoryFilter || "All Categories"}
+                      </span>
+                      <FaChevronDown className="mu-dropdown-arrow ms-2" />
+                    </div>
+                  </Dropdown.Toggle>
+                  <Dropdown.Menu className="modern-dropdown-menu">
+                    <Dropdown.Item eventKey="" active={categoryFilter === ""}>
+                      All Categories
+                    </Dropdown.Item>
+                    {allCategories.map((cat, idx) => (
+                      <Dropdown.Item
+                        key={idx}
+                        eventKey={cat}
+                        active={categoryFilter === cat}
+                      >
+                        {cat}
+                      </Dropdown.Item>
+                    ))}
+                  </Dropdown.Menu>
                 </Dropdown>
               </InputGroup>
 
               {/* Status Filter */}
               <InputGroup className="mu-filter-group">
-                <InputGroup.Text className="mu-filter-icon"><FaFilter/></InputGroup.Text>
-                <Dropdown onSelect={setStatusFilter} className="mu-custom-dropdown">
-                    <Dropdown.Toggle variant="light" className="mu-filter-toggle" id="status-filter">
-                        <div className="d-flex align-items-center justify-content-between w-100">
-                            <span className="text-truncate">
-                                {statusFilter || "All Statuses"}
-                            </span>
-                            <FaChevronDown className="mu-dropdown-arrow ms-2"/>
-                        </div>
-                    </Dropdown.Toggle>
-                    <Dropdown.Menu className="modern-dropdown-menu">
-                        <Dropdown.Item eventKey="" active={statusFilter === ""}>All Statuses</Dropdown.Item>
-                        {ALL_STATUSES.map((st, idx) => (
-                            <Dropdown.Item key={idx} eventKey={st} active={statusFilter === st}>
-                                {st}
-                            </Dropdown.Item>
-                        ))}
-                    </Dropdown.Menu>
+                <InputGroup.Text className="mu-filter-icon">
+                  <FaFilter />
+                </InputGroup.Text>
+                <Dropdown
+                  onSelect={setStatusFilter}
+                  className="mu-custom-dropdown"
+                >
+                  <Dropdown.Toggle
+                    variant="light"
+                    className="mu-filter-toggle"
+                    id="status-filter"
+                  >
+                    <div className="d-flex align-items-center justify-content-between w-100">
+                      <span className="text-truncate">
+                        {statusFilter || "All Statuses"}
+                      </span>
+                      <FaChevronDown className="mu-dropdown-arrow ms-2" />
+                    </div>
+                  </Dropdown.Toggle>
+                  <Dropdown.Menu className="modern-dropdown-menu">
+                    <Dropdown.Item eventKey="" active={statusFilter === ""}>
+                      All Statuses
+                    </Dropdown.Item>
+                    {ALL_STATUSES.map((st, idx) => (
+                      <Dropdown.Item
+                        key={idx}
+                        eventKey={st}
+                        active={statusFilter === st}
+                      >
+                        {st}
+                      </Dropdown.Item>
+                    ))}
+                  </Dropdown.Menu>
                 </Dropdown>
               </InputGroup>
             </>
           ) : (
             <div className="bg-light p-2 px-3 rounded text-muted small border">
-               Viewing: <strong>{userDepartmentCategory || "My Department"}</strong> &nbsp;|&nbsp; Status: <strong>Assigned</strong>
+              Viewing:{" "}
+              <strong>{userDepartmentCategory || "My Department"}</strong>{" "}
+              &nbsp;|&nbsp; Status: <strong>Assigned</strong>
             </div>
           )}
         </div>
@@ -313,9 +381,7 @@ export default function MunicipalityUserHome({ user }) {
 
       {/* Table Card */}
       <Card className="mu-home-card border-0 shadow-sm">
-        <Card.Body className="p-0">
-          {renderContent()}
-        </Card.Body>
+        <Card.Body className="p-0">{renderContent()}</Card.Body>
       </Card>
 
       {/* Report Detail Modal */}

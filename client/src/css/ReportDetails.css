@@ -19,19 +19,23 @@
   background-color: var(--rdm-bg-light);
 }
 
-/* --- Header Section --- */
+/* --- Header Section (ORIGINAL RED STYLE) --- */
 .rdm-header {
   background: linear-gradient(135deg, var(--rdm-brand) 0%, #c44569 100%);
   color: white;
   padding: 24px 32px;
   border: none;
   position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
 }
 
 .rdm-header-content {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  width: 100%;
 }
 
 .rdm-title {
@@ -70,11 +74,34 @@
 }
 
 /* Status Colors */
-.status-success { background: #d1fae5; color: #065f46; border: 1px solid #10b981; }
-.status-danger { background: #fee2e2; color: #991b1b; border: 1px solid #ef4444; }
-.status-warning { background: #fef3c7; color: #92400e; border: 1px solid #f59e0b; }
-.status-primary { background: #dbeafe; color: #1e40af; border: 1px solid #3b82f6; }
-.status-default { background: #f3f4f6; color: #374151; }
+.status-success {
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid #10b981;
+}
+
+.status-danger {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #ef4444;
+}
+
+.status-warning {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #f59e0b;
+}
+
+.status-primary {
+  background: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #3b82f6;
+}
+
+.status-default {
+  background: #f3f4f6;
+  color: #374151;
+}
 
 .rdm-close-btn {
   position: absolute;
@@ -110,8 +137,7 @@
 }
 
 .rdm-main-content {
-    /* Permette al footer di essere spinto in basso se c'è spazio, ma non è essenziale */
-    height: 100%; 
+  height: 100%;
 }
 
 /* Sections General */
@@ -128,7 +154,9 @@
   margin-top: 1rem;
 }
 
-.rdm-section-title svg { color: var(--rdm-brand); }
+.rdm-section-title svg {
+  color: var(--rdm-brand);
+}
 
 /* Description Box */
 .rdm-description-box {
@@ -168,7 +196,9 @@
   transition: transform 0.4s ease;
 }
 
-.rdm-photo-card:hover img { transform: scale(1.1); }
+.rdm-photo-card:hover img {
+  transform: scale(1.1);
+}
 
 .rdm-photo-overlay {
   position: absolute;
@@ -190,19 +220,84 @@
   font-size: 0.75rem;
 }
 
-.rdm-photo-card:hover .rdm-photo-overlay { opacity: 1; }
-
-/* --- Footer & Actions (REFACTORED) --- */
-
-.rdm-footer-section {
-    border-color: #e5e7eb !important;
-    min-height: 60px; /* Previene saltelli di altezza eccessivi */
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.rdm-photo-card:hover .rdm-photo-overlay {
+  opacity: 1;
 }
-.rdm-footer-section > div {
-    width: 100%;
+
+/* --- MAP SLIDE DOWN ANIMATION (INTEGRATED) --- */
+.rdm-map-wrapper {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.6s ease;
+  margin-top: 0;
+}
+
+.rdm-map-wrapper.open {
+  max-height: 500px;
+  /* Abbastanza spazio per titolo e mappa */
+  opacity: 1;
+  margin-top: 1rem;
+}
+
+.rdm-map-container {
+  height: 300px;
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--rdm-border);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  background: white;
+}
+
+/* Pulsante Toggle Mappa (Stile Sidebar) */
+.rdm-btn-map-toggle {
+  width: 100%;
+  margin-top: 12px;
+  padding: 8px 12px;
+  background: white;
+  border: 1px solid var(--rdm-brand);
+  border-radius: 8px;
+  color: var(--rdm-brand);
+  font-weight: 600;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.rdm-btn-map-toggle:hover {
+  background: #fff5f5;
+  transform: translateY(-1px);
+}
+
+.rdm-btn-map-toggle.active {
+  background: var(--rdm-brand);
+  color: white;
+}
+
+.rdm-btn-map-toggle:disabled {
+  opacity: 0.5;
+  border-color: var(--rdm-text-muted);
+  color: var(--rdm-text-muted);
+  cursor: not-allowed;
+  background: transparent;
+}
+
+
+/* --- Footer & Actions --- */
+.rdm-footer-section {
+  border-color: #e5e7eb !important;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rdm-footer-section>div {
+  width: 100%;
 }
 
 .rdm-id-text {
@@ -220,38 +315,45 @@
 }
 
 .rdm-btn-action:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 /* Rejection Inline Container */
 .rdm-rejection-inline-container {
-    background-color: #fef2f2;
-    border: 1px solid #fee2e2;
-    border-radius: 12px;
-    padding: 12px 16px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  background-color: #fef2f2;
+  border: 1px solid #fee2e2;
+  border-radius: 12px;
+  padding: 12px 16px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
 }
 
 .rdm-reject-textarea {
-    resize: none;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    font-size: 0.95rem;
+  resize: none;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 0.95rem;
 }
 
 .rdm-reject-textarea:focus {
-    border-color: var(--rdm-danger);
-    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+  border-color: var(--rdm-danger);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
 }
 
 .animate-fadeIn {
-    animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(5px); }
-    to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* --- Sidebar --- */
@@ -286,7 +388,10 @@
   gap: 12px;
   margin-bottom: 12px;
 }
-.rdm-info-row:last-child { margin-bottom: 0; }
+
+.rdm-info-row:last-child {
+  margin-bottom: 0;
+}
 
 .rdm-icon-box {
   width: 36px;
@@ -300,72 +405,127 @@
   color: var(--rdm-brand);
   flex-shrink: 0;
 }
-.rdm-icon-box.assignee { background: #eff6ff; color: #3b82f6; }
-.rdm-icon-box.location { background: #ecfdf5; color: #10b981; }
 
-.rdm-label { font-size: 0.75rem; color: var(--rdm-text-muted); display: block; }
-.rdm-value { font-size: 0.9rem; font-weight: 600; color: var(--rdm-text-main); line-height: 1.2; word-break: break-all;}
-.font-monospace { font-family: 'Courier New', monospace; letter-spacing: -0.5px; }
+.rdm-icon-box.assignee {
+  background: #eff6ff;
+  color: #3b82f6;
+}
+
+.rdm-icon-box.location {
+  background: #ecfdf5;
+  color: #10b981;
+}
+
+.rdm-label {
+  font-size: 0.75rem;
+  color: var(--rdm-text-muted);
+  display: block;
+}
+
+.rdm-value {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--rdm-text-main);
+  line-height: 1.2;
+  word-break: break-all;
+}
+
+.font-monospace {
+  font-family: 'Courier New', monospace;
+  letter-spacing: -0.5px;
+}
 
 /* Alerts */
 .rdm-alert {
-    border-radius: 8px;
-    font-size: 0.9rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
 }
-.rdm-alert-warning { background-color: #fffbeb; color: #92400e; border: 1px solid #fcd34d; }
-.rdm-alert-error { background-color: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+
+.rdm-alert-warning {
+  background-color: #fffbeb;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+}
+
+.rdm-alert-error {
+  background-color: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
 
 /* --- Lightbox & Responsive --- */
-.rdm-lightbox .modal-content { background: transparent; box-shadow: none; border: none; }
+.rdm-lightbox .modal-content {
+  background: transparent;
+  box-shadow: none;
+  border: none;
+}
+
 .rdm-lightbox-backdrop {
-    /* Rimuovi l'opacità forzata e il nero solido */
-    /* opacity: 0.9 !important;  <-- RIMOSSO */
-    /* background-color: #000 !important; <-- RIMOSSO */
-
-    /* Usa uno sfondo semi-trasparente per far passare i colori sottostanti */
-    background-color: rgba(0, 0, 0, 0.6) !important;
-
-    /* Applica la sfocatura a tutto ciò che si trova dietro questo overlay */
-    backdrop-filter: blur(10px);
-    /* Per compatibilità con browser più vecchi (es. Safari datati) */
-    -webkit-backdrop-filter: blur(10px);
+  background-color: rgba(0, 0, 0, 0.6) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
-.rdm-lightbox-container { width: 100%; height: 100vh; display: flex; align-items: center; justify-content: center; position: relative; }
-.rdm-lightbox-img { max-height: 90vh; max-width: 90vw; border-radius: 4px; box-shadow: 0 0 50px rgba(0, 0, 0, 0.8); object-fit: contain; }
-.rdm-lightbox-close { 
-  position: absolute; 
-  top: 20px; 
-  right: 20px; 
-  background: rgba(255, 255, 255, 0.2); 
-  color: white; 
-  border: none; 
-  width: 50px; 
-  height: 50px; 
-  border-radius: 50%; 
-  font-size: 1.5rem; 
-  cursor: pointer; 
-  z-index: 1060; 
+
+.rdm-lightbox-container {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
 }
-.rdm-lightbox-close:hover { 
-  background: rgba(255, 255, 255, 0.4); 
+
+.rdm-lightbox-img {
+  max-height: 90vh;
+  max-width: 90vw;
+  border-radius: 4px;
+  box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
+  object-fit: contain;
 }
 
 @media (max-width: 992px) {
-  .rdm-grid-layout { grid-template-columns: 1fr; gap: 20px; }
-  .rdm-sidebar { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .rdm-grid-layout {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .rdm-sidebar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
 }
+
 @media (max-width: 768px) {
-  .rdm-sidebar { grid-template-columns: 1fr; }
-  .rdm-title { font-size: 1.4rem; }
-  .rdm-header, .rdm-body { padding: 20px; }
-  .rdm-footer-section > div { flex-direction: column; align-items: flex-start !important; gap: 1rem; }
-  .rdm-btn-action { width: 100%; justify-content: center; }
+  .rdm-sidebar {
+    grid-template-columns: 1fr;
+  }
+
+  .rdm-title {
+    font-size: 1.4rem;
+  }
+
+  .rdm-header,
+  .rdm-body {
+    padding: 20px;
+  }
+
+  .rdm-footer-section>div {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 1rem;
+  }
+
+  .rdm-btn-action {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 .rdm-rejection-display {
-  background-color: var(--rdm-danger-bg); /* Sfondo rosso chiaro */
-  border: 1px solid #fecaca;              /* Bordo rosso leggero */
-  color: #7f1d1d;                         /* Testo rosso scuro */
+  background-color: var(--rdm-danger-bg);
+  border: 1px solid #fecaca;
+  color: #7f1d1d;
   padding: 20px;
   border-radius: 12px;
   font-size: 1rem;
@@ -374,8 +534,182 @@
   box-shadow: 0 1px 2px rgba(239, 68, 68, 0.05);
 }
 
-/* Opzionale: Se vuoi che l'icona del titolo sia rossa specificamente in questo caso */
 .rdm-section-title svg {
-  /* Questo è già gestito dalla regola generale, ma se il titolo ha un colore custom inline, l'SVG eredita quello */
-  color: inherit; 
+  color: inherit;
+}
+
+
+/* ... [MANTIENI LE VARIABILI ESISTENTI E AGGIUNGI QUESTE] ... */
+
+/* Status Colors aggiuntivi */
+.status-info {
+  background: #e0f2fe;
+  color: #0369a1;
+  border: 1px solid #0ea5e9;
+}
+
+/* In Progress */
+.status-suspended {
+  background: #fff7ed;
+  color: #c2410c;
+  border: 1px solid #f97316;
+}
+
+/* Suspended */
+
+/* ... [MANTIENI IL RESTO DEL CSS E AGGIUNGI GLI STILI DEI BOTTONI QUI SOTTO] ... */
+
+/* --- Modern Button Styles for Workflow --- */
+
+.rdm-btn-start {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  border: none;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);
+}
+
+.rdm-btn-start:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  box-shadow: 0 6px 8px -1px rgba(59, 130, 246, 0.4);
+  transform: translateY(-1px);
+  color: white;
+}
+
+.rdm-btn-suspend {
+  background: white;
+  color: #ea580c;
+  /* Orange-600 */
+  border: 1px solid #ea580c;
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+}
+
+.rdm-btn-suspend:hover {
+  background: #fff7ed;
+  /* Orange-50 */
+  color: #c2410c;
+  border-color: #c2410c;
+  transform: translateY(-1px);
+}
+
+.rdm-btn-resolve {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border: none;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.3);
+}
+
+.rdm-btn-resolve:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  box-shadow: 0 6px 8px -1px rgba(16, 185, 129, 0.4);
+  transform: translateY(-1px);
+  color: white;
+}
+
+/* Base button override to ensure consistency */
+.rdm-btn-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.9rem;
+  border-radius: 9999px;
+  /* Pill shape */
+  transition: all 0.2s ease-in-out;
+  height: 40px;
+  /* Altezza fissa per allineamento */
+  white-space: nowrap;
+}
+
+
+
+/* --- EXTERNAL ASSIGNMENT STYLES --- */
+
+/* Button Style */
+.rdm-btn-external-assign {
+  background-color: transparent;
+  color: var(--rdm-text-main);
+  border: 1px dashed var(--rdm-text-muted);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex !important;
+  /* Force flex for alignment */
+  align-items: center;
+}
+
+.rdm-btn-external-assign:hover,
+.rdm-btn-external-assign:focus,
+.rdm-btn-external-assign:active,
+.show>.rdm-btn-external-assign.dropdown-toggle {
+  background-color: var(--rdm-text-main);
+  color: white;
+  border-color: var(--rdm-text-main);
+  border-style: solid;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(31, 41, 55, 0.15);
+}
+
+/* Dropdown Menu Styles */
+.rdm-dropdown-menu {
+  border-radius: 12px !important;
+  padding: 8px !important;
+  margin-top: 8px !important;
+  animation: fadeInSlide 0.2s ease-out;
+}
+
+.rdm-dropdown-header {
+  letter-spacing: 0.5px;
+  font-size: 0.7rem;
+  color: #9ca3af;
+}
+
+.rdm-dropdown-item {
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+  padding-left: 8px !important;
+  padding-right: 8px !important;
+}
+
+.rdm-dropdown-item:hover {
+  background-color: var(--rdm-bg-light);
+}
+
+.rdm-dropdown-item:active {
+  background-color: #e5e7eb;
+  color: inherit;
+}
+
+/* Avatar Circle for List */
+.rdm-avatar-circle {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  /* Indigo theme for external */
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+@keyframes fadeInSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
