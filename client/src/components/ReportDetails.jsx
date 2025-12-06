@@ -34,6 +34,7 @@ import {
   FaCheck,
   FaUserPlus,
   FaBuilding,
+  FaMapPin,
   FaChevronDown, // Aggiunta icona chevron
 } from "react-icons/fa";
 import "../css/ReportDetails.css";
@@ -665,6 +666,24 @@ const ReportDetails = ({
 
               <div className="rdm-info-card">
                 <h4 className="rdm-card-label">Location Data</h4>
+
+                {/* === NUOVO CAMPO: ADDRESS === */}
+                <div className="rdm-info-row">
+                  <div className="rdm-icon-box location">
+                    <FaMapPin />
+                  </div>
+                  <div className="flex-grow-1"> {/* Aggiunto flex-grow per gestire testi lunghi */}
+                    <span className="rdm-label">Address</span>
+                    <div className="rdm-value address-text"> {/* Classe specifica aggiunta */}
+                      {report.address
+                        ? report.address
+                        : <span className="text-muted fst-italic">Address not available</span>
+                      }
+                    </div>
+                  </div>
+                </div>
+
+                {/* === CAMPO ESISTENTE: COORDINATES === */}
                 <div className="rdm-info-row">
                   <div className="rdm-icon-box location">
                     <FaMapMarkerAlt />
@@ -676,6 +695,7 @@ const ReportDetails = ({
                     </div>
                   </div>
                 </div>
+
                 <button
                   className={`rdm-btn-map-toggle ${showMap ? "active" : ""}`}
                   onClick={() => setShowMap(!showMap)}

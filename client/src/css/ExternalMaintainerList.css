@@ -1,0 +1,409 @@
+:root {
+  --brand-red: #A12B32;
+  --brand-red-hover: #8a232a;
+  --brand-dark: #0f172a;
+  --brand-navy: #1e293b;
+  --accent-blue: #3b82f6;
+  --accent-blue-soft: #eff6ff;
+  --accent-teal: #0d9488;
+  --accent-teal-soft: #f0fdfa;
+  --bg-page: #f8fafc;
+  --bg-card: #ffffff;
+  --bg-hover: #f1f5f9;
+  --border-subtle: #e2e8f0;
+  --text-main: #334155;
+  --text-muted: #6c757d;
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+}
+
+/* --- Main Container --- */
+.externalMaintainerList-modern {
+  width: 100%;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--text-main);
+  animation: fadeInSmooth 0.6s ease-out;
+}
+
+@keyframes fadeInSmooth {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* --- Header --- */
+.eml-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin: 2rem;
+}
+
+.eml-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--brand-dark);
+  margin: 0;
+  letter-spacing: -0.025em;
+  position: relative;
+  padding-left: 1rem;
+}
+
+.eml-title::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 10%;
+  height: 80%;
+  width: 4px;
+  background: var(--brand-red);
+  border-radius: 2px;
+}
+
+/* --- Card Container --- */
+.eml-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  overflow: visible;
+  min-height: 250px;
+  display: flex;
+  flex-direction: column;
+}
+
+.eml-card-body {
+  padding: 0;
+}
+
+/* --- Loading & Empty --- */
+.eml-loading,
+.eml-empty {
+  padding: 4rem 2rem;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.eml-loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--border-subtle);
+  border-top: 3px solid var(--brand-red);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-bottom: 1rem;
+  display: inline-block;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.eml-empty-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.eml-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.eml-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 800px;
+}
+
+.eml-table th {
+  background: var(--bg-page);
+  color: var(--brand-navy);
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border-subtle);
+  text-align: left;
+}
+
+.eml-table td {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-main);
+  vertical-align: middle;
+  font-size: 0.9rem;
+}
+
+.eml-table tbody tr {
+  transition: background 0.2s ease;
+}
+
+.eml-table tbody tr:hover {
+  background: var(--bg-hover);
+}
+
+.eml-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* --- Badges --- */
+.eml-role-badge {
+  display: inline-block;
+  padding: 0.35rem 0.75rem;
+  background: var(--accent-teal-soft);
+  color: var(--accent-teal);
+  border: 1px solid rgba(13, 148, 136, 0.2);
+  border-radius: 2rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* --- Actions Buttons --- */
+.eml-actions {
+  display: flex;
+  gap: 0.75rem;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.eml-table tr:hover .eml-actions {
+  opacity: 1;
+}
+
+.eml-btn {
+  padding: 0.4rem 0.8rem;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: all 0.2s;
+}
+
+.eml-btn-edit {
+  background: var(--accent-blue-soft);
+  color: var(--accent-blue);
+}
+
+.eml-btn-edit:hover {
+  background: var(--accent-blue);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+}
+
+.eml-btn-delete {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.eml-btn-delete:hover {
+  background: #dc2626;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.4);
+}
+
+/* --- Modals --- */
+.eml-modal-content {
+  border: none;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.eml-modal-header {
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 1.5rem;
+}
+
+.eml-modal-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--brand-dark);
+}
+
+.eml-modal-body {
+  padding: 2rem;
+  background: var(--bg-card);
+}
+
+.eml-modal-footer {
+  background: var(--bg-page);
+  border-top: 1px solid var(--border-subtle);
+  padding: 1.25rem 2rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
+/* --- Forms inside Modal --- */
+.eml-modal-body .eml-input-group {
+  border-radius: var(--radius-md);
+  position: relative;
+  display: flex;
+  flex-wrap: nowrap;
+  transition: all 0.2s ease;
+}
+
+.eml-modal-body .eml-icon {
+  background-color: #f8f9fa;
+  border: 1px solid var(--border-subtle);
+  border-right: none;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  padding-left: 1rem;
+  padding-right: 0.75rem;
+  border-top-left-radius: 0.75rem !important;
+  border-bottom-left-radius: 0.75rem !important;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+}
+
+.eml-modal-body .eml-input {
+  border: 1px solid var(--border-subtle);
+  border-left: none;
+  background-color: #fff;
+  color: var(--text-main);
+  font-size: 0.9rem;
+  padding: 0.75rem;
+  height: auto;
+  font-weight: 500;
+  border-top-right-radius: 0.75rem !important;
+  border-bottom-right-radius: 0.75rem !important;
+  transition: all 0.3s ease;
+  width: 100%;
+}
+
+.eml-modal-body .eml-input:focus {
+  border-color: var(--brand-red);
+  box-shadow: none;
+}
+
+.eml-modal-body .eml-input-group:hover .eml-icon {
+  border-color: var(--brand-red) !important;
+  color: var(--brand-red) !important;
+  background-color: #fff;
+  border-right: none !important;
+}
+
+.eml-modal-body .eml-input-group:hover .eml-input {
+  border-color: var(--brand-red) !important;
+  border-left: none !important;
+}
+
+.eml-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--brand-navy);
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.eml-required::after {
+  content: " *";
+  color: var(--brand-red);
+}
+
+.eml-readonly {
+  background: var(--bg-page) !important;
+  color: var(--text-muted) !important;
+  border-color: transparent !important;
+}
+
+.name-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.eml-help-text {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+  display: block;
+}
+
+/* --- Modal Buttons --- */
+.eml-modal-btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.6rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.eml-modal-btn-cancel {
+  background: white;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+}
+
+.eml-modal-btn-cancel:hover {
+  background: var(--bg-hover);
+  color: var(--text-main);
+  border-color: #cbd5e1;
+}
+
+.eml-modal-btn-confirm {
+  background: var(--brand-red);
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(161, 43, 50, 0.2);
+}
+
+.eml-modal-btn-confirm:hover {
+  background: var(--brand-red-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 8px -1px rgba(161, 43, 50, 0.3);
+}
+
+.eml-modal-btn-danger {
+  background: #dc2626;
+  color: white;
+}
+
+.eml-modal-btn-danger:hover {
+  background: #b91c1c;
+  box-shadow: 0 4px 10px rgba(220, 38, 38, 0.3);
+}
+
+/* --- Responsive --- */
+@media (max-width: 768px) {
+  .eml-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .name-row {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .eml-actions {
+    opacity: 1;
+  }
+}

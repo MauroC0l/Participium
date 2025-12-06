@@ -638,3 +638,13 @@
 }
 
 .rdm-section-title svg { color: inherit; }  
+
+
+/* --- Address Specific Style --- */
+.rdm-value.address-text {
+  font-size: 0.95rem;      /* Leggermente più grande per leggibilità */
+  line-height: 1.4;        /* Spaziatura migliore per indirizzi su più righe */
+  word-break: break-word;  /* Spezza solo tra le parole, non a metà parola */
+  white-space: normal;     /* Assicura il wrap del testo */
+  color: var(--rdm-text-main);
+}

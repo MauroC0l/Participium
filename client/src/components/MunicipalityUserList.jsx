@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Alert, Modal, Dropdown, InputGroup, Tooltip, OverlayTrigger } from "react-bootstrap";
-import { FaFilter, FaBuilding, FaChevronDown, FaUndo, FaUser, FaEnvelope, FaUserShield, FaSave } from "react-icons/fa"; // Aggiunto FaUndo
+import { FaFilter, FaBuilding, FaChevronDown, FaUndo, FaUser, FaEnvelope, FaUserShield, FaSave } from "react-icons/fa"; 
 import { 
   getAllMunicipalityUsers, 
   deleteMunicipalityUser,
@@ -207,8 +207,17 @@ export default function MunicipalityUserList({ refreshTrigger }) {
     return roleFilter.name || roleFilter;
   };
 
-  // --- Filter Logic ---
+  // --- Filter Logic (DATA LEVEL) ---
   const filteredUsers = users.filter(user => {
+    // 1. ESCLUSIONE CATEGORIE SPECIFICHE (HARD FILTER)
+    // Questa parte assicura che "All Departments" e "All Roles" escludano comunque questi utenti.
+    if (user.department_name === "external service providers") return false;
+    
+    // Controllo case-insensitive per il ruolo "External Maintainer"
+    const roleName = user.role_name ? user.role_name.toLowerCase() : "";
+    if (roleName === "external maintainer") return false;
+
+    // 2. LOGICA FILTRI UI STANDARD
     const selectedDeptName = departmentFilter 
       ? departments.find(d => d.id === parseInt(departmentFilter))?.name 
       : null;
@@ -242,7 +251,13 @@ export default function MunicipalityUserList({ refreshTrigger }) {
                     <Dropdown.Item eventKey="" active={departmentFilter === ""}>
                         All Departments
                     </Dropdown.Item>
-                    {departments.map((dept) => (
+                    {departments
+                        // UI FILTER: Rimuove "External Service Provider" dalla lista dropdown
+                        .filter(dept => {
+                            const deptValue = (typeof dept === 'object' ? dept.name : dept) || "";
+                            return deptValue.toLowerCase() !== "external service providers";
+                        })
+                        .map((dept) => (
                         <Dropdown.Item key={dept.id} eventKey={dept.id} active={departmentFilter === dept.id.toString()}>
                             {dept.name}
                         </Dropdown.Item>
@@ -265,14 +280,20 @@ export default function MunicipalityUserList({ refreshTrigger }) {
                     <Dropdown.Item eventKey="" active={roleFilter === ""}>
                         All Roles
                     </Dropdown.Item>
-                    {roles.map((role) => {
-                        const roleValue = typeof role === 'object' ? role.name : role;
-                        const roleKey = typeof role === 'object' ? role.id : role;
-                        return (
-                            <Dropdown.Item key={roleKey} eventKey={roleValue} active={roleFilter === roleValue}>
-                                {roleValue}
-                            </Dropdown.Item>
-                        );
+                    {roles
+                        // UI FILTER: Rimuove "External Maintainer" dalla lista dropdown
+                        .filter(role => {
+                            const roleValue = (typeof role === 'object' ? role.name : role) || "";
+                            return roleValue.toLowerCase() !== "external maintainer";
+                        })
+                        .map((role) => {
+                            const roleValue = typeof role === 'object' ? role.name : role;
+                            const roleKey = typeof role === 'object' ? role.id : role;
+                            return (
+                                <Dropdown.Item key={roleKey} eventKey={roleValue} active={roleFilter === roleValue}>
+                                    {roleValue}
+                                </Dropdown.Item>
+                            );
                     })}
                 </Dropdown.Menu>
              </Dropdown>

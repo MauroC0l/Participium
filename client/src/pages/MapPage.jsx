@@ -451,7 +451,10 @@ const MapPage = () => {
     try {
       const base64Photos = await Promise.all(photos.map(photo => convertToBase64(photo.file)));
 
+      console.log("creo report con dati:", formData);
+
       const reportData = {
+        address: formData.address,
         title: formData.title.trim(),
         description: formData.description.trim(),
         category: formData.category,
