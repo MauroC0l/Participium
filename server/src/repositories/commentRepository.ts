@@ -1,5 +1,5 @@
 import { AppDataSource } from '../database/connection';
-import { commentEntity } from '@entity/commentEntity';
+import { CommentEntity } from '@entity/commentEntity';
 import { Repository } from 'typeorm';
 
 /**
@@ -7,10 +7,10 @@ import { Repository } from 'typeorm';
  * Handles database operations for comments
  */
 class CommentRepository {
-  private repository: Repository<commentEntity>;
+  private readonly repository: Repository<CommentEntity>;
 
   constructor() {
-    this.repository = AppDataSource.getRepository(commentEntity);
+    this.repository = AppDataSource.getRepository(CommentEntity);
   }
 
   /**
@@ -18,7 +18,7 @@ class CommentRepository {
    * @param reportId - The ID of the report
    * @returns Array of comments with author information
    */
-  async getCommentsByReportId(reportId: number): Promise<commentEntity[]> {
+  async getCommentsByReportId(reportId: number): Promise<CommentEntity[]> {
     return this.repository.find({
       where: { reportId },
       relations: ['author', 'author.departmentRole', 'author.departmentRole.role'],
@@ -33,7 +33,7 @@ class CommentRepository {
    * @param content - The comment text content
    * @returns The created comment with author information
    */
-  async createComment(reportId: number, authorId: number, content: string): Promise<commentEntity> {
+  async createComment(reportId: number, authorId: number, content: string): Promise<CommentEntity> {
     const comment = this.repository.create({
       reportId,
       authorId,
@@ -60,7 +60,7 @@ class CommentRepository {
    * @param commentId - The ID of the comment
    * @returns The comment or null if not found
    */
-  async getCommentById(commentId: number): Promise<commentEntity | null> {
+  async getCommentById(commentId: number): Promise<CommentEntity | null> {
     return this.repository.findOne({
       where: { id: commentId },
       relations: ['author', 'author.departmentRole', 'author.departmentRole.role']

@@ -2,7 +2,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from
 import request from 'supertest';
 import { AppDataSource } from "@database/connection";
 import app from "../../../app";
-import { userEntity } from "@models/entity/userEntity";
+import { UserEntity } from "@models/entity/userEntity";
 import { RegisterRequest } from '@models/dto/input/RegisterRequest';
 import { userRepository } from '@repositories/userRepository';
 import { departmentRoleRepository } from '@repositories/departmentRoleRepository';
@@ -33,7 +33,7 @@ describe('UserController Integration Tests', () => {
   // Cleanup after all tests
   afterAll(async () => {
     if (createdUserIds.length > 0) {
-      const repository = AppDataSource.getRepository(userEntity);
+      const repository = AppDataSource.getRepository(UserEntity);
       await repository.delete({ id: In(createdUserIds) });
       createdUserIds = [];
     }
@@ -45,7 +45,7 @@ describe('UserController Integration Tests', () => {
   // Cleanup after each test
   afterEach(async () => {
     if (createdUserIds.length > 0) {
-      const repository = AppDataSource.getRepository(userEntity);
+      const repository = AppDataSource.getRepository(UserEntity);
       await repository.delete({ id: In(createdUserIds) });
       createdUserIds = [];
     }
@@ -78,7 +78,7 @@ describe('UserController Integration Tests', () => {
       expect(response.body.password).toBeUndefined();
       expect(response.body.passwordHash).toBeUndefined();
 
-      const dbUser = await AppDataSource.getRepository(userEntity).findOneBy({ id: response.body.id });
+      const dbUser = await AppDataSource.getRepository(UserEntity).findOneBy({ id: response.body.id });
       expect(dbUser).not.toBeNull();
       expect(dbUser?.username).toBe(newCitizenData.username);
     });

@@ -108,8 +108,6 @@ CREATE TABLE users (
     last_name VARCHAR(100) NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     
-    -- RIMOSSO: role user_role NOT NULL DEFAULT 'Citizen',
-    
     -- AGGIUNTO: Collega alla "posizione" (Dipartimento + Ruolo) dell'utente.
     -- La logica applicativa assegnerà il ruolo 'Citizen' ai nuovi utenti.
     department_role_id INT NOT NULL REFERENCES department_roles(id),
@@ -141,6 +139,7 @@ CREATE TABLE reports (
     description TEXT NOT NULL,
     category report_category NOT NULL,
     location GEOGRAPHY(Point, 4326) NOT NULL,
+    address VARCHAR(500),
     is_anonymous BOOLEAN NOT NULL DEFAULT false,
     status report_status NOT NULL DEFAULT 'Pending Approval',
     rejection_reason TEXT,
@@ -156,7 +155,6 @@ CREATE TABLE reports (
 
 /*
  * Images table (photos)
- * (Nessuna modifica)
  */
 CREATE TABLE photos (
     id SERIAL PRIMARY KEY,
@@ -168,7 +166,6 @@ CREATE TABLE photos (
 
 /*
  * Comments table (comments)
- * (Nessuna modifica)
  */
 CREATE TABLE comments (
     id SERIAL PRIMARY KEY,
@@ -181,7 +178,6 @@ CREATE TABLE comments (
 
 /*
  * Notifications tables (notifications)
- * (Nessuna modifica)
  */
 CREATE TABLE notifications (
     id SERIAL PRIMARY KEY,
@@ -195,7 +191,6 @@ CREATE TABLE notifications (
 
 /*
  * Messages table (messages)
- * (Nessuna modifica)
  */
 CREATE TABLE messages (
     id SERIAL PRIMARY KEY,
@@ -204,20 +199,6 @@ CREATE TABLE messages (
     content TEXT NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
-
-
-/*
- * Category Department Mapping table (category_department_mapping)
- * Maps report categories to responsible departments for automatic assignment
- 
-CREATE TABLE category_department_mapping (
-    id SERIAL PRIMARY KEY,
-    category report_category NOT NULL UNIQUE,
-    department_id INT NOT NULL REFERENCES departments(id),
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
-);*/
-
-
 
 /*
  * Category Role Mapping table (category_role_mapping)

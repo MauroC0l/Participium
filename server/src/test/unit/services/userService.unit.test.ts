@@ -6,7 +6,7 @@ import * as loggingService from '@services/loggingService';
 import { ConflictError } from '@models/errors/ConflictError';
 import { AppError } from '@models/errors/AppError';
 import { RegisterRequest } from '@models/dto/input/RegisterRequest';
-import { userEntity } from '@models/entity/userEntity';
+import { UserEntity } from '@models/entity/userEntity';
 import { UserResponse } from '@models/dto/output/UserResponse';
 
 jest.mock('@repositories/userRepository');
@@ -15,8 +15,8 @@ jest.mock('@services/mapperService');
 jest.mock('@services/loggingService');
 
 // Helper to create mock user entity
-const createMockUserEntity = (overrides?: Partial<userEntity>): userEntity => {
-  const mockUser = new userEntity();
+const createMockUserEntity = (overrides?: Partial<UserEntity>): UserEntity => {
+  const mockUser = new UserEntity();
   mockUser.id = 1;
   mockUser.username = 'testuser';
   mockUser.email = 'test@example.com';

@@ -5,7 +5,7 @@ import { userRepository } from '@repositories/userRepository';
 import { departmentRoleRepository } from '@repositories/departmentRoleRepository';
 import { companyRepository } from '@repositories/companyRepository';
 import { RegisterRequest } from '@models/dto/input/RegisterRequest';
-import { userEntity } from '@models/entity/userEntity';
+import { UserEntity } from '@models/entity/userEntity';
 import { ConflictError } from '@models/errors/ConflictError';
 import { AppError } from '@models/errors/AppError';
 import { In } from 'typeorm';

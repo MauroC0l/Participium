@@ -2,8 +2,8 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from
 import request from 'supertest';
 import { AppDataSource } from "@database/connection";
 import app from "../../../app";
-import { userEntity } from "@models/entity/userEntity";
-import { reportEntity } from "@models/entity/reportEntity";
+import { UserEntity } from "@models/entity/userEntity";
+import { ReportEntity } from "@models/entity/reportEntity";
 import { userRepository } from '@repositories/userRepository';
 import { departmentRoleRepository } from '@repositories/departmentRoleRepository';
 import { companyRepository } from '@repositories/companyRepository';
@@ -11,7 +11,7 @@ import { reportRepository } from '@repositories/reportRepository';
 import { In } from 'typeorm';
 
 
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 import { reportService } from '../../../services/reportService';
 import { ReportStatus } from '../../../models/dto/ReportStatus';
 import { ReportCategory } from '../../../models/dto/ReportCategory';
@@ -38,11 +38,11 @@ describe('ReportController Integration Tests', () => {
   // Final cleanup
   afterAll(async () => {
     if (createdReportIds.length > 0) {
-      await AppDataSource.getRepository(reportEntity).delete({ id: In(createdReportIds) });
+      await AppDataSource.getRepository(ReportEntity).delete({ id: In(createdReportIds) });
       createdReportIds = [];
     }
     if (createdUserIds.length > 0) {
-      await AppDataSource.getRepository(userEntity).delete({ id: In(createdUserIds) });
+      await AppDataSource.getRepository(UserEntity).delete({ id: In(createdUserIds) });
       createdUserIds = [];
     }
     if (AppDataSource.isInitialized) {
@@ -54,11 +54,11 @@ describe('ReportController Integration Tests', () => {
   afterEach(async () => {
     // Delete reports first due to foreign key constraints
     if (createdReportIds.length > 0) {
-      await AppDataSource.getRepository(reportEntity).delete({ id: In(createdReportIds) });
+      await AppDataSource.getRepository(ReportEntity).delete({ id: In(createdReportIds) });
       createdReportIds = [];
     }
     if (createdUserIds.length > 0) {
-      await AppDataSource.getRepository(userEntity).delete({ id: In(createdUserIds) });
+      await AppDataSource.getRepository(UserEntity).delete({ id: In(createdUserIds) });
       createdUserIds = [];
     }
     jest.restoreAllMocks();
@@ -172,7 +172,7 @@ describe('ReportController Integration Tests', () => {
       createdReportIds.push(createRes.body.id);
 
       // Manually update status to allow Citizen to see it (Citizen cannot see PENDING_APPROVAL)
-      await AppDataSource.getRepository(reportEntity).update(createRes.body.id, { status: ReportStatus.ASSIGNED });
+      await AppDataSource.getRepository(ReportEntity).update(createRes.body.id, { status: ReportStatus.ASSIGNED });
 
       const response = await agent.get('/api/reports');
 

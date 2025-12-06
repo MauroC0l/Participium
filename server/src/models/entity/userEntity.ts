@@ -2,7 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, Jo
 import { DepartmentRoleEntity } from "./departmentRoleEntity";
 
 @Entity("users")
-export class userEntity implements Express.User {
+export class UserEntity implements Express.User {
   @PrimaryGeneratedColumn()
   id!: number;
 
