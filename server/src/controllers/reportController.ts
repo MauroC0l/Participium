@@ -110,9 +110,13 @@ class ReportController {
       }
 
       const userId = (req.user as any).id;
-      const status = req.query.status as ReportStatus | undefined;
+      const { status, category } = req.query;
 
-      const reports = await reportService.getMyAssignedReports(userId, status);
+      const reports = await reportService.getMyAssignedReports(
+        userId, 
+        status as ReportStatus | undefined, 
+        category as ReportCategory | undefined
+      );
       res.status(200).json(reports);
     } catch (error) {
       next(error);

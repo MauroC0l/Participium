@@ -263,9 +263,10 @@ class ReportService {
    * Get reports assigned to a specific user
    * @param userId - ID of the user to whom reports are assigned
    * @param status - Optional status filter
+   * @param category - Optional category filter
    * @returns Array of reports assigned to the user
    */
-  async getMyAssignedReports(userId: number, status?: ReportStatus): Promise<ReportResponse[]> {
+  async getMyAssignedReports(userId: number, status?: ReportStatus, category?: ReportCategory): Promise<ReportResponse[]> {
     const user = await userRepository.findUserById(userId);
     if (!user) {
       throw new UnauthorizedError('User not found');
@@ -275,9 +276,9 @@ class ReportService {
 
     let reports;
     if (departmentName === 'External Service Providers') {
-      reports = await reportRepository.findByExternalAssigneeId(userId, status);
+      reports = await reportRepository.findByExternalAssigneeId(userId, status, category);
     } else {
-      reports = await reportRepository.findByAssigneeId(userId, status);
+      reports = await reportRepository.findByAssigneeId(userId, status, category);
     }
 
     // Batch query companies for all external assignees
