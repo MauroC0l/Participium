@@ -1,5 +1,5 @@
 import { AppDataSource } from '../database/connection';
-import { CategoryRoleEntity } from '../models/entity/CategoryRoleEntity';
+import { CategoryRoleEntity } from '../models/entity/categoryRoleEntity';
 import { ReportCategory } from '../models/dto/ReportCategory';
 
 class CategoryRoleRepository {

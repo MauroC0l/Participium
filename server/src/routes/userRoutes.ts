@@ -82,12 +82,12 @@ router.post('/', validateRegisterInput, UserController.register);
  *       - cookieAuth: []
  *     parameters:
  *       - in: query
- *         name: categoryId
+ *         name: category
  *         required: true
  *         schema:
- *           type: integer
- *         description: Category ID to filter external maintainers by their competence area
- *         example: 1
+ *           type: string
+ *         description: Category name to filter external maintainers by their competence area
+ *         example: "Public Lighting"
  *     responses:
  *       200:
  *         description: List of external maintainers for the specified category
@@ -125,7 +125,7 @@ router.post('/', validateRegisterInput, UserController.register);
  *                       name:
  *                         type: string
  *       400:
- *         description: Missing or invalid categoryId parameter
+ *         description: Missing or invalid category parameter
  *         content:
  *           application/json:
  *             schema:
@@ -133,7 +133,7 @@ router.post('/', validateRegisterInput, UserController.register);
  *             example:
  *               code: 400
  *               name: "BadRequestError"
- *               message: "categoryId query parameter is required"
+ *               message: "category query parameter is required"
  *       401:
  *         description: User not authenticated
  *         content:
