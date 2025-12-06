@@ -12,7 +12,7 @@ import { Location } from "@models/dto/Location";
 import { ReportCategory } from "@models/dto/ReportCategory";
 import { Report } from "@dto/Report";
 import { CategoryRoleMapping } from '../models/dto/CategoryRoleMapping';
-import { CategoryRoleEntity } from '../models/entity/CategoryRoleEntity';
+import { CategoryRoleEntity } from '../models/entity/categoryRoleEntity';
 import { ReportStatus } from "@models/dto/ReportStatus";
 
 
