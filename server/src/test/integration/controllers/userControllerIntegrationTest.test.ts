@@ -166,7 +166,7 @@ describe('UserController Integration Tests - Get External Maintainers', () => {
 
   afterAll(async () => {
     if (createdUserIds.length > 0) {
-      await AppDataSource.getRepository(userEntity).delete({ id: In(createdUserIds) });
+      await AppDataSource.getRepository(UserEntity).delete({ id: In(createdUserIds) });
     }
     if (createdCompanyIds.length > 0) {
       await AppDataSource.query('DELETE FROM companies WHERE id = ANY($1)', [createdCompanyIds]);
@@ -178,7 +178,7 @@ describe('UserController Integration Tests - Get External Maintainers', () => {
 
   afterEach(async () => {
     if (createdUserIds.length > 0) {
-      await AppDataSource.getRepository(userEntity).delete({ id: In(createdUserIds) });
+      await AppDataSource.getRepository(UserEntity).delete({ id: In(createdUserIds) });
       createdUserIds = [];
     }
     if (createdCompanyIds.length > 0) {

@@ -2,7 +2,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from
 import request from 'supertest';
 import { AppDataSource } from "@database/connection";
 import app from "../../../app";
-import { userEntity } from "@models/entity/userEntity";
+import { UserEntity } from "@models/entity/userEntity";
 import { userRepository } from '@repositories/userRepository';
 import { departmentRoleRepository } from '@repositories/departmentRoleRepository';
 import { In } from 'typeorm';
@@ -23,7 +23,7 @@ describe('CompanyController Integration Tests', () => {
 
   afterAll(async () => {
     if (createdUserIds.length > 0) {
-      await AppDataSource.getRepository(userEntity).delete({ id: In(createdUserIds) });
+      await AppDataSource.getRepository(UserEntity).delete({ id: In(createdUserIds) });
     }
     if (createdCompanyIds.length > 0) {
       await AppDataSource.query('DELETE FROM companies WHERE id = ANY($1)', [createdCompanyIds]);
@@ -35,7 +35,7 @@ describe('CompanyController Integration Tests', () => {
 
   afterEach(async () => {
     if (createdUserIds.length > 0) {
-      await AppDataSource.getRepository(userEntity).delete({ id: In(createdUserIds) });
+      await AppDataSource.getRepository(UserEntity).delete({ id: In(createdUserIds) });
       createdUserIds = [];
     }
     if (createdCompanyIds.length > 0) {

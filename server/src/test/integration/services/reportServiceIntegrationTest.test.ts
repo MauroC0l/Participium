@@ -1097,11 +1097,11 @@ describe('ReportService Integration Tests - Assign to External Maintainer', () =
   afterAll(async () => {
     // Cleanup in correct order (FK constraints)
     if (createdReportIds.length > 0) {
-      await AppDataSource.getRepository(reportEntity).delete({ id: In(createdReportIds) });
+      await AppDataSource.getRepository(ReportEntity).delete({ id: In(createdReportIds) });
     }
     
     if (createdUserIds.length > 0) {
-      await AppDataSource.getRepository(userEntity).delete({ id: In(createdUserIds) });
+      await AppDataSource.getRepository(UserEntity).delete({ id: In(createdUserIds) });
     }
     
     if (createdCompanyIds.length > 0) {

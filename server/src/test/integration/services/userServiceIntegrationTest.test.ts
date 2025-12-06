@@ -23,7 +23,7 @@ describe('UserService Integration Tests', () => {
   afterAll(async () => {
     // Cleanup
     if (createdUserIds.length > 0) {
-      await AppDataSource.getRepository(userEntity).delete({ id: In(createdUserIds) });
+      await AppDataSource.getRepository(UserEntity).delete({ id: In(createdUserIds) });
     }
     
     if (createdCompanyIds.length > 0) {

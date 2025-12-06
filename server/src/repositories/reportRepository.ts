@@ -330,7 +330,7 @@ class ReportRepository {
    * @param report - The report entity to save
    * @returns The saved report entity with all relations loaded
    */
-  public async save(report: reportEntity): Promise<reportEntity> {
+  public async save(report: ReportEntity): Promise<ReportEntity> {
     const savedReport = await this.repository.save(report);
     // Reload with all relations to ensure complete data
     const reloadedReport = await this.findReportById(savedReport.id);

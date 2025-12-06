@@ -6,7 +6,7 @@ import { departmentRoleRepository } from '@repositories/departmentRoleRepository
 import { ConflictError } from '@models/errors/ConflictError';
 import { BadRequestError } from '@models/errors/BadRequestError';
 import { In } from 'typeorm';
-import { userEntity } from '@models/entity/userEntity';
+import { UserEntity } from '@models/entity/userEntity';
 
 describe('CompanyService Integration Tests', () => {
   let adminUserId: number;
@@ -45,7 +45,7 @@ describe('CompanyService Integration Tests', () => {
   afterAll(async () => {
     // Cleanup users first, then companies (users may have FK to companies)
     if (createdUserIds.length > 0) {
-      await AppDataSource.getRepository(userEntity).delete({ id: In(createdUserIds) });
+      await AppDataSource.getRepository(UserEntity).delete({ id: In(createdUserIds) });
     }
     
     if (createdCompanyIds.length > 0) {

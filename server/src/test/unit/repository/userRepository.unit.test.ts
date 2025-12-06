@@ -957,7 +957,7 @@ describe('UserRepository Unit Tests', () => {
   describe('findExternalMaintainersByCategory', () => {
     it('should find and return external maintainers for a given category', async () => {
         const category = 'Public Lighting';
-        const expectedUsers: userEntity[] = [new userEntity(), new userEntity()];
+        const expectedUsers: UserEntity[] = [new UserEntity(), new UserEntity()];
 
         mockQueryBuilder.getMany.mockResolvedValue(expectedUsers);
 

@@ -275,7 +275,7 @@ class UserRepository {
    * @param category - The category string to filter by
    * @returns Array of user entities
    */
-  public async findExternalMaintainersByCategory(category: string): Promise<userEntity[]> {
+  public async findExternalMaintainersByCategory(category: string): Promise<UserEntity[]> {
     return await this.repository
       .createQueryBuilder('user')
       .leftJoinAndSelect('user.departmentRole', 'departmentRole')
