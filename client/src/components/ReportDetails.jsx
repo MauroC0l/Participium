@@ -198,7 +198,7 @@ const ReportDetails = ({
     if (isOpen && externalUsers.length === 0) {
       setLoadingExternal(true);
       try {
-        const users = await getAllExternals();
+        const users = await getAllExternals(report.category);
         setExternalUsers(users || []);
       } catch (err) {
         console.error("Failed to load external users", err);
@@ -211,6 +211,10 @@ const ReportDetails = ({
 
   const handleAssignToExternal = async (externalUser) => {
     try {
+
+      console.log("ASSIGN TO EXTERNAL USER: ", externalUser);
+
+
       await assignToExternalUser(report.id, externalUser.id);
       if (onStatusUpdate) await onStatusUpdate();
       onHide();

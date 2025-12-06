@@ -8,7 +8,9 @@ const handleResponse = async (response) => {
     const error = new Error();
     try {
       const data = await response.json();
+      
       error.message = data.message || data.error || `Request failed with status ${response.status}`;
+      
       error.status = response.status;
       error.data = data;
     } catch {
@@ -19,7 +21,6 @@ const handleResponse = async (response) => {
   }
   return response.json();
 };
-
 /**
  * Get all Categories
  */
@@ -113,19 +114,39 @@ export const getAddressFromCoordinates = async (latitude, longitude) => {
 };
 
 /**
- * Assign a report to an external maintainer
+ * Get reports assigned to a specific external maintainer
  * @param {string} externalMaintainerId - ID of the external maintainer
  * @param {Object} externalUserData - Data for the external maintainer assignment
  */
-export const assignToExternalUser = async (externalMaintainerId, externalUserData) => {
+export const assignedToExternalUser = async (externalMaintainerId, externalUserData) => {
   const response = await fetch(`/api/reports/assigned/external/${externalMaintainerId}`, {
-    method: "POST",
+    method: "GET",
     headers: {
       "Content-Type": "application/json",
     },
     credentials: "include",
     body: JSON.stringify(externalUserData),
   });
+
+  return handleResponse(response);
+};
+
+/**
+ * Assign a report to an external user
+ * @param {string|number} reportId - ID of the report to assign
+ * @param {string|number} externalUserId - ID of the external user to assign the report to
+ * @returns {Promise<Object>} The updated report object
+ */
+export const assignToExternalUser = async (reportId, externalUserId) => {
+  const response = await fetch(`/api/reports/${reportId}/assign-external/`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+    // MODIFICA QUI: Mappa externalUserId nella chiave attesa dal backend
+    body: JSON.stringify({ externalAssigneeId: externalUserId }), 
+  }); 
 
   return handleResponse(response);
 };

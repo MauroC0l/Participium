@@ -5,13 +5,13 @@ import {
   Table,
   Badge,
   Button,
-  Alert,
-  Dropdown,
   Spinner,
   InputGroup,
+  Dropdown,
+  Alert,
 } from "react-bootstrap";
 import { BsEye } from "react-icons/bs";
-import { FaFilter, FaList, FaChevronDown } from "react-icons/fa"; // Aggiunto FaChevronDown
+import { FaFilter, FaList, FaChevronDown } from "react-icons/fa";
 import "../css/MunicipalityUserHome.css";
 
 // Componenti
@@ -23,6 +23,7 @@ import {
   getAllCategories,
   updateReportStatus,
   getReportsAssignedToMe,
+  assignedToExternalUser, // <--- IMPORTATO
 } from "../api/reportApi";
 
 // --- CONSTANTS & CONFIGURATION ---
@@ -87,13 +88,18 @@ export default function MunicipalityUserHome({ user }) {
   // --- DERIVED STATE (MEMOIZED) ---
   const userRole = user?.role_name?.toLowerCase();
 
+  const isExternalMaintainer = useMemo(() => {
+    return userRole === "external maintainer";
+  }, [userRole]);
+
   const isStaffMember = useMemo(() => {
     return (
       userRole &&
       userRole !== "administrator" &&
-      userRole !== "municipal public relations officer"
+      userRole !== "municipal public relations officer" &&
+      !isExternalMaintainer // Escludiamo external maintainer da staff member generico per gestire logiche separate se necessario
     );
-  }, [userRole]);
+  }, [userRole, isExternalMaintainer]);
 
   const userDepartmentCategory = useMemo(() => {
     return isStaffMember ? getDepartmentCategory(user?.role_name) : null;
@@ -103,8 +109,9 @@ export default function MunicipalityUserHome({ user }) {
 
   // 1. Set default filters based on role
   useEffect(() => {
-    if (isStaffMember && userDepartmentCategory) {
-      setCategoryFilter(userDepartmentCategory);
+    if ((isStaffMember && userDepartmentCategory) || isExternalMaintainer) {
+      // Se è staff o external, filtro categoria (se applicabile) e status "Assigned"
+      if (userDepartmentCategory) setCategoryFilter(userDepartmentCategory);
       setStatusFilter("Assigned");
     } else if (
       userRole === "administrator" ||
@@ -112,17 +119,27 @@ export default function MunicipalityUserHome({ user }) {
     ) {
       setStatusFilter("Pending Approval");
     }
-  }, [isStaffMember, userDepartmentCategory, userRole]);
+  }, [isStaffMember, isExternalMaintainer, userDepartmentCategory, userRole]);
 
   // 2. Fetch Data
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     setApiError(null);
     try {
+      // Determina quale API chiamare in base al ruolo
+      let reportsPromise;
+      if (isExternalMaintainer) {
+        reportsPromise = assignedToExternalUser(user.id);
+      } else if (isStaffMember) {
+        reportsPromise = getReportsAssignedToMe();
+      } else {
+        reportsPromise = getReports();
+      }
+
       // Parallel fetching for categories and reports
       const [categoriesData, reportsData] = await Promise.all([
         getAllCategories(),
-        isStaffMember ? getReportsAssignedToMe() : getReports(),
+        reportsPromise,
       ]);
 
       setAllCategories(categoriesData || []);
@@ -146,7 +163,7 @@ export default function MunicipalityUserHome({ user }) {
     } finally {
       setIsLoading(false);
     }
-  }, [isStaffMember]);
+  }, [isStaffMember, isExternalMaintainer]);
 
   useEffect(() => {
     if (user) {
@@ -157,6 +174,8 @@ export default function MunicipalityUserHome({ user }) {
   // --- FILTERING LOGIC (MEMOIZED) ---
   const filteredReports = useMemo(() => {
     return reports.filter((report) => {
+      // Se è External Maintainer, la categoria è già filtrata dal backend (tramite la company),
+      // ma manteniamo il filtro lato client se categoryFilter è settato.
       const matchesCategory =
         categoryFilter === "" || report.category === categoryFilter;
       const matchesStatus =
@@ -277,14 +296,18 @@ export default function MunicipalityUserHome({ user }) {
       {/* Header Section */}
       <div className="mu-header-wrapper">
         <div>
-          <h2 className="mu-home-title">Officer Dashboard</h2>
+          <h2 className="mu-home-title">
+            {isExternalMaintainer ? "Maintainer Dashboard" : "Officer Dashboard"}
+          </h2>
           <p className="mu-home-subtitle">
-            Manage and validate citizen reports.
+            {isExternalMaintainer
+              ? "Manage maintenance tasks assigned to your company."
+              : "Manage and validate citizen reports."}
           </p>
         </div>
 
         <div className="mu-filters">
-          {!isStaffMember ? (
+          {!isStaffMember && !isExternalMaintainer ? (
             <>
               {/* Category Filter */}
               <InputGroup className="mu-filter-group">
@@ -365,7 +388,11 @@ export default function MunicipalityUserHome({ user }) {
           ) : (
             <div className="bg-light p-2 px-3 rounded text-muted small border">
               Viewing:{" "}
-              <strong>{userDepartmentCategory || "My Department"}</strong>{" "}
+              <strong>
+                {isExternalMaintainer
+                  ? "Assigned Jobs"
+                  : userDepartmentCategory || "My Department"}
+              </strong>{" "}
               &nbsp;|&nbsp; Status: <strong>Assigned</strong>
             </div>
           )}

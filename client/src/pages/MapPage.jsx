@@ -494,10 +494,6 @@ const MapPage = () => {
         photos.map((photo) => convertToBase64(photo.file))
       );
 
-      console.log("creo report con dati:", formData);
-
-      console.log("creo report con dati:", formData);
-
       const reportData = {
         address: formData.address,
         title: formData.title.trim(),

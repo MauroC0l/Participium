@@ -1,15 +1,6 @@
 import { useState, useEffect } from "react";
-import { Alert, Modal, Dropdown, InputGroup, Tooltip, OverlayTrigger } from "react-bootstrap";
-import { 
-  FaUser, 
-  FaEnvelope, 
-  FaUserShield, 
-  FaSave, 
-  FaBuilding, 
-  FaFilter, 
-  FaChevronDown, 
-  FaUndo 
-} from "react-icons/fa";
+import { Alert, Modal, InputGroup } from "react-bootstrap";
+import { FaUser, FaEnvelope, FaUserShield, FaSave, FaBuilding } from "react-icons/fa";
 import { 
   getAllExternals,
   deleteMunicipalityUser,
@@ -17,18 +8,15 @@ import {
 } from "../api/municipalityUserApi";
 
 import { getAllCompanies } from "../api/companyApi";
+import UserDetails from "./UserDetails"; // Importazione del componente riutilizzabile
 
 import "../css/ExternalMaintainerList.css"; 
 
 export default function ExternalMaintainerList({ refreshTrigger }) {
   const [users, setUsers] = useState([]);
-  const [companies, setCompanies] = useState([]); // State per le companies
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  
-  // Filters states
-  const [companyFilter, setCompanyFilter] = useState("");
   
   // Modal states
   const [showEditModal, setShowEditModal] = useState(false);
@@ -45,14 +33,8 @@ export default function ExternalMaintainerList({ refreshTrigger }) {
     const initData = async () => {
       setLoading(true);
       try {
-        // Fetch parallela di utenti e companies
-        const [usersData, companiesData] = await Promise.all([
-          getAllExternals(),
-          getAllCompanies()
-        ]);
-
+        const usersData = await getAllExternals();
         setUsers(usersData);
-        setCompanies(companiesData);
       } catch (err) {
         console.error("Failed to fetch initial data:", err);
         if (err.status === 403) {
@@ -82,18 +64,6 @@ export default function ExternalMaintainerList({ refreshTrigger }) {
     }
   };
 
-  // --- Filter Handler Functions ---
-  const handleCompanySelect = (value) => setCompanyFilter(value);
-
-  const getSelectedCompanyName = () => {
-    if (!companyFilter) return "All Companies";
-    return companies.find(c => c.id === parseInt(companyFilter))?.name;
-  };
-
-  const handleResetFilters = () => {
-    setCompanyFilter("");
-  };
-
   // --- Edit Modal Functions ---
   const handleEdit = (user) => {
     setEditingUser(user);
@@ -103,6 +73,7 @@ export default function ExternalMaintainerList({ refreshTrigger }) {
       firstName: user.first_name || "",
       lastName: user.last_name || "",
       role: user.role_name,
+      // Se l'utente ha un campo company_name nel DB, lo mostriamo, altrimenti vuoto
       companyName: user.company_name || "" 
     });
     setShowEditModal(true);
@@ -114,7 +85,9 @@ export default function ExternalMaintainerList({ refreshTrigger }) {
   };
 
   const handleEditSubmit = async (e) => {
-    e.preventDefault();
+    // Gestione opzionale se l'evento è passato
+    if (e && e.preventDefault) e.preventDefault();
+    
     setError("");
     setSuccess("");
 
@@ -126,19 +99,20 @@ export default function ExternalMaintainerList({ refreshTrigger }) {
     setEditLoading(true);
 
     try {
+      // Nota: Non inviamo il ruolo per cambiarlo, assumiamo che rimanga External Maintainer
       const payload = {
         email: editForm.email,
         first_name: editForm.firstName,
         last_name: editForm.lastName,
         role: editForm.role, 
-        // company_name: editForm.companyName 
+        // company_name: editForm.companyName // Scommentare se il backend supporta l'update della company
       };
 
       await updateMunicipalityUser(editingUser.id, payload);
       
       setSuccess(`User "${editForm.username}" updated successfully!`);
       setShowEditModal(false);
-      await fetchUsers();
+      await fetchUsers(); // Ricarica e rifiltra la lista
 
       setTimeout(() => setSuccess(""), 5000);
     } catch (err) {
@@ -181,66 +155,13 @@ export default function ExternalMaintainerList({ refreshTrigger }) {
     }
   };
 
-  // --- Filter Logic ---
-  const filteredUsers = users.filter(user => {
-    // Se c'è un filtro azienda, confrontiamo il nome dell'azienda dell'utente
-    // con il nome dell'azienda selezionata (trovata tramite ID nel filtro)
-    if (companyFilter) {
-      const selectedCompany = companies.find(c => c.id === parseInt(companyFilter));
-      // Se non troviamo l'azienda (caso raro), non mostriamo nulla o tutto, qui escludiamo
-      if (!selectedCompany) return false;
-      return user.company_name === selectedCompany.name;
-    }
-    return true;
-  });
-
   return (
     <div className="externalMaintainerList-modern">
       {/* Header */}
       <div className="eml-header">
-        <div>
-            <h1 className="eml-title">External Maintainers</h1>
-            <div className="eml-subtitle text-muted ps-3 mt-1">
-                Viewing <strong>External Service Provider</strong> personnel
-            </div>
-        </div>
-        
-        <div className="eml-filters">
-          
-          {/* Company Filter */}
-          <InputGroup className="eml-filter-group">
-             <InputGroup.Text className="eml-filter-icon"><FaBuilding/></InputGroup.Text>
-             <Dropdown onSelect={handleCompanySelect} className="eml-custom-dropdown">
-                <Dropdown.Toggle variant="light" className="eml-filter-toggle">
-                    <div className="d-flex align-items-center justify-content-between w-100">
-                        <span className="text-truncate">{getSelectedCompanyName()}</span>
-                        <FaChevronDown className="eml-dropdown-arrow ms-2"/>
-                    </div>
-                </Dropdown.Toggle>
-                <Dropdown.Menu className="modern-dropdown-menu">
-                    <Dropdown.Item eventKey="" active={companyFilter === ""}>
-                        All Companies
-                    </Dropdown.Item>
-                    {companies.map((comp) => (
-                        <Dropdown.Item key={comp.id} eventKey={comp.id} active={companyFilter === comp.id.toString()}>
-                            {comp.name}
-                        </Dropdown.Item>
-                    ))}
-                </Dropdown.Menu>
-             </Dropdown>
-          </InputGroup>
-
-          {/* Reset Filters Button */}
-          <OverlayTrigger placement="top" overlay={<Tooltip>Reset Filters</Tooltip>}>
-            <button 
-                className="eml-btn-reset" 
-                onClick={handleResetFilters} 
-                disabled={!companyFilter}
-            >
-                <FaUndo />
-            </button>
-          </OverlayTrigger>
-
+        <h1 className="eml-title">External Maintainers Management</h1>
+        <div className="eml-subtitle text-muted">
+            Viewing only <strong>External Service Provider</strong> personnel
         </div>
       </div>
 
@@ -267,16 +188,11 @@ export default function ExternalMaintainerList({ refreshTrigger }) {
                 <div>Loading maintainers...</div>
               </div>
             </div>
-          ) : filteredUsers.length === 0 ? (
+          ) : users.length === 0 ? (
             <div className="eml-empty">
               <div className="eml-empty-content">
                 <div className="eml-empty-icon">👷</div>
-                <div>
-                   {companyFilter 
-                     ? "No maintainers match the selected company."
-                     : "No External Maintainers found."
-                   }
-                </div>
+                <div>No External Maintainers found.</div>
               </div>
             </div>
           ) : (
@@ -284,8 +200,8 @@ export default function ExternalMaintainerList({ refreshTrigger }) {
               <table className="eml-table">
                 <thead>
                   <tr>
+                    <th>ID</th>
                     <th>Username</th>
-                    <th>Name</th>
                     <th>Email</th>
                     <th>Role</th>
                     <th>Company</th>
@@ -293,15 +209,15 @@ export default function ExternalMaintainerList({ refreshTrigger }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredUsers.map((user) => (
+                  {users.map((user) => (
                     <tr key={user.id}>
+                      <td><span className="text-muted">#{user.id}</span></td>
                       <td><strong>{user.username}</strong></td>
-                      <td>{user.first_name} {user.last_name}</td>
                       <td>{user.email}</td>
                       <td><span className="eml-role-badge">{user.role_name}</span></td>
                       <td>
                         {user.company_name ? (
-                            <span className="text-muted small fw-bold"><FaBuilding className="me-1"/>{user.company_name}</span>
+                            <span className="text-muted small"><FaBuilding className="me-1"/>{user.company_name}</span>
                         ) : (
                             <span className="text-muted small">-</span>
                         )}
@@ -331,61 +247,12 @@ export default function ExternalMaintainerList({ refreshTrigger }) {
           <Modal.Title className="eml-modal-title">Edit Maintainer</Modal.Title>
         </Modal.Header>
         <Modal.Body className="eml-modal-body">
-          <form onSubmit={handleEditSubmit} className="eml-edit-form">
-            <div className="name-row">
-              <div className="eml-field">
-                <label className="eml-label"><span className="eml-required">First Name</span></label>
-                <InputGroup className="eml-input-group">
-                    <InputGroup.Text className="eml-icon"><FaUser/></InputGroup.Text>
-                    <input type="text" name="firstName" className="form-control eml-input" value={editForm.firstName} onChange={handleEditChange} required disabled={editLoading}/>
-                </InputGroup>
-              </div>
-              <div className="eml-field">
-                <label className="eml-label"><span className="eml-required">Last Name</span></label>
-                <InputGroup className="eml-input-group">
-                    <InputGroup.Text className="eml-icon"><FaUser/></InputGroup.Text>
-                    <input type="text" name="lastName" className="form-control eml-input" value={editForm.lastName} onChange={handleEditChange} required disabled={editLoading}/>
-                </InputGroup>
-              </div>
-            </div>
-
-            <div className="eml-field">
-              <label className="eml-label">Username</label>
-              <InputGroup className="eml-input-group">
-                    <InputGroup.Text className="eml-icon"><FaUser/></InputGroup.Text>
-                    <input type="text" className="form-control eml-input eml-readonly" value={editForm.username} disabled />
-              </InputGroup>
-              <small className="eml-help-text">Username cannot be changed</small>
-            </div>
-
-            <div className="eml-field">
-              <label className="eml-label"><span className="eml-required">Email</span></label>
-              <InputGroup className="eml-input-group">
-                    <InputGroup.Text className="eml-icon"><FaEnvelope/></InputGroup.Text>
-                    <input type="email" name="email" className="form-control eml-input" value={editForm.email} onChange={handleEditChange} required disabled={editLoading}/>
-              </InputGroup>
-            </div>
-
-            <div className="eml-field">
-              <label className="eml-label">Role</label>
-              <InputGroup className="eml-input-group">
-                    <InputGroup.Text className="eml-icon"><FaUserShield/></InputGroup.Text>
-                    <input type="text" className="form-control eml-input eml-readonly" value={editForm.role} disabled />
-              </InputGroup>
-              <small className="eml-help-text">Role is locked for this category</small>
-            </div>
-            
-            {editForm.companyName && (
-                <div className="eml-field">
-                  <label className="eml-label">Company</label>
-                  <InputGroup className="eml-input-group">
-                        <InputGroup.Text className="eml-icon"><FaBuilding/></InputGroup.Text>
-                        <input type="text" className="form-control eml-input eml-readonly" value={editForm.companyName} disabled />
-                  </InputGroup>
-                  <small className="eml-help-text">Company managed via contract settings</small>
-                </div>
-            )}
-          </form>
+            <UserDetails 
+                formData={editForm} 
+                onChange={handleEditChange} 
+                onSubmit={handleEditSubmit} 
+                loading={editLoading} 
+            />
         </Modal.Body>
         <Modal.Footer className="eml-modal-footer">
           <button className="eml-modal-btn eml-modal-btn-cancel" onClick={() => setShowEditModal(false)} disabled={editLoading}>
