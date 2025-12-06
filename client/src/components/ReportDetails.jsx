@@ -510,9 +510,8 @@ const ReportDetails = ({
                     <Form.Group className="mb-2">
                       <Form.Control
                         as="textarea"
-                        className={`rdm-reject-textarea ${
-                          errorMsg ? "is-invalid" : ""
-                        }`}
+                        className={`rdm-reject-textarea ${errorMsg ? "is-invalid" : ""
+                          }`}
                         rows={2}
                         placeholder="Enter reason for rejection..."
                         value={rejectionReason}
@@ -591,8 +590,23 @@ const ReportDetails = ({
                     <div className="rdm-value highlight">
                       {report.assignee ? (
                         report.assignee.id
-                      ) : report.externalAssigneeId ? (
-                        `${report.externalAssigneeId} (Ext)`
+                      ) : (
+                        <span className="text-muted">Not assigned</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+
+                <div className="rdm-info-row">
+                  <div className="rdm-icon-box external">
+                    <FaBuilding />
+                  </div>
+                  <div>
+                    <span className="rdm-label">External ID:</span>
+                    <div className="rdm-value highlight">
+                      {report.externalAssigneeId ? (
+                        report.externalAssigneeId
                       ) : (
                         <span className="text-muted">Not assigned</span>
                       )}
@@ -611,9 +625,8 @@ const ReportDetails = ({
                     >
                       {/* NOTA LE CLASSI QUI: d-flex justify-content-between align-items-center */}
                       <Dropdown.Toggle
-                        className={`rdm-btn-external-assign w-100 d-flex justify-content-between align-items-center ${
-                          isDropdownOpen ? "active" : ""
-                        }`}
+                        className={`rdm-btn-external-assign w-100 d-flex justify-content-between align-items-center ${isDropdownOpen ? "active" : ""
+                          }`}
                         variant="outline-dark"
                         id="external-assign-dropdown"
                       >
@@ -622,9 +635,8 @@ const ReportDetails = ({
                         </span>
                         {/* La chevron è l'ultimo elemento, quindi andrà a destra */}
                         <FaChevronDown
-                          className={`rdm-chevron ${
-                            isDropdownOpen ? "rotate" : ""
-                          }`}
+                          className={`rdm-chevron ${isDropdownOpen ? "rotate" : ""
+                            }`}
                         />
                       </Dropdown.Toggle>
 

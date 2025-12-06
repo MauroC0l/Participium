@@ -461,7 +461,10 @@
   background: #fff1f2;
   color: var(--rdm-brand);
   flex-shrink: 0;
+  background: #f3e8ff; /* Viola molto chiaro */
+  color: #7e22ce;      /* Viola scuro */
 }
+
 
 .rdm-icon-box.assignee {
   background: #eff6ff;
