@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Row, Col, Form, Button, Alert, InputGroup, Dropdown } from "react-bootstrap";
 import { createMunicipalityUser, getAllRoles } from "../api/municipalityUserApi";
 import { getRolesByDepartment, getAllDepartments } from "../api/departmentAPI";
+import { getAllCompanies } from "../api/companyApi"; // <--- 1. Import API Companies
 import "../css/MunicipalityUserForm.css";
 import {
     FaEye, FaEyeSlash, FaSave, FaTimes,
@@ -84,15 +85,25 @@ export default function MunicipalityUserForm({ onUserCreated, onCancel }) {
     const initialFormState = {
         username: "", email: "", password: "", confirmPassword: "",
         first_name: "", last_name: "", department: "", role: "",
-        company: ""
+        company: "" // Qui ora salveremo l'ID della company
     };
 
     const [formData, setFormData] = useState(initialFormState);
     const [errors, setErrors] = useState({});
 
-    // Dati completi (tutti i dipartimenti e ruoli grezzi)
-    const [data, setData] = useState({ departments: [], roles: [] });
-    const [status, setStatus] = useState({ loading: false, globalError: "", success: "", loadingDepts: true, loadingRoles: false });
+    // Dati completi (tutti i dipartimenti, ruoli e companies)
+    // <--- 2. Aggiunto array companies allo stato
+    const [data, setData] = useState({ departments: [], roles: [], companies: [] });
+    
+    const [status, setStatus] = useState({ 
+        loading: false, 
+        globalError: "", 
+        success: "", 
+        loadingDepts: true, 
+        loadingRoles: false,
+        loadingCompanies: true // <--- Aggiunto loading state
+    });
+    
     const [showPwd, setShowPwd] = useState({ main: false, confirm: false });
     const [isExternal, setIsExternal] = useState(false);
 
@@ -112,15 +123,31 @@ export default function MunicipalityUserForm({ onUserCreated, onCancel }) {
         if (status.globalError) setStatus(prev => ({ ...prev, globalError: "" }));
     }, [status.globalError, errors]);
 
-    // --- 1. Load Departments on Mount ---
+    // --- 1. Load Departments & Companies on Mount ---
     useEffect(() => {
         let isMounted = true;
-        getAllDepartments().then(depts => {
-            if (isMounted) {
-                setData(prev => ({ ...prev, departments: depts }));
-                setStatus(prev => ({ ...prev, loadingDepts: false }));
+        
+        const initData = async () => {
+            try {
+                // <--- 3. Fetch parallelo di Departments e Companies
+                const [depts, comps] = await Promise.all([
+                    getAllDepartments(),
+                    getAllCompanies()
+                ]);
+
+                if (isMounted) {
+                    setData(prev => ({ ...prev, departments: depts, companies: comps }));
+                    setStatus(prev => ({ ...prev, loadingDepts: false, loadingCompanies: false }));
+                }
+            } catch (err) {
+                console.error("Failed loading init data", err);
+                if (isMounted) {
+                    setStatus(prev => ({ ...prev, loadingDepts: false, loadingCompanies: false }));
+                }
             }
-        }).catch(() => { if (isMounted) setStatus(prev => ({ ...prev, loadingDepts: false })); });
+        };
+
+        initData();
         return () => { isMounted = false; };
     }, []);
 
@@ -146,53 +173,37 @@ export default function MunicipalityUserForm({ onUserCreated, onCancel }) {
         fetchRoles();
     }, [formData.department]);
 
-    // --- 3. LOGICA FILTRO (Per INTERNAL users) ---
-    // Se è External, non ci interessa filtrare la lista perché il dropdown è disabilitato.
-    // Ma ci serve la lista completa per trovare l'ID da settare.
-    // Se è Internal, filtriamo via le opzioni "External..." così non può sceglierle.
-
+    // --- 3. LOGICA FILTRO ---
     const displayDepartments = useMemo(() => {
-        // Se siamo Internal, nascondiamo l'opzione "External Service Providers"
         if (!isExternal) {
             return data.departments.filter(d => d.name !== "External Service Providers");
         }
-        // Se siamo External, serve la lista completa per risolvere l'ID nel nome
         return data.departments;
     }, [data.departments, isExternal]);
 
     const displayRoles = useMemo(() => {
-        // Se siamo Internal, nascondiamo l'opzione "External Maintainer"
         if (!isExternal) {
             return data.roles.filter(r => r.name !== "External Maintainer");
         }
-        // Se siamo External, serve la lista completa
         return data.roles;
     }, [data.roles, isExternal]);
 
 
     // --- 4. LOGICA AUTOMAZIONE EXTERNAL ---
-
-    // Gestore Toggle: Imposta immediatamente il Dipartimento
     const handleTypeToggle = () => {
         const nextIsExternal = !isExternal;
         setIsExternal(nextIsExternal);
-        setErrors({}); // Pulisci errori precedenti
+        setErrors({});
 
         if (nextIsExternal) {
-            // ---> ATTIVAZIONE EXTERNAL <---
-            // 1. Cerchiamo l'ID del dipartimento External nella lista caricata
             const extDept = data.departments.find(d => d.name === "External Service Providers");
-
             setFormData(prev => ({
                 ...prev,
-                company: "", // Resetta o init company
-                department: extDept ? extDept.id : "", // Imposta SUBITO il dipartimento
-                role: "" // Resetta il ruolo, aspettiamo che fetchRoles carichi i ruoli di questo dipartimento
+                company: "",
+                department: extDept ? extDept.id : "",
+                role: ""
             }));
-
         } else {
-            // ---> RITORNO A INTERNAL <---
-            // Pulisci i campi forzati per lasciare libera scelta all'utente
             setFormData(prev => ({
                 ...prev,
                 department: "",
@@ -202,13 +213,9 @@ export default function MunicipalityUserForm({ onUserCreated, onCancel }) {
         }
     };
 
-    // Observer per il RUOLO: Appena arrivano i ruoli, se siamo External, forza la selezione
     useEffect(() => {
-        // Esegui solo se siamo External e abbiamo dei ruoli caricati
         if (isExternal && data.roles.length > 0) {
             const extRole = data.roles.find(r => r.name === "External Maintainer");
-
-            // Se troviamo il ruolo e non è già quello selezionato, impostalo
             if (extRole && String(formData.role) !== String(extRole.id)) {
                 setFormData(prev => ({ ...prev, role: extRole.id }));
                 clearError('role');
@@ -226,17 +233,27 @@ export default function MunicipalityUserForm({ onUserCreated, onCancel }) {
         if (!formData.email.trim()) newErrors.email = "Email is required";
         else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = "Invalid email";
 
-        // Importante: anche se disabilitati, i campi department e role hanno un valore nel formData, quindi la validazione passa!
         if (!formData.department) newErrors.department = "Select department";
         if (!formData.role) newErrors.role = "Select role";
 
         if (!formData.password) newErrors.password = "Password required";
         else if (formData.password.length < 6) newErrors.password = "Min 6 chars";
         if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = "Passwords mismatch";
-        if (isExternal && !formData.company.trim()) newErrors.company = "Company required";
+        
+        // Validazione Company: ora formData.company contiene un ID (stringa o numero)
+        if (isExternal && !formData.company) newErrors.company = "Company required";
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
+    };
+
+    const handleResetAndCancelWrapper = () => {
+        setFormData(initialFormState);
+        setErrors({});
+        setStatus(prev => ({ ...prev, globalError: "", success: "" }));
+        setIsExternal(false);
+        setShowPwd({ main: false, confirm: false });
+        if (onCancel) onCancel();
     };
 
     const handleSubmit = async (e) => {
@@ -247,31 +264,33 @@ export default function MunicipalityUserForm({ onUserCreated, onCancel }) {
 
         setStatus(prev => ({ ...prev, loading: true }));
         try {
-            // Cerchiamo i nomi originali nelle liste complete (data.departments)
             const selectedDept = data.departments.find(d => String(d.id) === String(formData.department));
             const selectedRole = data.roles.find(r => String(r.id) === String(formData.role));
+            
+            // <--- 5. Recuperiamo il NOME della company dall'ID selezionato
+            let selectedCompanyName = "";
+            if (isExternal && formData.company) {
+                const selectedCompObj = data.companies.find(c => String(c.id) === String(formData.company));
+                selectedCompanyName = selectedCompObj ? selectedCompObj.name : "";
+            }
 
             const payload = {
                 username: formData.username, email: formData.email, password: formData.password,
                 first_name: formData.first_name, last_name: formData.last_name,
                 department_name: selectedDept?.name || "",
                 role_name: selectedRole?.name || "",
-                company_name: isExternal ? formData.company : "",
+                company_name: selectedCompanyName, // Inviamo il nome, non l'ID, per compatibilità backend
             };
 
             const newUser = await createMunicipalityUser(payload);
             setStatus(prev => ({ ...prev, success: `Officer "${newUser.username}" created!`, loading: false }));
 
-            handleResetAndCancelWrapper(); // Resetta form e resetta isExternal
+            handleResetAndCancelWrapper(); 
             if (onUserCreated) onUserCreated(newUser);
         } catch (err) {
             const errorMessage = err.message || "Creation failed. Error or duplicate.";
             setStatus(prev => ({ ...prev, globalError: errorMessage, loading: false }));
         }
-    };
-
-    const handleResetAndCancelWrapper = () => {
-        setIsExternal(false);
     };
 
     const getLabelClass = (hasError) => hasError ? "muf-label text-danger" : "muf-label";
@@ -377,6 +396,7 @@ export default function MunicipalityUserForm({ onUserCreated, onCancel }) {
                             {errors.email && <div className="muf-field-error">{errors.email}</div>}
                         </Form.Group>
 
+                        {/* --- 4. DROPDOWN COMPANY --- */}
                         {isExternal && (
                             <Form.Group className="mb-3 fade-in">
                                 <Form.Label className={getLabelClass(errors.company)}>
@@ -384,12 +404,15 @@ export default function MunicipalityUserForm({ onUserCreated, onCancel }) {
                                 </Form.Label>
                                 <InputGroup className={`muf-input-group ${errors.company ? 'has-error' : ''}`}>
                                     <InputGroup.Text className="muf-icon"><FaBuilding /></InputGroup.Text>
-                                    <Form.Control
-                                        placeholder="External Company Name"
+                                    <CustomSelect
                                         value={formData.company}
-                                        onChange={e => updateField('company', e.target.value)}
+                                        options={data.companies}
+                                        onChange={(val) => updateField('company', val)}
                                         onFocus={() => clearError('company')}
-                                        className={`muf-input ${errors.company ? 'muf-input-error' : ''}`}
+                                        placeholder="Select Company"
+                                        loading={status.loadingCompanies}
+                                        disabled={status.loadingCompanies}
+                                        hasError={!!errors.company}
                                     />
                                 </InputGroup>
                                 {errors.company && <div className="muf-field-error">{errors.company}</div>}
@@ -412,7 +435,6 @@ export default function MunicipalityUserForm({ onUserCreated, onCancel }) {
                                     onFocus={() => clearError('department')}
                                     placeholder="Select Department"
                                     loading={status.loadingDepts}
-                                    // MODIFICA QUI: Disabilitato se sta caricando O se è External
                                     disabled={status.loadingDepts || isExternal}
                                     hasError={!!errors.department}
                                 />
@@ -431,7 +453,6 @@ export default function MunicipalityUserForm({ onUserCreated, onCancel }) {
                                     onFocus={() => clearError('role')}
                                     placeholder={!formData.department ? "Waiting Department" : "Select Role"}
                                     loading={status.loadingRoles}
-                                    // MODIFICA QUI: Disabilitato se manca dipartimento, se carica, O se è External
                                     disabled={!formData.department || status.loadingRoles || isExternal}
                                     hasError={!!errors.role}
                                 />
