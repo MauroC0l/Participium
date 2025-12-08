@@ -2,48 +2,42 @@ import { useState, useEffect } from "react";
 import { Alert, InputGroup, Tooltip, OverlayTrigger } from "react-bootstrap";
 import { FaSearch, FaBuilding, FaTag, FaUndo } from "react-icons/fa"; 
 import { getAllCompanies } from "../api/companyApi";
-
-// Importiamo lo stesso CSS per mantenere lo stile identico
 import "../css/MunicipalityUserList.css"; 
 
 export default function CompanyList({ refreshTrigger }) {
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  
-  // Filter state
   const [searchText, setSearchText] = useState("");
 
-  // Initial Data Fetch
+  // Fetch Logic triggerata dal cambio di refreshTrigger (o mount iniziale)
   useEffect(() => {
-    const initData = async () => {
+    let isMounted = true;
+    const fetchData = async () => {
       setLoading(true);
+      setError("");
       try {
         const data = await getAllCompanies();
-        setCompanies(data);
+        if (isMounted) setCompanies(data);
       } catch (err) {
-        console.error("Failed to fetch companies:", err);
-        if (err.status === 403) {
-          setError("You don't have permission to view data.");
-        } else if (err.status === 401) {
-          setError("You are not authenticated.");
-        } else {
-          setError(`Failed to load data: ${err.message}`);
+        if (isMounted) {
+            console.error("Failed to fetch companies:", err);
+            setError("Failed to load company registry.");
         }
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
 
-    initData();
+    fetchData();
+
+    return () => { isMounted = false; };
   }, [refreshTrigger]);
 
-  // --- Reset Filters ---
   const handleResetFilters = () => {
       setSearchText("");
   };
 
-  // --- Filter Logic ---
   const filteredCompanies = companies.filter(company => {
     if (!searchText) return true;
     const lowerSearch = searchText.toLowerCase();
@@ -55,13 +49,9 @@ export default function CompanyList({ refreshTrigger }) {
 
   return (
     <div className="municipalityUserList-modern">
-      {/* Header */}
       <div className="mul-header">
         <h1 className="mul-title">Company Registry</h1>
-        
         <div className="mul-filters">
-          
-          {/* Search Filter (Styled like the original dropdowns) */}
           <InputGroup className="mul-filter-group">
              <InputGroup.Text className="mul-filter-icon"><FaSearch/></InputGroup.Text>
              <input 
@@ -70,11 +60,10 @@ export default function CompanyList({ refreshTrigger }) {
                 placeholder="Search companies..."
                 value={searchText}
                 onChange={(e) => setSearchText(e.target.value)}
-                style={{ borderLeft: 'none', boxShadow: 'none' }} // Small inline fix to match specific toggle look
+                style={{ borderLeft: 'none', boxShadow: 'none' }}
              />
           </InputGroup>
 
-          {/* Reset Filters Button */}
           <OverlayTrigger placement="top" overlay={<Tooltip>Reset Filters</Tooltip>}>
             <button 
                 className="mul-btn-reset" 
@@ -84,18 +73,15 @@ export default function CompanyList({ refreshTrigger }) {
                 <FaUndo />
             </button>
           </OverlayTrigger>
-
         </div>
       </div>
 
-      {/* Alerts */}
       {error && (
         <Alert variant="danger" onClose={() => setError("")} dismissible className="mb-4">
           {error}
         </Alert>
       )}
 
-      {/* Main Card */}
       <div className="mul-card">
         <div className="mul-card-body">
           {loading ? (
@@ -124,7 +110,6 @@ export default function CompanyList({ refreshTrigger }) {
                   <tr>
                     <th>Company Name</th>
                     <th>Category</th>
-                    {/* Lasciamo una colonna vuota o azioni future se necessario, per mantenere l'allineamento visivo */}
                     <th>Actions</th> 
                   </tr>
                 </thead>
@@ -138,14 +123,12 @@ export default function CompanyList({ refreshTrigger }) {
                         </div>
                       </td>
                       <td>
-                        {/* Utilizziamo lo stile 'badge' originale per la categoria */}
                         <span className="mul-role-badge">
                             <FaTag className="me-1" style={{fontSize: '0.7rem'}}/>
                             {company.category}
                         </span>
                       </td>
                       <td>
-                        {/* Placeholder per azioni future, per mantenere lo stile della tabella */}
                         <div className="mul-actions">
                           <button className="mul-btn mul-btn-edit" style={{opacity: 0.5, cursor: 'not-allowed'}}>
                             Edit

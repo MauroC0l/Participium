@@ -2,14 +2,14 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Row, Col, Form, Button, Alert, InputGroup, Dropdown } from "react-bootstrap";
 import { createMunicipalityUser, getAllRoles } from "../api/municipalityUserApi";
 import { getRolesByDepartment, getAllDepartments } from "../api/departmentAPI";
-import { getAllCompanies } from "../api/companyApi"; // <--- 1. Import API Companies
+import { getAllCompanies } from "../api/companyApi";
 import "../css/MunicipalityUserForm.css";
 import {
     FaEye, FaEyeSlash, FaSave, FaTimes,
     FaUser, FaIdCard, FaEnvelope, FaBuilding, FaUserShield, FaLock, FaChevronDown
 } from "react-icons/fa";
 
-// --- Utility Functions ---
+// Utility Functions
 const cleanInput = (value, isEmail = false) => {
     if (typeof value !== 'string') return value;
     const noSpaces = value.replace(/\s/g, '');
@@ -29,15 +29,10 @@ const calculateStrength = (password) => {
 
 const getStrengthColor = (s) => ["#e9ecef", "#dc3545", "#ffc107", "#198754", "#198754"][s];
 
-// --- Custom Dropdown Component ---
+// Custom Select Component
 const CustomSelect = ({ value, options, onChange, placeholder, disabled, loading, hasError, onFocus }) => {
-    // Cerchiamo l'oggetto selezionato basandoci sull'ID
     const selectedItem = options.find(opt => String(opt.id) === String(value));
-
-    // Se non c'è item selezionato o stiamo caricando, è placeholder
     const isPlaceholder = !selectedItem;
-
-    // Testo da mostrare: Se c'è un valore selezionato, mostra il nome. Altrimenti il placeholder.
     const displayText = selectedItem ? selectedItem.name : placeholder;
 
     return (
@@ -49,27 +44,16 @@ const CustomSelect = ({ value, options, onChange, placeholder, disabled, loading
                 onFocus={onFocus}
             >
                 <div className="d-flex align-items-center justify-content-between w-100">
-                    <span
-                        className={`text-truncate ${isPlaceholder ? 'muf-placeholder-text' : ''}`}
-                        style={{ flex: 1, textAlign: 'left' }}
-                    >
+                    <span className={`text-truncate ${isPlaceholder ? 'muf-placeholder-text' : ''}`} style={{ flex: 1, textAlign: 'left' }}>
                         {loading ? "Loading..." : displayText}
                     </span>
-                    {/* Nascondiamo la freccia se è disabilitato per pulizia visiva, opzionale */}
                     {!disabled && <FaChevronDown className={`muf-dropdown-arrow ms-2 ${isPlaceholder ? 'muf-placeholder-arrow' : ''}`} />}
                 </div>
             </Dropdown.Toggle>
-
             <Dropdown.Menu className="muf-dropdown-menu">
                 {options.length > 0 ? (
                     options.map(opt => (
-                        <Dropdown.Item
-                            key={opt.id}
-                            eventKey={opt.id}
-                            active={String(value) === String(opt.id)}
-                            className="muf-dropdown-item"
-                            title={opt.name}
-                        >
+                        <Dropdown.Item key={opt.id} eventKey={opt.id} active={String(value) === String(opt.id)} className="muf-dropdown-item">
                             <div className="text-truncate">{opt.name}</div>
                         </Dropdown.Item>
                     ))
@@ -81,18 +65,16 @@ const CustomSelect = ({ value, options, onChange, placeholder, disabled, loading
     );
 };
 
-export default function MunicipalityUserForm({ onUserCreated, onCancel }) {
+// >>> MODIFICA QUI: Aggiunta prop refreshTrigger <<<
+export default function MunicipalityUserForm({ onSuccess, onCancel, refreshTrigger }) {
     const initialFormState = {
         username: "", email: "", password: "", confirmPassword: "",
         first_name: "", last_name: "", department: "", role: "",
-        company: "" // Qui ora salveremo l'ID della company
+        company: "" 
     };
 
     const [formData, setFormData] = useState(initialFormState);
     const [errors, setErrors] = useState({});
-
-    // Dati completi (tutti i dipartimenti, ruoli e companies)
-    // <--- 2. Aggiunto array companies allo stato
     const [data, setData] = useState({ departments: [], roles: [], companies: [] });
     
     const [status, setStatus] = useState({ 
@@ -101,7 +83,7 @@ export default function MunicipalityUserForm({ onUserCreated, onCancel }) {
         success: "", 
         loadingDepts: true, 
         loadingRoles: false,
-        loadingCompanies: true // <--- Aggiunto loading state
+        loadingCompanies: true 
     });
     
     const [showPwd, setShowPwd] = useState({ main: false, confirm: false });
@@ -109,7 +91,6 @@ export default function MunicipalityUserForm({ onUserCreated, onCancel }) {
 
     const passwordStrength = useMemo(() => calculateStrength(formData.password), [formData.password]);
 
-    // --- Helper Updates ---
     const clearError = (name) => {
         if (errors[name]) setErrors(prev => ({ ...prev, [name]: null }));
     };
@@ -123,18 +104,20 @@ export default function MunicipalityUserForm({ onUserCreated, onCancel }) {
         if (status.globalError) setStatus(prev => ({ ...prev, globalError: "" }));
     }, [status.globalError, errors]);
 
-    // --- 1. Load Departments & Companies on Mount ---
+    // --- 1. Load Departments & Companies ---
+    // >>> MODIFICA QUI: Dipendenza da refreshTrigger per ricaricare quando crei una company <<<
     useEffect(() => {
         let isMounted = true;
         
         const initData = async () => {
+            // Reset loading state per feedback visivo se necessario (opzionale)
+            // setStatus(prev => ({ ...prev, loadingDepts: true, loadingCompanies: true }));
+            
             try {
-                // <--- 3. Fetch parallelo di Departments e Companies
                 const [depts, comps] = await Promise.all([
                     getAllDepartments(),
                     getAllCompanies()
                 ]);
-
                 if (isMounted) {
                     setData(prev => ({ ...prev, departments: depts, companies: comps }));
                     setStatus(prev => ({ ...prev, loadingDepts: false, loadingCompanies: false }));
@@ -149,15 +132,14 @@ export default function MunicipalityUserForm({ onUserCreated, onCancel }) {
 
         initData();
         return () => { isMounted = false; };
-    }, []);
+    }, [refreshTrigger]); // AGGIUNTO QUI
 
-    // --- 2. Load Roles when Department Changes ---
+    // --- 2. Load Roles (Depends on Department) ---
     useEffect(() => {
         if (!formData.department) {
             setData(prev => ({ ...prev, roles: [] }));
             return;
         }
-
         const fetchRoles = async () => {
             setStatus(prev => ({ ...prev, loadingRoles: true }));
             try {
@@ -165,7 +147,10 @@ export default function MunicipalityUserForm({ onUserCreated, onCancel }) {
                 let rolesList = await getRolesByDepartment(deptId);
                 setData(prev => ({ ...prev, roles: rolesList }));
             } catch (err) {
-                try { const allRoles = await getAllRoles(); setData(prev => ({ ...prev, roles: allRoles })); } catch (e) { }
+                try { 
+                    const allRoles = await getAllRoles(); 
+                    setData(prev => ({ ...prev, roles: allRoles })); 
+                } catch (e) { }
             } finally {
                 setStatus(prev => ({ ...prev, loadingRoles: false }));
             }
@@ -173,30 +158,25 @@ export default function MunicipalityUserForm({ onUserCreated, onCancel }) {
         fetchRoles();
     }, [formData.department]);
 
-    // --- 3. LOGICA FILTRO ---
+    // --- Derived Data ---
     const displayDepartments = useMemo(() => {
-        if (!isExternal) {
-            return data.departments.filter(d => d.name !== "External Service Providers");
-        }
+        if (!isExternal) return data.departments.filter(d => d.name.toLowerCase() !== "external service providers");
         return data.departments;
     }, [data.departments, isExternal]);
 
     const displayRoles = useMemo(() => {
-        if (!isExternal) {
-            return data.roles.filter(r => r.name !== "External Maintainer");
-        }
+        if (!isExternal) return data.roles.filter(r => r.name.toLowerCase() !== "external maintainer");
         return data.roles;
     }, [data.roles, isExternal]);
 
-
-    // --- 4. LOGICA AUTOMAZIONE EXTERNAL ---
+    // --- Handle External Toggle ---
     const handleTypeToggle = () => {
         const nextIsExternal = !isExternal;
         setIsExternal(nextIsExternal);
         setErrors({});
 
         if (nextIsExternal) {
-            const extDept = data.departments.find(d => d.name === "External Service Providers");
+            const extDept = data.departments.find(d => d.name.toLowerCase() === "external service providers");
             setFormData(prev => ({
                 ...prev,
                 company: "",
@@ -213,9 +193,10 @@ export default function MunicipalityUserForm({ onUserCreated, onCancel }) {
         }
     };
 
+    // --- Auto Select Role for External ---
     useEffect(() => {
         if (isExternal && data.roles.length > 0) {
-            const extRole = data.roles.find(r => r.name === "External Maintainer");
+            const extRole = data.roles.find(r => r.name.toLowerCase() === "external maintainer");
             if (extRole && String(formData.role) !== String(extRole.id)) {
                 setFormData(prev => ({ ...prev, role: extRole.id }));
                 clearError('role');
@@ -223,7 +204,7 @@ export default function MunicipalityUserForm({ onUserCreated, onCancel }) {
         }
     }, [isExternal, data.roles, formData.role]);
 
-    // --- Validation & Submit ---
+    // --- Validation ---
     const validate = () => {
         const newErrors = {};
         if (!formData.first_name.trim()) newErrors.first_name = "First name is required";
@@ -240,22 +221,13 @@ export default function MunicipalityUserForm({ onUserCreated, onCancel }) {
         else if (formData.password.length < 6) newErrors.password = "Min 6 chars";
         if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = "Passwords mismatch";
         
-        // Validazione Company: ora formData.company contiene un ID (stringa o numero)
         if (isExternal && !formData.company) newErrors.company = "Company required";
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
 
-    const handleResetAndCancelWrapper = () => {
-        setFormData(initialFormState);
-        setErrors({});
-        setStatus(prev => ({ ...prev, globalError: "", success: "" }));
-        setIsExternal(false);
-        setShowPwd({ main: false, confirm: false });
-        if (onCancel) onCancel();
-    };
-
+    // --- Submit ---
     const handleSubmit = async (e) => {
         e.preventDefault();
         setStatus(prev => ({ ...prev, globalError: "", success: "" }));
@@ -267,7 +239,6 @@ export default function MunicipalityUserForm({ onUserCreated, onCancel }) {
             const selectedDept = data.departments.find(d => String(d.id) === String(formData.department));
             const selectedRole = data.roles.find(r => String(r.id) === String(formData.role));
             
-            // <--- 5. Recuperiamo il NOME della company dall'ID selezionato
             let selectedCompanyName = "";
             if (isExternal && formData.company) {
                 const selectedCompObj = data.companies.find(c => String(c.id) === String(formData.company));
@@ -279,14 +250,19 @@ export default function MunicipalityUserForm({ onUserCreated, onCancel }) {
                 first_name: formData.first_name, last_name: formData.last_name,
                 department_name: selectedDept?.name || "",
                 role_name: selectedRole?.name || "",
-                company_name: selectedCompanyName, // Inviamo il nome, non l'ID, per compatibilità backend
+                company_name: selectedCompanyName,
             };
 
             const newUser = await createMunicipalityUser(payload);
             setStatus(prev => ({ ...prev, success: `Officer "${newUser.username}" created!`, loading: false }));
 
-            handleResetAndCancelWrapper(); 
-            if (onUserCreated) onUserCreated(newUser);
+            setFormData(initialFormState);
+            setIsExternal(false);
+
+            if (onSuccess) {
+                setTimeout(() => onSuccess(isExternal), 1500);
+            }
+
         } catch (err) {
             const errorMessage = err.message || "Creation failed. Error or duplicate.";
             setStatus(prev => ({ ...prev, globalError: errorMessage, loading: false }));
@@ -312,7 +288,7 @@ export default function MunicipalityUserForm({ onUserCreated, onCancel }) {
                         <span className={`ms-2 ${isExternal ? "fw-bold text-dark" : "text-muted"}`}>External</span>
                     </div>
 
-                    <button type="button" className="muf-btn-text" onClick={handleResetAndCancelWrapper} disabled={status.loading}>
+                    <button type="button" className="muf-btn-text" onClick={onCancel} disabled={status.loading}>
                         <FaTimes /> Cancel
                     </button>
                 </div>
@@ -326,10 +302,8 @@ export default function MunicipalityUserForm({ onUserCreated, onCancel }) {
                 )}
 
                 <Row className="g-4">
-                    {/* Left Column */}
                     <Col lg={6} className="muf-col-left">
                         <h6 className="muf-section-header">Personal Information</h6>
-
                         <Row className="g-3 mb-3">
                             <Col md={6}>
                                 <Form.Group>
@@ -396,7 +370,6 @@ export default function MunicipalityUserForm({ onUserCreated, onCancel }) {
                             {errors.email && <div className="muf-field-error">{errors.email}</div>}
                         </Form.Group>
 
-                        {/* --- 4. DROPDOWN COMPANY --- */}
                         {isExternal && (
                             <Form.Group className="mb-3 fade-in">
                                 <Form.Label className={getLabelClass(errors.company)}>
@@ -420,10 +393,8 @@ export default function MunicipalityUserForm({ onUserCreated, onCancel }) {
                         )}
                     </Col>
 
-                    {/* Right Column */}
                     <Col lg={6}>
                         <h6 className="muf-section-header">Access & Security</h6>
-
                         <Form.Group className="mb-3">
                             <Form.Label className={getLabelClass(errors.department)}>Department <span className="req">*</span></Form.Label>
                             <InputGroup className={`muf-input-group ${errors.department ? 'has-error' : ''}`}>
