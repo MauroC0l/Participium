@@ -44,7 +44,7 @@ const ROLE_DEPARTMENT_MAPPING = {
   "building maintenance staff member": "Architectural Barriers",
   "accessibility staff member": "Architectural Barriers",
   "recycling program staff member": "Waste",
-  "parks maintenance staff member": "Parks and Recreation",
+  "parks maintenance staff member": "Public Green Areas and Playgrounds",
 };
 
 const getStatusBadgeVariant = (status) => {
