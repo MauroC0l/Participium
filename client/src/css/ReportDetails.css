@@ -793,3 +793,25 @@
   /* Assicura il wrap del testo */
   color: var(--rdm-text-main);
 }
+
+
+.rdm-dropdown-id-badge {
+  font-family: 'Courier New', monospace; /* Font tecnico per i numeri */
+  font-size: 0.60rem;
+  font-weight: 700;
+  color: #6b7280;
+  background-color: #f3f4f6;
+  padding: 2px 8px;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  white-space: nowrap; /* Impedisce che l'ID vada a capo */
+  flex-shrink: 0; /* Impedisce che l'ID si rimpicciolisca se il nome è lungo */
+  letter-spacing: -0.5px;
+}
+
+/* Opzionale: hover effect sull'item cambia anche il colore del badge */
+.rdm-dropdown-item:hover .rdm-dropdown-id-badge {
+  background-color: white;
+  border-color: #d1d5db;
+  color: #374151;
+}

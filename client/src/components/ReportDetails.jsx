@@ -217,10 +217,10 @@ const ReportDetails = ({
       // 1. Chiamata API
       await assignToExternalUser(report.id, externalUser.id);
 
-      // 2. AGGIORNAMENTO DEL PADRE (Mancava questo!)
+      // 2. AGGIORNAMENTO DEL PADRE
       if (onReportUpdated) {
-        onReportUpdated(report.id, { 
-          status: "Assigned", 
+        onReportUpdated(report.id, {
+          status: "Assigned",
           externalAssigneeId: externalUser.id,
           // Se l'API restituisce l'oggetto completo dell'assegnatario, potresti voler aggiornare anche quello, 
           // ma per ora aggiorniamo gli ID critici per la visualizzazione.
@@ -290,7 +290,7 @@ const ReportDetails = ({
 
       // 3. Callback legacy
       if (onStatusUpdate) await onStatusUpdate();
-      
+
       onHide();
     } catch (error) {
       setErrorMsg(error.message || `Failed to update status to ${newStatus}`);
@@ -674,36 +674,42 @@ const ReportDetails = ({
                         ) : externalUsers.length > 0 ? (
                           <>
                             <div className="rdm-dropdown-header">
-                              Select Contractor
+                              Select External Maintainer
                             </div>
                             <div className="rdm-dropdown-scroll-area">
                               {externalUsers.map((extUser) => (
                                 <Dropdown.Item
                                   key={extUser.id}
-                                  onClick={() =>
-                                    handleAssignToExternal(extUser)
-                                  }
+                                  onClick={() => handleAssignToExternal(extUser)}
                                   className="rdm-dropdown-item"
                                 >
-                                  <div className="d-flex align-items-center">
-                                    <div className="rdm-avatar-circle me-3">
+                                  {/* Aggiunto w-100 per occupare tutta la larghezza */}
+                                  <div className="d-flex align-items-center w-100">
+
+                                    {/* Avatar */}
+                                    <div className="rdm-avatar-circle me-3 flex-shrink-0">
                                       {extUser.first_name.charAt(0)}
                                       {extUser.last_name.charAt(0)}
                                     </div>
-                                    <div className="flex-grow-1 overflow-hidden">
+
+                                    {/* Nome e Azienda */}
+                                    <div className="flex-grow-1 overflow-hidden me-2">
                                       <div className="rdm-user-name text-truncate">
                                         {extUser.first_name} {extUser.last_name}
                                       </div>
                                       {extUser.company_name && (
                                         <div className="rdm-company-name text-truncate">
-                                          <FaBuilding
-                                            className="me-1"
-                                            size={10}
-                                          />
+                                          <FaBuilding className="me-1" size={10} />
                                           {extUser.company_name}
                                         </div>
                                       )}
                                     </div>
+
+                                    {/* --- NUOVO: ID Badge --- */}
+                                    <div className="rdm-dropdown-id-badge">
+                                      ID #{extUser.id}
+                                    </div>
+
                                   </div>
                                 </Dropdown.Item>
                               ))}
