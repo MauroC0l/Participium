@@ -49,7 +49,7 @@ class UserService {
 
     // Genera un intero tra 100000 (incluso) e 1000000 (escluso)
     const otpCode = crypto.randomInt(100000, 1000000).toString();
-    const otpExpiration = new Date(Date.now() + 900000) // 15 minutes from now
+    const otpExpiration = new Date(Date.now() + 1800000) // 30 minutes from now
 
     // Create new user with hashed password
     const newUser = await userRepository.createUserWithPassword({

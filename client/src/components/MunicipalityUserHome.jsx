@@ -17,7 +17,7 @@ import "../css/MunicipalityUserHome.css";
 // Componenti
 import ReportDetails from "./ReportDetails";
 
-// IMPORT API (Assicurati che siano state aggiornate come indicato sopra)
+// IMPORT API
 import {
   getReports,
   getAllCategories,
@@ -48,7 +48,6 @@ const ROLE_DEPARTMENT_MAPPING = {
 };
 
 const getStatusBadgeVariant = (status) => {
-  // Gestiamo sia il formato "Pending Approval" che "PENDING_APPROVAL" per sicurezza visiva
   const normalizedStatus = status?.replace("_", " ").toLowerCase();
   
   if (normalizedStatus === "pending approval") return "warning";
@@ -64,10 +63,8 @@ const getDepartmentCategory = (roleName) => {
   return ROLE_DEPARTMENT_MAPPING[roleName.toLowerCase()] || null;
 };
 
-// Helper per convertire lo stato UI (es. "Pending Approval") in stato API (es. "PENDING_APPROVAL")
 const formatStatusForApi = (uiStatus) => {
     if (!uiStatus || uiStatus === "All Statuses") return null;
-    // Converte "Pending Approval" -> "PENDING_APPROVAL"
     return uiStatus;
 };
 
@@ -126,8 +123,6 @@ export default function MunicipalityUserHome({ user }) {
   }, [isStaffMember, userDepartmentCategory, userRole]);
 
   // --- FETCHING LOGIC ---
-
-  // 1. Fetch Categories
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -140,7 +135,6 @@ export default function MunicipalityUserHome({ user }) {
     fetchCategories();
   }, []);
 
-  // 2. Fetch Reports
   const fetchReportsData = useCallback(async () => {
     if (!user) return;
 
@@ -148,7 +142,6 @@ export default function MunicipalityUserHome({ user }) {
     setApiError(null);
 
     try {
-      // Conversione Filtri per API
       const apiStatusParam = formatStatusForApi(statusFilter);
       const apiCategoryParam = categoryFilter === "" || categoryFilter === "All Categories" ? null : categoryFilter;
 
@@ -157,10 +150,8 @@ export default function MunicipalityUserHome({ user }) {
       let reportsData;
 
       if (isStaffMember) {
-        // Passiamo i parametri corretti
         reportsData = await getReportsAssignedToMe(apiStatusParam, apiCategoryParam);
       } else {
-        // Passiamo i parametri corretti
         reportsData = await getReports(apiStatusParam, apiCategoryParam);
       }
 
@@ -173,7 +164,6 @@ export default function MunicipalityUserHome({ user }) {
           ) || [],
       }));
 
-      // Sort by date descending
       formattedReports.sort((a, b) => b.createdAt - a.createdAt);
 
       setReports(formattedReports);
@@ -185,7 +175,6 @@ export default function MunicipalityUserHome({ user }) {
     }
   }, [user, isStaffMember, statusFilter, categoryFilter]);
 
-  // Trigger fetch when dependencies change
   useEffect(() => {
     fetchReportsData();
   }, [fetchReportsData]);
@@ -202,16 +191,55 @@ export default function MunicipalityUserHome({ user }) {
     setShowModal(true);
   };
 
+  // Funzione helper per aggiornare lo stato locale immediatamente (SOLO STATUS)
+  const updateLocalReportsState = (reportId, newStatus) => {
+    setReports((prevReports) => {
+      if (statusFilter && statusFilter !== "All Statuses" && statusFilter !== newStatus) {
+        return prevReports.filter((report) => report.id !== reportId);
+      }
+      return prevReports.map((report) =>
+        report.id === reportId ? { ...report, status: newStatus } : report
+      );
+    });
+  };
+
+  // --- NUOVA FUNZIONE PER GESTIRE GLI AGGIORNAMENTI COMPLESSI DAL MODALE ---
+  // Questa funzione riceve un oggetto con i campi aggiornati (es. { status: 'Assigned', externalAssigneeId: 123 })
+  const handleReportUpdateFromModal = (reportId, updatedFields) => {
+    setReports((prevReports) => {
+      // 1. Verifichiamo se l'aggiornamento dello status causa la rimozione dai filtri
+      if (
+        updatedFields.status && 
+        statusFilter && 
+        statusFilter !== "All Statuses" && 
+        statusFilter !== updatedFields.status
+      ) {
+        return prevReports.filter((report) => report.id !== reportId);
+      }
+
+      // 2. Altrimenti aggiorniamo l'oggetto nell'array
+      return prevReports.map((report) =>
+        report.id === reportId ? { ...report, ...updatedFields } : report
+      );
+    });
+    
+    // Opzionale: Se vuoi essere sicuro al 100%, puoi anche triggerare un fetch in background silenzioso
+    // fetchReportsData(); 
+  };
+
   const handleAcceptReport = async (reportId) => {
     try {
-      const result = await updateReportStatus(reportId, "Assigned"); // Backend probably expects "ASSIGNED" here too? Check your API logic.
-      await fetchReportsData();
-
+      const result = await updateReportStatus(reportId, "Assigned"); 
       if (result?.error) throw new Error(result.error);
-      if (!result?.assignee) return { noOfficerFound: true };
+      updateLocalReportsState(reportId, "Assigned");
+      if (!result?.assignee) {
+         return { noOfficerFound: true };
+      }
+      fetchReportsData(); 
       return { success: true };
     } catch (error) {
       console.error("Error approving report:", error);
+      fetchReportsData();
       throw error;
     }
   };
@@ -219,10 +247,12 @@ export default function MunicipalityUserHome({ user }) {
   const handleRejectReport = async (reportId, reason) => {
     try {
       await updateReportStatus(reportId, "Rejected", reason);
-      await fetchReportsData();
+      updateLocalReportsState(reportId, "Rejected");
+      fetchReportsData();
       return true;
     } catch (error) {
       console.error("Error rejecting report:", error);
+      fetchReportsData(); 
       return false;
     }
   };
@@ -273,7 +303,6 @@ export default function MunicipalityUserHome({ user }) {
                   bg={getStatusBadgeVariant(report.status)}
                   className="fw-normal"
                 >
-                  {/* Visualizziamo lo status in modo pulito (togliamo underscore) */}
                   {report.status.replace(/_/g, " ")}
                 </Badge>
               </td>
@@ -407,6 +436,8 @@ export default function MunicipalityUserHome({ user }) {
         user={user}
         onApprove={handleAcceptReport}
         onReject={handleRejectReport}
+        // --- AGGIUNTA FONDAMENTALE QUI SOTTO ---
+        onReportUpdated={handleReportUpdateFromModal}
       />
     </Container>
   );
