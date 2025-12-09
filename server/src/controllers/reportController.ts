@@ -208,6 +208,10 @@ class ReportController {
    */
   async getInternalComments(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
+      if (!req.user) {
+        throw new UnauthorizedError('Not authenticated');
+      }
+
       const reportId = parseAndValidateId(req.params.id, 'report');
       
       const comments = await reportService.getInternalComments(reportId);

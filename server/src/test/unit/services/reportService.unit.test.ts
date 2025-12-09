@@ -21,6 +21,7 @@ import { createMockUser } from '@test/utils/mockEntities';
 jest.mock('@repositories/userRepository');
 jest.mock('@repositories/reportRepository');
 jest.mock('@repositories/photoRepository');
+jest.mock('@repositories/commentRepository');
 jest.mock('@services/storageService');
 jest.mock('@services/mapperService');
 jest.mock('@repositories/categoryRoleRepository');
@@ -1633,6 +1634,321 @@ describe('ReportService additional unit tests', () => {
       await expect(
         reportService.assignToExternalMaintainer(reportId, externalMaintainerId, 999)
       ).rejects.toThrow(UnauthorizedError);
+    });
+  });
+
+  describe('Internal Comments', () => {
+    const { commentRepository } = require('@repositories/commentRepository');
+    const { InsufficientRightsError } = require('@models/errors/InsufficientRightsError');
+
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    describe('getInternalComments', () => {
+      it('should return comments for existing report', async () => {
+        const mockReport = createMockReport({ id: 10 });
+        const mockComments = [
+          {
+            id: 1,
+            reportId: 10,
+            content: 'Test comment',
+            author: {
+              id: 1,
+              username: 'testuser',
+              firstName: 'Test',
+              lastName: 'User',
+              departmentRole: {
+                role: { name: 'Staff Member' }
+              }
+            },
+            createdAt: new Date('2024-01-15T10:00:00Z')
+          }
+        ];
+
+        jest.spyOn(reportRepository, 'findReportById').mockResolvedValue(mockReport);
+        jest.spyOn(commentRepository, 'getCommentsByReportId').mockResolvedValue(mockComments);
+
+        const result = await reportService.getInternalComments(10);
+
+        expect(reportRepository.findReportById).toHaveBeenCalledWith(10);
+        expect(commentRepository.getCommentsByReportId).toHaveBeenCalledWith(10);
+        expect(result).toHaveLength(1);
+        expect(result[0]).toHaveProperty('id', 1);
+        expect(result[0]).toHaveProperty('content', 'Test comment');
+        expect(result[0]).toHaveProperty('author');
+        expect(result[0].author).toHaveProperty('username', 'testuser');
+      });
+
+      it('should throw NotFoundError if report does not exist', async () => {
+        jest.spyOn(reportRepository, 'findReportById').mockResolvedValue(null);
+
+        await expect(reportService.getInternalComments(999))
+          .rejects
+          .toThrow(NotFoundError);
+
+        expect(reportRepository.findReportById).toHaveBeenCalledWith(999);
+        expect(commentRepository.getCommentsByReportId).not.toHaveBeenCalled();
+      });
+
+      it('should return empty array if report has no comments', async () => {
+        const mockReport = createMockReport({ id: 10 });
+        jest.spyOn(reportRepository, 'findReportById').mockResolvedValue(mockReport);
+        jest.spyOn(commentRepository, 'getCommentsByReportId').mockResolvedValue([]);
+
+        const result = await reportService.getInternalComments(10);
+
+        expect(result).toEqual([]);
+        expect(result).toHaveLength(0);
+      });
+
+      it('should map comments to response DTOs correctly', async () => {
+        const mockReport = createMockReport({ id: 10 });
+        const mockComments = [
+          {
+            id: 1,
+            reportId: 10,
+            content: 'Comment 1',
+            author: {
+              id: 1,
+              username: 'user1',
+              firstName: 'First',
+              lastName: 'User',
+              departmentRole: {
+                role: { name: 'Role1' }
+              }
+            },
+            createdAt: new Date('2024-01-15T10:00:00Z')
+          },
+          {
+            id: 2,
+            reportId: 10,
+            content: 'Comment 2',
+            author: {
+              id: 2,
+              username: 'user2',
+              firstName: 'Second',
+              lastName: 'User',
+              departmentRole: {
+                role: { name: 'Role2' }
+              }
+            },
+            createdAt: new Date('2024-01-15T11:00:00Z')
+          }
+        ];
+
+        jest.spyOn(reportRepository, 'findReportById').mockResolvedValue(mockReport);
+        jest.spyOn(commentRepository, 'getCommentsByReportId').mockResolvedValue(mockComments);
+
+        const result = await reportService.getInternalComments(10);
+
+        expect(result).toHaveLength(2);
+        expect(result[0].reportId).toBe(10);
+        expect(result[0].author.role).toBe('Role1');
+        expect(result[1].author.role).toBe('Role2');
+      });
+    });
+
+    describe('addInternalComment', () => {
+      it('should add comment successfully', async () => {
+        const mockReport = createMockReport({ id: 10 });
+        const mockUser = createMockUser('Water Network staff member', 'Water and Sewer Services Department', { id: 1, username: 'testuser' });
+        const mockCreatedComment = {
+          id: 5,
+          reportId: 10,
+          content: 'New comment',
+          author: mockUser,
+          createdAt: new Date()
+        };
+
+        jest.spyOn(reportRepository, 'findReportById').mockResolvedValue(mockReport);
+        jest.spyOn(commentRepository, 'createComment').mockResolvedValue(mockCreatedComment);
+
+        const result = await reportService.addInternalComment(10, 1, 'New comment');
+
+        expect(reportRepository.findReportById).toHaveBeenCalledWith(10);
+        expect(commentRepository.createComment).toHaveBeenCalledWith({
+          reportId: 10,
+          authorId: 1,
+          content: 'New comment'
+        });
+        expect(result).toHaveProperty('id', 5);
+        expect(result).toHaveProperty('content', 'New comment');
+      });
+
+      it('should throw NotFoundError if report does not exist', async () => {
+        jest.spyOn(reportRepository, 'findReportById').mockResolvedValue(null);
+
+        await expect(reportService.addInternalComment(999, 1, 'Test'))
+          .rejects
+          .toThrow(NotFoundError);
+
+        expect(commentRepository.createComment).not.toHaveBeenCalled();
+      });
+
+      it('should throw BadRequestError for empty content', async () => {
+        const mockReport = createMockReport({ id: 10 });
+        jest.spyOn(reportRepository, 'findReportById').mockResolvedValue(mockReport);
+
+        await expect(reportService.addInternalComment(10, 1, ''))
+          .rejects
+          .toThrow(BadRequestError);
+
+        expect(commentRepository.createComment).not.toHaveBeenCalled();
+      });
+
+      it('should throw BadRequestError for whitespace-only content', async () => {
+        const mockReport = createMockReport({ id: 10 });
+        jest.spyOn(reportRepository, 'findReportById').mockResolvedValue(mockReport);
+
+        await expect(reportService.addInternalComment(10, 1, '   '))
+          .rejects
+          .toThrow(BadRequestError);
+
+        expect(commentRepository.createComment).not.toHaveBeenCalled();
+      });
+
+      it('should throw BadRequestError for content exceeding max length', async () => {
+        const mockReport = createMockReport({ id: 10 });
+        const longContent = 'a'.repeat(2001);
+        jest.spyOn(reportRepository, 'findReportById').mockResolvedValue(mockReport);
+
+        await expect(reportService.addInternalComment(10, 1, longContent))
+          .rejects
+          .toThrow(BadRequestError);
+
+        expect(commentRepository.createComment).not.toHaveBeenCalled();
+      });
+
+      it('should accept content at max length (2000 chars)', async () => {
+        const mockReport = createMockReport({ id: 10 });
+        const mockUser = createMockUser('Water Network staff member', 'Water and Sewer Services Department', { id: 1 });
+        const maxContent = 'a'.repeat(2000);
+        const mockCreatedComment = {
+          id: 1,
+          reportId: 10,
+          content: maxContent,
+          author: mockUser,
+          createdAt: new Date()
+        };
+
+        jest.spyOn(reportRepository, 'findReportById').mockResolvedValue(mockReport);
+        jest.spyOn(commentRepository, 'createComment').mockResolvedValue(mockCreatedComment);
+
+        const result = await reportService.addInternalComment(10, 1, maxContent);
+
+        expect(result.content).toBe(maxContent);
+        expect(commentRepository.createComment).toHaveBeenCalled();
+      });
+
+      it('should trim whitespace from content', async () => {
+        const mockReport = createMockReport({ id: 10 });
+        const mockUser = createMockUser('Water Network staff member', 'Water and Sewer Services Department', { id: 1 });
+        const mockCreatedComment = {
+          id: 1,
+          reportId: 10,
+          content: 'Trimmed content',
+          author: mockUser,
+          createdAt: new Date()
+        };
+
+        jest.spyOn(reportRepository, 'findReportById').mockResolvedValue(mockReport);
+        jest.spyOn(commentRepository, 'createComment').mockResolvedValue(mockCreatedComment);
+
+        await reportService.addInternalComment(10, 1, '  Trimmed content  ');
+
+        expect(commentRepository.createComment).toHaveBeenCalledWith({
+          reportId: 10,
+          authorId: 1,
+          content: 'Trimmed content'
+        });
+      });
+    });
+
+    describe('deleteInternalComment', () => {
+      it('should delete own comment successfully', async () => {
+        const mockReport = createMockReport({ id: 10 });
+        const mockComment = {
+          id: 5,
+          reportId: 10,
+          authorId: 1,
+          content: 'Comment to delete',
+          author: { id: 1 }
+        };
+
+        jest.spyOn(reportRepository, 'findReportById').mockResolvedValue(mockReport);
+        jest.spyOn(commentRepository, 'getCommentById').mockResolvedValue(mockComment);
+        jest.spyOn(commentRepository, 'deleteComment').mockResolvedValue(undefined);
+
+        await reportService.deleteInternalComment(10, 5, 1);
+
+        expect(reportRepository.findReportById).toHaveBeenCalledWith(10);
+        expect(commentRepository.getCommentById).toHaveBeenCalledWith(5);
+        expect(commentRepository.deleteComment).toHaveBeenCalledWith(5);
+      });
+
+      it('should throw NotFoundError if report does not exist', async () => {
+        jest.spyOn(reportRepository, 'findReportById').mockResolvedValue(null);
+
+        await expect(reportService.deleteInternalComment(999, 5, 1))
+          .rejects
+          .toThrow(NotFoundError);
+
+        expect(commentRepository.getCommentById).not.toHaveBeenCalled();
+        expect(commentRepository.deleteComment).not.toHaveBeenCalled();
+      });
+
+      it('should throw NotFoundError if comment does not exist', async () => {
+        const mockReport = createMockReport({ id: 10 });
+        jest.spyOn(reportRepository, 'findReportById').mockResolvedValue(mockReport);
+        jest.spyOn(commentRepository, 'getCommentById').mockResolvedValue(null);
+
+        await expect(reportService.deleteInternalComment(10, 999, 1))
+          .rejects
+          .toThrow(NotFoundError);
+
+        expect(commentRepository.deleteComment).not.toHaveBeenCalled();
+      });
+
+      it('should throw BadRequestError if comment does not belong to report', async () => {
+        const mockReport = createMockReport({ id: 10 });
+        const mockComment = {
+          id: 5,
+          reportId: 20, // Different report ID
+          authorId: 1,
+          content: 'Comment',
+          author: { id: 1 }
+        };
+
+        jest.spyOn(reportRepository, 'findReportById').mockResolvedValue(mockReport);
+        jest.spyOn(commentRepository, 'getCommentById').mockResolvedValue(mockComment);
+
+        await expect(reportService.deleteInternalComment(10, 5, 1))
+          .rejects
+          .toThrow(BadRequestError);
+
+        expect(commentRepository.deleteComment).not.toHaveBeenCalled();
+      });
+
+      it('should throw InsufficientRightsError when trying to delete someone else\'s comment', async () => {
+        const mockReport = createMockReport({ id: 10 });
+        const mockComment = {
+          id: 5,
+          reportId: 10,
+          authorId: 2, // Different author
+          content: 'Comment',
+          author: { id: 2 }
+        };
+
+        jest.spyOn(reportRepository, 'findReportById').mockResolvedValue(mockReport);
+        jest.spyOn(commentRepository, 'getCommentById').mockResolvedValue(mockComment);
+
+        await expect(reportService.deleteInternalComment(10, 5, 1))
+          .rejects
+          .toThrow(InsufficientRightsError);
+
+        expect(commentRepository.deleteComment).not.toHaveBeenCalled();
+      });
     });
   });
 });
