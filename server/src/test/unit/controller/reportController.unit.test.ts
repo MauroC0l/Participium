@@ -348,7 +348,7 @@ describe('ReportController', () => {
 
       await reportController.getMyAssignedReports(mockRequest as Request, mockResponse as Response, mockNext);
 
-      expect(reportService.getMyAssignedReports).toHaveBeenCalledWith(mockUser.id, undefined);
+      expect(reportService.getMyAssignedReports).toHaveBeenCalledWith(mockUser.id, undefined, undefined);
       expect(mockResponse.status).toHaveBeenCalledWith(200);
       expect(mockResponse.json).toHaveBeenCalledWith(reports);
     });

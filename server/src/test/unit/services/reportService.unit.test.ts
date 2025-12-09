@@ -210,7 +210,7 @@ describe('ReportService', () => {
 
       // Assert
       expect(userRepository.findUserById).toHaveBeenCalledWith(userId);
-      expect(reportRepository.findByAssigneeId).toHaveBeenCalledWith(userId, undefined);
+      expect(reportRepository.findByAssigneeId).toHaveBeenCalledWith(userId, undefined, undefined);
       expect(reportRepository.findByAssigneeId).toHaveBeenCalledTimes(1);
       expect(result).toHaveLength(3);
       expect(mapReportEntityToReportResponse).toHaveBeenCalledTimes(3);
@@ -228,7 +228,7 @@ describe('ReportService', () => {
 
       // Assert
       expect(userRepository.findUserById).toHaveBeenCalledWith(userId);
-      expect(reportRepository.findByAssigneeId).toHaveBeenCalledWith(userId, undefined);
+      expect(reportRepository.findByAssigneeId).toHaveBeenCalledWith(userId, undefined, undefined);
       expect(result).toHaveLength(0);
       expect(mapReportEntityToReportResponse).not.toHaveBeenCalled();
     });
@@ -271,7 +271,7 @@ describe('ReportService', () => {
       const result = await reportService.getMyAssignedReports(userId, status);
 
       // Assert
-      expect(reportRepository.findByAssigneeId).toHaveBeenCalledWith(userId, ReportStatus.ASSIGNED);
+      expect(reportRepository.findByAssigneeId).toHaveBeenCalledWith(userId, ReportStatus.ASSIGNED, undefined);
       expect(result).toHaveLength(2);
       expect(result.every(r => r.status === ReportStatus.ASSIGNED)).toBe(true);
     });
@@ -298,7 +298,7 @@ describe('ReportService', () => {
       const result = await reportService.getMyAssignedReports(userId, status);
 
       // Assert
-      expect(reportRepository.findByAssigneeId).toHaveBeenCalledWith(userId, ReportStatus.IN_PROGRESS);
+      expect(reportRepository.findByAssigneeId).toHaveBeenCalledWith(userId, ReportStatus.IN_PROGRESS, undefined);
       expect(result).toHaveLength(2);
       expect(result.every(r => r.status === ReportStatus.IN_PROGRESS)).toBe(true);
     });
@@ -325,7 +325,7 @@ describe('ReportService', () => {
       const result = await reportService.getMyAssignedReports(userId, status);
 
       // Assert
-      expect(reportRepository.findByAssigneeId).toHaveBeenCalledWith(userId, ReportStatus.RESOLVED);
+      expect(reportRepository.findByAssigneeId).toHaveBeenCalledWith(userId, ReportStatus.RESOLVED, undefined);
       expect(result).toHaveLength(2);
       expect(result.every(r => r.status === ReportStatus.RESOLVED)).toBe(true);
     });
@@ -342,7 +342,7 @@ describe('ReportService', () => {
       const result = await reportService.getMyAssignedReports(userId, status);
 
       // Assert
-      expect(reportRepository.findByAssigneeId).toHaveBeenCalledWith(userId, status);
+      expect(reportRepository.findByAssigneeId).toHaveBeenCalledWith(userId, status, undefined);
       expect(result).toHaveLength(0);
     });
 
@@ -514,7 +514,7 @@ describe('ReportService', () => {
       const result = await reportService.getMyAssignedReports(userId);
 
       // Assert
-      expect(reportRepository.findByAssigneeId).toHaveBeenCalledWith(userId, undefined);
+      expect(reportRepository.findByAssigneeId).toHaveBeenCalledWith(userId, undefined, undefined);
       expect(result.every(r => r.assigneeId === userId)).toBe(true);
     });
 
@@ -566,7 +566,7 @@ describe('ReportService', () => {
 
       // Assert
       expect(userRepository.findUserById).toHaveBeenCalledWith(userId);
-      expect(reportRepository.findByExternalAssigneeId).toHaveBeenCalledWith(userId, undefined);
+      expect(reportRepository.findByExternalAssigneeId).toHaveBeenCalledWith(userId, undefined, undefined);
       expect(reportRepository.findByAssigneeId).not.toHaveBeenCalled();
       expect(result).toHaveLength(2);
       expect(mapReportEntityToReportResponse).toHaveBeenCalledTimes(2);

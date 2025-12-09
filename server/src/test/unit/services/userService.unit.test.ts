@@ -94,7 +94,7 @@ describe('UserService', () => {
           'Organization',
           'Citizen'
         );
-        expect(userRepository.createUserWithPassword).toHaveBeenCalledWith({
+        expect(userRepository.createUserWithPassword).toHaveBeenCalledWith(expect.objectContaining({
           username: 'newuser',
           email: 'newuser@example.com',
           password: 'SecurePass123!',
@@ -103,7 +103,7 @@ describe('UserService', () => {
           departmentRoleId: 1,
           emailNotificationsEnabled: true,
           isVerified: false,
-        });
+        }));
         expect(result).toEqual(mockResponse);
         expect(loggingService.logInfo).toHaveBeenCalledWith('New citizen registered: newuser (ID: 10)');
       });

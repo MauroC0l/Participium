@@ -83,7 +83,8 @@ describe('ReportController Integration Tests', () => {
 
     const user = await userRepository.createUserWithPassword({
       ...TEST_USER_CREDENTIALS,
-      emailNotificationsEnabled: true
+      emailNotificationsEnabled: true,
+      isVerified: true
     });
 
     createdUserIds.push(user.id);
@@ -274,7 +275,7 @@ describe('ReportController Integration Tests - getMyAssignedReports', () => {
       );
 
       // Assert
-      expect(reportService.getMyAssignedReports).toHaveBeenCalledWith(50, undefined);
+      expect(reportService.getMyAssignedReports).toHaveBeenCalledWith(50, undefined, undefined);
       expect(statusMock).toHaveBeenCalledWith(200);
       expect(jsonMock).toHaveBeenCalledWith(mockReports);
       expect(mockReports).toHaveLength(3);
@@ -311,7 +312,8 @@ describe('ReportController Integration Tests - getMyAssignedReports', () => {
       // Assert
       expect(reportService.getMyAssignedReports).toHaveBeenCalledWith(
         50,
-        ReportStatus.ASSIGNED
+        ReportStatus.ASSIGNED,
+        undefined
       );
       expect(statusMock).toHaveBeenCalledWith(200);
       expect(jsonMock).toHaveBeenCalledWith(mockReports);
@@ -343,7 +345,8 @@ describe('ReportController Integration Tests - getMyAssignedReports', () => {
       // Assert
       expect(reportService.getMyAssignedReports).toHaveBeenCalledWith(
         50,
-        ReportStatus.IN_PROGRESS
+        ReportStatus.IN_PROGRESS,
+        undefined
       );
       expect(statusMock).toHaveBeenCalledWith(200);
       expect(jsonMock).toHaveBeenCalledWith(mockReports);
@@ -380,7 +383,8 @@ describe('ReportController Integration Tests - getMyAssignedReports', () => {
       // Assert
       expect(reportService.getMyAssignedReports).toHaveBeenCalledWith(
         50,
-        ReportStatus.RESOLVED
+        ReportStatus.RESOLVED,
+        undefined
       );
       expect(statusMock).toHaveBeenCalledWith(200);
       expect(jsonMock).toHaveBeenCalledWith(mockReports);
@@ -399,7 +403,7 @@ describe('ReportController Integration Tests - getMyAssignedReports', () => {
       );
 
       // Assert
-      expect(reportService.getMyAssignedReports).toHaveBeenCalledWith(50, undefined);
+      expect(reportService.getMyAssignedReports).toHaveBeenCalledWith(50, undefined, undefined);
       expect(statusMock).toHaveBeenCalledWith(200);
       expect(jsonMock).toHaveBeenCalledWith([]);
     });
@@ -437,7 +441,7 @@ describe('ReportController Integration Tests - getMyAssignedReports', () => {
       );
 
       // Assert
-      expect(reportService.getMyAssignedReports).toHaveBeenCalledWith(50, undefined);
+      expect(reportService.getMyAssignedReports).toHaveBeenCalledWith(50, undefined, undefined);
       expect(mockNext).toHaveBeenCalledWith(serviceError);
       expect(statusMock).not.toHaveBeenCalled();
     });
@@ -471,7 +475,7 @@ describe('ReportController Integration Tests - getMyAssignedReports', () => {
       );
 
       // Assert
-      expect(reportService.getMyAssignedReports).toHaveBeenCalledWith(75, undefined);
+      expect(reportService.getMyAssignedReports).toHaveBeenCalledWith(75, undefined, undefined);
       expect(statusMock).toHaveBeenCalledWith(200);
       expect(jsonMock).toHaveBeenCalledWith(mockReports);
     });
@@ -520,7 +524,7 @@ describe('ReportController Integration Tests - getMyAssignedReports', () => {
           mockNext
         );
 
-        expect(reportService.getMyAssignedReports).toHaveBeenCalledWith(50, status);
+        expect(reportService.getMyAssignedReports).toHaveBeenCalledWith(50, status, undefined);
         expect(statusMock).toHaveBeenCalledWith(200);
       }
     });
@@ -547,7 +551,7 @@ describe('ReportController Integration Tests - getMyAssignedReports', () => {
 
       // Assert
       expect(reportService.getMyAssignedReports).toHaveBeenCalledTimes(1);
-      expect(reportService.getMyAssignedReports).toHaveBeenCalledWith(123, undefined);
+      expect(reportService.getMyAssignedReports).toHaveBeenCalledWith(123, undefined, undefined);
     });
 
     it('should pass status filter to service when provided', async () => {
@@ -566,7 +570,8 @@ describe('ReportController Integration Tests - getMyAssignedReports', () => {
       // Assert
       expect(reportService.getMyAssignedReports).toHaveBeenCalledWith(
         50,
-        ReportStatus.IN_PROGRESS
+        ReportStatus.IN_PROGRESS,
+        undefined
       );
     });
 
