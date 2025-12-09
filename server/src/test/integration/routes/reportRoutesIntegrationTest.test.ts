@@ -1,7 +1,85 @@
 jest.mock('@middleware/authMiddleware', () => ({
-  isLoggedIn: jest.fn((req, res, next) => next()),
+  isLoggedIn: jest.fn((req, res, next) => {
+    const userType = req.headers['x-test-user-type'];
+    if (!userType) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+    
+    // Re-import SystemRoles here to avoid hoisting issues
+    const { SystemRoles } = jest.requireActual('@dto/UserRole');
+    
+    const roleMap: { [key: string]: string } = {
+      PRO: SystemRoles.PUBLIC_RELATIONS_OFFICER,
+      TECHNICIAN: 'Water Network staff member',
+      TECHNICAL_MANAGER: 'Road Maintenance staff member',
+      EXTERNAL_MAINTAINER: SystemRoles.EXTERNAL_MAINTAINER,
+      CITIZEN: SystemRoles.CITIZEN,
+    };
+    
+    const role = roleMap[userType];
+    if (role) {
+      const userIdMap: { [key: string]: number } = {
+        'PRO': 1,
+        'CITIZEN': 2,
+        'TECHNICIAN': 3,
+        'TECHNICAL_MANAGER': 4,
+        'EXTERNAL_MAINTAINER': 8,
+      };
+      req.user = {
+        id: userIdMap[userType] || 1,
+        departmentRole: {
+          role: {
+            name: role,
+          },
+        },
+      };
+      next();
+    } else {
+      res.status(401).json({ error: 'Not authenticated' });
+    }
+  }),
   requireRole: jest.fn(() => (req: any, res: any, next: any) => next()),
-  requireTechnicalStaffOrRole: jest.fn(() => (req: any, res: any, next: any) => next()),
+  requireTechnicalStaffOrRole: jest.fn((additionalRoles: string[] = []) => {
+    return (req: any, res: any, next: any) => {
+      const userType = req.headers['x-test-user-type'];
+      if (!userType) return res.status(401).json({ error: 'Not authenticated' });
+      
+      // Re-import SystemRoles here to avoid hoisting issues
+      const { SystemRoles, isTechnicalStaff: isTechStaff } = jest.requireActual('@dto/UserRole');
+      
+      const roleMap: { [key: string]: string } = {
+        PRO: SystemRoles.PUBLIC_RELATIONS_OFFICER,
+        TECHNICIAN: 'Water Network staff member',
+        TECHNICAL_MANAGER: 'Road Maintenance staff member',
+        EXTERNAL_MAINTAINER: SystemRoles.EXTERNAL_MAINTAINER,
+        CITIZEN: SystemRoles.CITIZEN,
+      };
+      
+      const userRole = roleMap[userType];
+      if (!userRole) {
+        return res.status(403).json({ error: 'Insufficient rights' });
+      }
+      
+      // Check if user is technical staff OR has one of the additional roles
+      const hasAccess = isTechStaff(userRole) || additionalRoles.includes(userRole);
+      if (hasAccess) {
+        const userIdMap: { [key: string]: number } = {
+          'PRO': 1,
+          'CITIZEN': 2,
+          'TECHNICIAN': 3,
+          'TECHNICAL_MANAGER': 4,
+          'EXTERNAL_MAINTAINER': 8,
+        };
+        req.user = { 
+          id: userIdMap[userType] || 1, 
+          departmentRole: { role: { name: userRole } } 
+        };
+        return next();
+      }
+      
+      return res.status(403).json({ error: 'Insufficient rights' });
+    };
+  }),
 }));
 
 jest.mock('@controllers/reportController', () => ({
@@ -24,9 +102,8 @@ jest.mock('@middleware/reportMiddleware', () => ({
   validateReportUpdate: jest.fn((req, res, next) => next()),
 }));
 jest.mock('@middleware/validateId', () => ({
-  validateId: jest.fn(() => (req: any, res: any, next: any) => {
-    // Support both id and externalMaintainerId
-    const paramId = req.params.externalMaintainerId ?? req.params.id;
+  validateId: jest.fn((paramName: string = 'id', resourceName: string = 'resource') => (req: any, res: any, next: any) => {
+    const paramId = req.params[paramName];
     const numericId = Number(paramId);
     if (
       !paramId ||
@@ -35,7 +112,7 @@ jest.mock('@middleware/validateId', () => ({
       numericId <= 0 ||
       !Number.isInteger(numericId)
     ) {
-      return res.status(400).json({ message: 'Invalid ID. Must be a positive integer.' });
+      return res.status(400).json({ message: `Invalid ${resourceName} ID. Must be a positive integer.` });
     }
     return next();
   }),

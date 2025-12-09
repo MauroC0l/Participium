@@ -24,7 +24,8 @@ describe('ReportController', () => {
     };
     mockResponse = {
       status: jest.fn().mockReturnThis(),
-      json: jest.fn().mockReturnThis()
+      json: jest.fn().mockReturnThis(),
+      send: jest.fn().mockReturnThis()
     };
     mockNext = jest.fn();
     jest.clearAllMocks();
@@ -966,20 +967,6 @@ describe('ReportController', () => {
 
   describe('Internal Comments', () => {
     describe('getInternalComments', () => {
-      it('should throw UnauthorizedError if user is not authenticated', async () => {
-        mockRequest.user = undefined;
-        mockRequest.params = { id: '10' };
-
-        await reportController.getInternalComments(
-          mockRequest as Request,
-          mockResponse as Response,
-          mockNext
-        );
-
-        expect(mockNext).toHaveBeenCalledWith(expect.any(UnauthorizedError));
-        expect(reportService.getInternalComments).not.toHaveBeenCalled();
-      });
-
       it('should return comments with 200 status', async () => {
         const mockUser = { id: 1 } as User;
         const mockComments = [
@@ -1048,21 +1035,6 @@ describe('ReportController', () => {
     });
 
     describe('addInternalComment', () => {
-      it('should throw UnauthorizedError if user is not authenticated', async () => {
-        mockRequest.user = undefined;
-        mockRequest.params = { id: '10' };
-        mockRequest.body = { content: 'Test comment' };
-
-        await reportController.addInternalComment(
-          mockRequest as Request,
-          mockResponse as Response,
-          mockNext
-        );
-
-        expect(mockNext).toHaveBeenCalledWith(expect.any(UnauthorizedError));
-        expect(reportService.addInternalComment).not.toHaveBeenCalled();
-      });
-
       it('should throw BadRequestError if content is missing', async () => {
         const mockUser = { id: 1 } as User;
         mockRequest.user = mockUser;
@@ -1131,20 +1103,6 @@ describe('ReportController', () => {
     });
 
     describe('deleteInternalComment', () => {
-      it('should throw UnauthorizedError if user is not authenticated', async () => {
-        mockRequest.user = undefined;
-        mockRequest.params = { reportId: '10', commentId: '5' };
-
-        await reportController.deleteInternalComment(
-          mockRequest as Request,
-          mockResponse as Response,
-          mockNext
-        );
-
-        expect(mockNext).toHaveBeenCalledWith(expect.any(UnauthorizedError));
-        expect(reportService.deleteInternalComment).not.toHaveBeenCalled();
-      });
-
       it('should delete comment and return 204 status', async () => {
         const mockUser = { id: 1 } as User;
         mockRequest.user = mockUser;

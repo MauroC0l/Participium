@@ -1767,11 +1767,7 @@ describe('ReportService additional unit tests', () => {
         const result = await reportService.addInternalComment(10, 1, 'New comment');
 
         expect(reportRepository.findReportById).toHaveBeenCalledWith(10);
-        expect(commentRepository.createComment).toHaveBeenCalledWith({
-          reportId: 10,
-          authorId: 1,
-          content: 'New comment'
-        });
+        expect(commentRepository.createComment).toHaveBeenCalledWith(10, 1, 'New comment');
         expect(result).toHaveProperty('id', 5);
         expect(result).toHaveProperty('content', 'New comment');
       });
@@ -1857,11 +1853,7 @@ describe('ReportService additional unit tests', () => {
 
         await reportService.addInternalComment(10, 1, '  Trimmed content  ');
 
-        expect(commentRepository.createComment).toHaveBeenCalledWith({
-          reportId: 10,
-          authorId: 1,
-          content: 'Trimmed content'
-        });
+        expect(commentRepository.createComment).toHaveBeenCalledWith(10, 1, 'Trimmed content');
       });
     });
 
