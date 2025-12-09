@@ -48,20 +48,14 @@ const ROLE_DEPARTMENT_MAPPING = {
 };
 
 const getStatusBadgeVariant = (status) => {
-  switch (status) {
-    case "Pending Approval":
-      return "warning";
-    case "Assigned":
-      return "primary";
-    case "In Progress":
-      return "info";
-    case "Resolved":
-      return "success";
-    case "Rejected":
-      return "danger";
-    default:
-      return "secondary";
-  }
+  const normalizedStatus = status?.replace("_", " ").toLowerCase();
+  
+  if (normalizedStatus === "pending approval") return "warning";
+  if (normalizedStatus === "assigned") return "primary";
+  if (normalizedStatus === "in progress") return "info";
+  if (normalizedStatus === "resolved") return "success";
+  if (normalizedStatus === "rejected") return "danger";
+  return "secondary";
 };
 
 const getDepartmentCategory = (roleName) => {
@@ -69,22 +63,13 @@ const getDepartmentCategory = (roleName) => {
   return ROLE_DEPARTMENT_MAPPING[roleName.toLowerCase()] || null;
 };
 
+const formatStatusForApi = (uiStatus) => {
+    if (!uiStatus || uiStatus === "All Statuses") return null;
+    return uiStatus;
+};
+
 export default function MunicipalityUserHome({ user }) {
-  // --- STATE ---
-  const [reports, setReports] = useState([]);
-  const [allCategories, setAllCategories] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [apiError, setApiError] = useState(null);
-
-  // Filters
-  const [categoryFilter, setCategoryFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("Pending Approval");
-
-  // Modal State
-  const [showModal, setShowModal] = useState(false);
-  const [selectedReport, setSelectedReport] = useState(null);
-
-  // --- DERIVED STATE (MEMOIZED) ---
+  // --- DERIVED USER INFO ---
   const userRole = user?.role_name?.toLowerCase();
 
   const isStaffMember = useMemo(() => {
@@ -99,81 +84,106 @@ export default function MunicipalityUserHome({ user }) {
     return isStaffMember ? getDepartmentCategory(user?.role_name) : null;
   }, [isStaffMember, user?.role_name]);
 
-  // --- INITIALIZATION EFFECTS ---
+  // --- STATE ---
+  const [categoryFilter, setCategoryFilter] = useState(() => {
+    return userDepartmentCategory || "";
+  });
 
-  // 1. Set default filters based on role
+  const [statusFilter, setStatusFilter] = useState(() => {
+    if (isStaffMember) return "Assigned";
+    if (
+      userRole === "administrator" ||
+      userRole === "municipal public relations officer"
+    ) {
+      return "Pending Approval";
+    }
+    return "";
+  });
+
+  const [reports, setReports] = useState([]);
+  const [allCategories, setAllCategories] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [apiError, setApiError] = useState(null);
+
+  // Modal State
+  const [showModal, setShowModal] = useState(false);
+  const [selectedReport, setSelectedReport] = useState(null);
+
+  // --- EFFECT: Handle User Role Changes ---
   useEffect(() => {
     if (isStaffMember) {
-      // FIX: Se è uno staff member (incluso external maintainer), deve vedere di default i task "Assigned"
       setStatusFilter("Assigned");
-
-      // Se ha una categoria specifica la imposta, altrimenti resetta il filtro categoria (vede tutto)
       setCategoryFilter(userDepartmentCategory || "");
     } else if (
       userRole === "administrator" ||
       userRole === "municipal public relations officer"
     ) {
-      setStatusFilter("Pending Approval");
+      if (!statusFilter) setStatusFilter("Pending Approval");
     }
   }, [isStaffMember, userDepartmentCategory, userRole]);
-  
-  // 2. Fetch Data
-  const fetchData = useCallback(async () => {
+
+  // --- FETCHING LOGIC ---
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const categoriesData = await getAllCategories();
+        setAllCategories(categoriesData || []);
+      } catch (err) {
+        console.error("Error fetching categories:", err);
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  const fetchReportsData = useCallback(async () => {
+    if (!user) return;
+
     setIsLoading(true);
     setApiError(null);
+
     try {
-      // Parallel fetching for categories and reports
-      const [categoriesData, reportsData] = await Promise.all([
-        getAllCategories(),
-        isStaffMember ? getReportsAssignedToMe() : getReports(),
-      ]);
+      const apiStatusParam = formatStatusForApi(statusFilter);
+      const apiCategoryParam = categoryFilter === "" || categoryFilter === "All Categories" ? null : categoryFilter;
 
-      console.log("REPORTSSS: ", reportsData);
+      console.log(`Fetching reports with params - Status: ${apiStatusParam}, Category: ${apiCategoryParam}`);
 
-      setAllCategories(categoriesData || []);
+      let reportsData;
+
+      if (isStaffMember) {
+        reportsData = await getReportsAssignedToMe(apiStatusParam, apiCategoryParam);
+      } else {
+        reportsData = await getReports(apiStatusParam, apiCategoryParam);
+      }
 
       const formattedReports = (reportsData || []).map((report) => ({
         ...report,
-        createdAt: new Date(report.createdAt), // Ensure Date object
+        createdAt: new Date(report.createdAt),
         images:
           report.photos?.map((p) =>
             typeof p === "string" ? p : p.storageUrl
           ) || [],
       }));
 
-      // Sort by date descending
       formattedReports.sort((a, b) => b.createdAt - a.createdAt);
 
       setReports(formattedReports);
     } catch (err) {
-      console.error("Error fetching data:", err);
+      console.error("Error fetching reports:", err);
       setApiError("Unable to load data. Please try again later.");
     } finally {
       setIsLoading(false);
     }
-  }, [isStaffMember]);
+  }, [user, isStaffMember, statusFilter, categoryFilter]);
 
   useEffect(() => {
-    if (user) {
-      fetchData();
-    }
-  }, [fetchData, user]);
+    fetchReportsData();
+  }, [fetchReportsData]);
 
-  // --- FILTERING LOGIC (MEMOIZED) ---
-  const filteredReports = useMemo(() => {
-    return reports.filter((report) => {
-      const matchesCategory =
-        categoryFilter === "" || report.category === categoryFilter;
-      const matchesStatus =
-        statusFilter === "" || report.status === statusFilter;
-      return matchesCategory && matchesStatus;
-    });
-  }, [reports, categoryFilter, statusFilter]);
 
   // --- HANDLERS ---
   const handleClose = () => {
     setShowModal(false);
-    setTimeout(() => setSelectedReport(null), 200); // Clear after animation
+    setTimeout(() => setSelectedReport(null), 200);
   };
 
   const handleShow = (report) => {
@@ -181,31 +191,68 @@ export default function MunicipalityUserHome({ user }) {
     setShowModal(true);
   };
 
+  // Funzione helper per aggiornare lo stato locale immediatamente (SOLO STATUS)
+  const updateLocalReportsState = (reportId, newStatus) => {
+    setReports((prevReports) => {
+      if (statusFilter && statusFilter !== "All Statuses" && statusFilter !== newStatus) {
+        return prevReports.filter((report) => report.id !== reportId);
+      }
+      return prevReports.map((report) =>
+        report.id === reportId ? { ...report, status: newStatus } : report
+      );
+    });
+  };
+
+  // --- NUOVA FUNZIONE PER GESTIRE GLI AGGIORNAMENTI COMPLESSI DAL MODALE ---
+  // Questa funzione riceve un oggetto con i campi aggiornati (es. { status: 'Assigned', externalAssigneeId: 123 })
+  const handleReportUpdateFromModal = (reportId, updatedFields) => {
+    setReports((prevReports) => {
+      // 1. Verifichiamo se l'aggiornamento dello status causa la rimozione dai filtri
+      if (
+        updatedFields.status && 
+        statusFilter && 
+        statusFilter !== "All Statuses" && 
+        statusFilter !== updatedFields.status
+      ) {
+        return prevReports.filter((report) => report.id !== reportId);
+      }
+
+      // 2. Altrimenti aggiorniamo l'oggetto nell'array
+      return prevReports.map((report) =>
+        report.id === reportId ? { ...report, ...updatedFields } : report
+      );
+    });
+    
+    // Opzionale: Se vuoi essere sicuro al 100%, puoi anche triggerare un fetch in background silenzioso
+    // fetchReportsData(); 
+  };
+
   const handleAcceptReport = async (reportId) => {
     try {
-      const result = await updateReportStatus(reportId, "Assigned");
-      // Refresh data silently
-      await fetchData();
-
+      const result = await updateReportStatus(reportId, "Assigned"); 
       if (result?.error) throw new Error(result.error);
-
-      // Return logic required by ReportDetails component
-      if (!result?.assignee) return { noOfficerFound: true };
+      updateLocalReportsState(reportId, "Assigned");
+      if (!result?.assignee) {
+         return { noOfficerFound: true };
+      }
+      fetchReportsData(); 
       return { success: true };
     } catch (error) {
       console.error("Error approving report:", error);
-      throw error; // Propagate to modal for UI feedback
+      fetchReportsData();
+      throw error;
     }
   };
 
   const handleRejectReport = async (reportId, reason) => {
     try {
       await updateReportStatus(reportId, "Rejected", reason);
-      await fetchData();
+      updateLocalReportsState(reportId, "Rejected");
+      fetchReportsData();
       return true;
     } catch (error) {
       console.error("Error rejecting report:", error);
-      // Optional: setApiError(error.message);
+      fetchReportsData(); 
       return false;
     }
   };
@@ -221,12 +268,12 @@ export default function MunicipalityUserHome({ user }) {
       );
     }
 
-    if (filteredReports.length === 0) {
+    if (reports.length === 0) {
       return (
         <div className="text-center p-5 text-muted">
           <h5>No reports found</h5>
           <p className="mb-0">
-            Try adjusting your filters or check back later.
+            There are no reports matching the current criteria ({statusFilter || "All"}).
           </p>
         </div>
       );
@@ -244,7 +291,7 @@ export default function MunicipalityUserHome({ user }) {
           </tr>
         </thead>
         <tbody>
-          {filteredReports.map((report) => (
+          {reports.map((report) => (
             <tr key={report.id}>
               <td className="ps-4">
                 <span className="fw-semibold text-dark">{report.category}</span>
@@ -256,7 +303,7 @@ export default function MunicipalityUserHome({ user }) {
                   bg={getStatusBadgeVariant(report.status)}
                   className="fw-normal"
                 >
-                  {report.status}
+                  {report.status.replace(/_/g, " ")}
                 </Badge>
               </td>
               <td className="text-end pe-4">
@@ -289,7 +336,6 @@ export default function MunicipalityUserHome({ user }) {
         </div>
 
         <div className="mu-filters">
-          {!isStaffMember ? (
             <>
               {/* Category Filter */}
               <InputGroup className="mu-filter-group">
@@ -367,13 +413,6 @@ export default function MunicipalityUserHome({ user }) {
                 </Dropdown>
               </InputGroup>
             </>
-          ) : (
-            <div className="bg-light p-2 px-3 rounded text-muted small border">
-              Viewing:{" "}
-              <strong>{userDepartmentCategory || "My Department"}</strong>{" "}
-              &nbsp;|&nbsp; Status: <strong>Assigned</strong>
-            </div>
-          )}
         </div>
       </div>
 
@@ -397,6 +436,8 @@ export default function MunicipalityUserHome({ user }) {
         user={user}
         onApprove={handleAcceptReport}
         onReject={handleRejectReport}
+        // --- AGGIUNTA FONDAMENTALE QUI SOTTO ---
+        onReportUpdated={handleReportUpdateFromModal}
       />
     </Container>
   );

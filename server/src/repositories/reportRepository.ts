@@ -253,7 +253,7 @@ class ReportRepository {
      * Find reports assigned to a specific internal staff member
      * Updated to include externalAssignee relation for completeness
      */
-    public async findByAssigneeId(assigneeId: number, status?: ReportStatus): Promise<ReportEntity[]> {
+    public async findByAssigneeId(assigneeId: number, status?: ReportStatus, category?: ReportCategory): Promise<ReportEntity[]> {
         const queryBuilder = this.repository
             .createQueryBuilder('report')
             .leftJoinAndSelect('report.reporter', 'reporter')
@@ -266,6 +266,10 @@ class ReportRepository {
             queryBuilder.andWhere('report.status = :status', { status });
         }
 
+        if (category) {
+            queryBuilder.andWhere('report.category = :category', { category });
+        }
+
         return queryBuilder
             .orderBy('report.createdAt', 'DESC')
             .getMany();
@@ -275,7 +279,7 @@ class ReportRepository {
      * Find reports assigned to a specific external maintainer
      * Updated to include assignee relation for completeness
      */
-    public async findByExternalAssigneeId(externalMaintainerId: number, status?: ReportStatus): Promise<ReportEntity[]> {
+    public async findByExternalAssigneeId(externalMaintainerId: number, status?: ReportStatus, category?: ReportCategory): Promise<ReportEntity[]> {
         const queryBuilder = this.repository
             .createQueryBuilder('report')
             .leftJoinAndSelect('report.reporter', 'reporter')
@@ -289,6 +293,10 @@ class ReportRepository {
 
         if (status) {
             queryBuilder.andWhere('report.status = :status', { status });
+        }
+
+        if (category) {
+            queryBuilder.andWhere('report.category = :category', { category });
         }
 
         return queryBuilder

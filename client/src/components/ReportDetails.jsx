@@ -56,6 +56,7 @@ const ReportDetails = ({
   onApprove,
   onReject,
   onStatusUpdate,
+  onReportUpdated,
 }) => {
   const [selectedImage, setSelectedImage] = useState(null);
   const [showImageModal, setShowImageModal] = useState(false);
@@ -211,12 +212,24 @@ const ReportDetails = ({
 
   const handleAssignToExternal = async (externalUser) => {
     try {
-
       console.log("ASSIGN TO EXTERNAL USER: ", externalUser);
 
-
+      // 1. Chiamata API
       await assignToExternalUser(report.id, externalUser.id);
+
+      // 2. AGGIORNAMENTO DEL PADRE (Mancava questo!)
+      if (onReportUpdated) {
+        onReportUpdated(report.id, { 
+          status: "Assigned", 
+          externalAssigneeId: externalUser.id,
+          // Se l'API restituisce l'oggetto completo dell'assegnatario, potresti voler aggiornare anche quello, 
+          // ma per ora aggiorniamo gli ID critici per la visualizzazione.
+        });
+      }
+
+      // 3. Callback legacy (se ancora usata, altrimenti puoi rimuoverla)
       if (onStatusUpdate) await onStatusUpdate();
+
       onHide();
     } catch (err) {
       setErrorMsg(err.message || "Failed to assign to external user.");
@@ -266,9 +279,18 @@ const ReportDetails = ({
   const handleStatusChange = async (newStatus) => {
     setErrorMsg("");
     try {
+      // 1. Chiamata API
       const result = await updateReportStatus(report.id, newStatus);
       if (result?.error) throw new Error(result.error);
+
+      // 2. AGGIORNAMENTO DEL PADRE (Mancava questo!)
+      if (onReportUpdated) {
+        onReportUpdated(report.id, { status: newStatus });
+      }
+
+      // 3. Callback legacy
       if (onStatusUpdate) await onStatusUpdate();
+      
       onHide();
     } catch (error) {
       setErrorMsg(error.message || `Failed to update status to ${newStatus}`);

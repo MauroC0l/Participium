@@ -1,15 +1,10 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Container, Tab, Nav } from 'react-bootstrap';
-
-// Nuove icone importate da FontAwesome (Fa) e Material Design (Md)
 import { 
-  FaUserTie,      // Per "Officers List" (Professionale/Ufficio)
-  FaUserPlus,     // Per "Add Officer"
-  FaHardHat,      // Per "External Maintainers" (Lavoro sul campo/Manutenzione)
-  FaBuilding,     // Per "Companies List"
-  FaCog           // Per "Settings"
+  FaUserTie, FaUserPlus, FaHardHat, 
+  FaBuilding, FaCog 
 } from 'react-icons/fa';
-import { MdAddBusiness } from 'react-icons/md'; // Specifica per "Add Company"
+import { MdAddBusiness } from 'react-icons/md';
 
 import MunicipalityUserForm from './MunicipalityUserForm';
 import MunicipalityUserList from './MunicipalityUserList';
@@ -23,13 +18,13 @@ export default function AdminHome() {
   const [activeTab, setActiveTab] = useState('users');
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  // Funzione unica per aggiornare le liste dopo creazioni/modifiche
-  const handleDataUpdate = () => {
+  // Funzione centralizzata per gestire il successo di un'operazione
+  const handleOperationSuccess = useCallback((targetTab) => {
     setRefreshTrigger(prev => prev + 1);
-    // Opzionale: rimanda alla lista pertinente dopo l'aggiunta
-    if (activeTab === 'add-user') setActiveTab('users');
-    if (activeTab === 'add-company') setActiveTab('companies');
-  };
+    if (targetTab) {
+      setActiveTab(targetTab);
+    }
+  }, []);
 
   return (
     <Container fluid className="admin-home-container">
@@ -106,7 +101,9 @@ export default function AdminHome() {
               {/* TAB 2: ADD OFFICER */}
               <Tab.Pane eventKey="add-user">
                 <MunicipalityUserForm 
-                  onUserCreated={handleDataUpdate}
+                  // >>> MODIFICA QUI: Passiamo il refreshTrigger <<<
+                  refreshTrigger={refreshTrigger}
+                  onSuccess={(isExternal) => handleOperationSuccess(isExternal ? 'externals' : 'users')}
                   onCancel={() => setActiveTab('users')} 
                 />
               </Tab.Pane>
@@ -125,8 +122,10 @@ export default function AdminHome() {
 
               {/* TAB 5: ADD COMPANY */}
               <Tab.Pane eventKey="add-company">
-                {/* Passiamo handleDataUpdate così il form può triggerare il refresh */}
-                <CompanyForm refreshTrigger={handleDataUpdate} />
+                <CompanyForm 
+                   onSuccess={() => handleOperationSuccess('companies')}
+                   onCancel={() => setActiveTab('companies')}
+                />
               </Tab.Pane>
 
               {/* TAB 6: SETTINGS */}

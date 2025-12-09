@@ -17,7 +17,7 @@ import { userRepository } from '../repositories/userRepository';
 import { companyRepository } from '../repositories/companyRepository';
 import { CreateReportRequest } from '../models/dto/input/CreateReportRequest';
 import { ReportResponse } from '../models/dto/output/ReportResponse';
-import { SystemRoles, isTechnicalStaff } from '@models/dto/UserRole';
+import { SystemRoles, isTechnicalStaff, isCitizen } from '@models/dto/UserRole';
 import { ReportEntity } from '../models/entity/reportEntity';
 import { Report } from '@models/dto/Report'; 
 import { mapReportEntityToResponse, mapReportEntityToDTO, mapReportEntityToReportResponse } from './mapperService';
@@ -271,9 +271,10 @@ class ReportService {
    * Get reports assigned to a specific user
    * @param userId - ID of the user to whom reports are assigned
    * @param status - Optional status filter
+   * @param category - Optional category filter
    * @returns Array of reports assigned to the user
    */
-  async getMyAssignedReports(userId: number, status?: ReportStatus): Promise<ReportResponse[]> {
+  async getMyAssignedReports(userId: number, status?: ReportStatus, category?: ReportCategory): Promise<ReportResponse[]> {
     const user = await userRepository.findUserById(userId);
     if (!user) {
       throw new UnauthorizedError('User not found');
@@ -283,9 +284,9 @@ class ReportService {
 
     let reports;
     if (departmentName === 'External Service Providers') {
-      reports = await reportRepository.findByExternalAssigneeId(userId, status);
+      reports = await reportRepository.findByExternalAssigneeId(userId, status, category);
     } else {
-      reports = await reportRepository.findByAssigneeId(userId, status);
+      reports = await reportRepository.findByAssigneeId(userId, status, category);
     }
 
     return await this.mapReportsWithCompanyNames(reports);
@@ -398,7 +399,7 @@ class ReportService {
           throw new BadRequestError(`Cannot resolve a report with status ${currentStatus}.`);
         }
         if (userRole === SystemRoles.EXTERNAL_MAINTAINER) {
-          if (report.assigneeId !== userId) {
+          if (report.assigneeId !== userId && report.externalAssigneeId !== userId) {
             throw new InsufficientRightsError('You can only resolve reports assigned to you.');
           }
         } else if (!isTechnicalStaff(userRole)) {
@@ -410,14 +411,14 @@ class ReportService {
         break;
 
       case ReportStatus.IN_PROGRESS:
-        if (currentStatus !== ReportStatus.ASSIGNED || !isTechnicalStaff(userRole)) {
-          throw new InsufficientRightsError('Only technical staff can mark reports as in progress.');
+        if (currentStatus !== ReportStatus.ASSIGNED && currentStatus !== ReportStatus.SUSPENDED || isCitizen(userRole)) {
+          throw new InsufficientRightsError('Only staff can mark reports as in progress.');
         }
         break;
 
       case ReportStatus.SUSPENDED:
-        if (currentStatus !== ReportStatus.IN_PROGRESS || !isTechnicalStaff(userRole)) {
-          throw new InsufficientRightsError('Only technical staff can suspend reports.');
+        if (currentStatus !== ReportStatus.IN_PROGRESS || isCitizen(userRole)) {
+          throw new InsufficientRightsError('Only staff can suspend reports.');
         }
         break;
 
