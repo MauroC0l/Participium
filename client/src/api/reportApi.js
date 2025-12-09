@@ -4,13 +4,14 @@ import { calculateAddress } from '../utils/retriveAddressUtils';
  * Handle API response and errors
  */
 const handleResponse = async (response) => {
+  if (response.status === 204) {
+    return; // No Content, nothing to parse
+  }
   if (!response.ok) {
     const error = new Error();
     try {
       const data = await response.json();
-      
       error.message = data.message || data.error || `Request failed with status ${response.status}`;
-      
       error.status = response.status;
       error.data = data;
     } catch {
