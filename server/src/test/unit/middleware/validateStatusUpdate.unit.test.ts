@@ -1,16 +1,16 @@
 import { validateStatusUpdate } from '@middleware/validateStatusUpdate';
 import { ReportStatus } from '@dto/ReportStatus';
-import { SystemRoles } from '@dto/UserRole';
+import { SystemRoles } from '@models/dto/UserRole';
 import { InsufficientRightsError } from '@errors/InsufficientRightsError';
 import { BadRequestError } from '@errors/BadRequestError';
 import type { Request, Response } from 'express';
 
 // Mock isTechnicalStaff
-jest.mock('@dto/UserRole', () => ({
+jest.mock('@models/dto/UserRole', () => ({
   SystemRoles: {
     CITIZEN: 'Citizen',
     ADMINISTRATOR: 'Administrator',
-    PUBLIC_RELATIONS_OFFICER: 'Public Relations Officer',
+    PUBLIC_RELATIONS_OFFICER: 'Municipal Public Relations Officer',
     EXTERNAL_MAINTAINER: 'External Maintainer',
     DEPARTMENT_DIRECTOR: 'Department Director',
   },
@@ -18,11 +18,13 @@ jest.mock('@dto/UserRole', () => ({
     const nonTechnicalRoles = [
       'Citizen',
       'Administrator',
-      'Public Relations Officer',
+      'Municipal Public Relations Officer',
       'External Maintainer',
-      'Department Director',
     ];
     return !nonTechnicalRoles.includes(roleName);
+  }),
+  isCitizen: jest.fn((roleName: string) => {
+    return roleName === 'Citizen';
   }),
 }));
 

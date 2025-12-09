@@ -63,7 +63,8 @@ describe('AuthController Integration Tests', () => {
 
     const user = await userRepository.createUserWithPassword({
       ...TEST_USER_CREDENTIALS,
-      emailNotificationsEnabled: true
+      emailNotificationsEnabled: true,
+      isVerified: true
     });
 
     createdUserIds.push(user.id);

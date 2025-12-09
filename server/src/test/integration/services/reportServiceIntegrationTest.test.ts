@@ -569,6 +569,11 @@ describe('ReportService Integration Tests - getMyAssignedReports', () => {
       );
     });
 
+    beforeEach(async () => {
+      // Clean ALL reports before each test to avoid interference from other test suites
+      await AppDataSource.query(`DELETE FROM reports`);
+    });
+
     afterEach(async () => {
       await AppDataSource.query(
         `DELETE FROM reports WHERE reporter_id IN ($1, $2)`,
