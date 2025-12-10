@@ -23,9 +23,10 @@ import "../css/ReportDetails.css";
 // -------------------------------------------------------------------------
 const ToastMessage = ({ message, type, onClose }) => {
   useEffect(() => {
+    // MODIFICA QUI: 2000 ms = 2 secondi
     const timer = setTimeout(() => {
       onClose();
-    }, 5000);
+    }, 2000); 
     return () => clearTimeout(timer);
   }, [onClose]);
 
@@ -66,7 +67,7 @@ const ReportDetails = ({
   onApprove,
   onReject,
   onStatusUpdate,
-  onReportUpdated, // AGGIUNTO: Propagazione dell'aggiornamento al componente genitore
+  onReportUpdated,
 }) => {
   // NUOVO STATO: Mantiene il report aggiornato all'interno della modale
   const [report, setReport] = useState(initialReport); 
@@ -101,10 +102,8 @@ const ReportDetails = ({
   }, [initialReport]);
   
   // Funzione per aggiornare lo stato del report localmente E notificare il genitore
-  // Uso useCallback per evitare che venga ricreata inutilmente, ma in questo caso non serve in un useEffect
   const handleReportUpdate = (reportId, updates) => {
     setReport(prev => ({ ...prev, ...updates }));
-    // NOTA IMPORTANTE: Qui l'onReportUpdated esterno notificherà il genitore di fare un re-fetch
     if (onReportUpdated) onReportUpdated(reportId, updates);
   };
 
@@ -187,8 +186,8 @@ const ReportDetails = ({
               currentUserId={currentUserId}
               onApprove={onApprove}
               onReject={onReject}
-              onStatusUpdate={onStatusUpdate} // Lasciato, ma ReportMainContent userà onReportUpdated per forzare il re-fetch esterno
-              onReportUpdated={handleReportUpdate} // Usa il gestore locale (che invoca il genitore onReportUpdated)
+              onStatusUpdate={onStatusUpdate}
+              onReportUpdated={handleReportUpdate} // Usa il gestore locale
               onHide={onHide}
               onOpenImage={(img) => { setSelectedImage(img); setShowImageModal(true); }}
               showMap={showMap && showRestrictedContent}
@@ -201,8 +200,8 @@ const ReportDetails = ({
             <ReportSidebar 
               report={report}
               currentUserId={currentUserId}
-              onReportUpdated={handleReportUpdate} // Usa il gestore locale (che invoca il genitore onReportUpdated)
-              onStatusUpdate={onStatusUpdate} // Lasciato per compatibilità, ma non è più la funzione principale di re-fetch
+              onReportUpdated={handleReportUpdate} // Usa il gestore locale
+              onStatusUpdate={onStatusUpdate}
               showMap={showMap}
               setShowMap={setShowMap}
               mapCoordinates={mapCoordinates}

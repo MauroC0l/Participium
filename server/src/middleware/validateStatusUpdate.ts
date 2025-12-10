@@ -42,7 +42,7 @@ export const validateStatusUpdate = (req: Request, res: Response, next: NextFunc
 
   // Map of status transitions to allowed roles
   const statusRoleMap: Record<string, string[]> = {
-    [ReportStatus.ASSIGNED]: [SystemRoles.PUBLIC_RELATIONS_OFFICER],
+    [ReportStatus.ASSIGNED]: [SystemRoles.PUBLIC_RELATIONS_OFFICER, SystemRoles.EXTERNAL_MAINTAINER],
     [ReportStatus.REJECTED]: [SystemRoles.PUBLIC_RELATIONS_OFFICER],
     [ReportStatus.RESOLVED]: [] // Checked separately below
   };
@@ -59,7 +59,7 @@ export const validateStatusUpdate = (req: Request, res: Response, next: NextFunc
 
   // Special handling for IN_PROGRESS and SUSPENDED - allow only technical staff
   if ([ReportStatus.IN_PROGRESS, ReportStatus.SUSPENDED].includes(newStatus as ReportStatus)) {
-    if (!isTechnicalStaff(roleName) || roleName !== SystemRoles.EXTERNAL_MAINTAINER) {
+    if (!isTechnicalStaff(roleName) && roleName !== SystemRoles.EXTERNAL_MAINTAINER) {
       return next(new InsufficientRightsError(
         `Only external maintainers can set status to ${newStatus}`
       ));

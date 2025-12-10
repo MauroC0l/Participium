@@ -14,9 +14,9 @@ const ReportMainContent = ({
   currentUserId,
   onApprove,
   onReject,
-  onReportUpdated, // AGGIUNTO
+  onReportUpdated,
   onOpenImage,
-  onHide,
+  onHide, // Manteniamo onHide qui per Accept/Reject
   showMap,
   mapCoordinates,
   showComments,
@@ -51,7 +51,7 @@ const ReportMainContent = ({
       if (success) {
         showToast("Report rejected successfully.", "success");
         onReportUpdated(report.id, { status: "Rejected", rejection_reason: rejectionReason }); // Aggiorna lo stato localmente E notifica il genitore per il re-fetch
-        onHide();
+        onHide(); // CHIUDE la modale dopo il rifiuto (azione finale)
       } else {
         showToast("Failed to reject report.", "error");
       }
@@ -69,7 +69,7 @@ const ReportMainContent = ({
       }
       showToast("Report accepted and assigned!", "success");
       onReportUpdated(report.id, { status: "Assigned", assignee: result?.assignee || report.assignee }); // Aggiorna lo stato localmente E notifica il genitore per il re-fetch
-      onHide();
+      onHide(); // CHIUDE la modale dopo l'accettazione (azione finale)
     } catch (error) { 
       showToast(error.message || "Approval error.", "error");
     }
@@ -88,7 +88,10 @@ const ReportMainContent = ({
       if (newStatus === "Resolved") { message = "Report successfully resolved!"; }
 
       showToast(message, type);
-      onHide();
+      
+      // RIMOZIONE DI onHide(): La modale non si chiude dopo un cambio di stato
+      // if (newStatus === "Resolved") { onHide(); } // Se volessimo chiudere solo alla risoluzione
+      
     } catch (error) { 
       showToast(error.message || `Failed to update status`, "error");
     }
