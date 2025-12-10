@@ -13,11 +13,11 @@
  * Altri ruoli tecnici vengono caricati dinamicamente dal database
  */
 export const SystemRoles = {
-  CITIZEN: 'citizen',
-  ADMINISTRATOR: 'administrator',
-  PUBLIC_RELATIONS_OFFICER: 'municipal public relations officer',
-  EXTERNAL_MAINTAINER: 'external maintainer',
-  DEPARTMENT_DIRECTOR: 'department director'
+  CITIZEN: 'Citizen',
+  ADMINISTRATOR: 'Administrator',
+  PUBLIC_RELATIONS_OFFICER: 'Municipal Public Relations Officer',
+  EXTERNAL_MAINTAINER: 'External Maintainer',
+  DEPARTMENT_DIRECTOR: 'Department Director'
 } as const;
 
 /**

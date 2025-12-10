@@ -7,11 +7,21 @@ import { UserEntity } from '@models/entity/userEntity';
 
 /**
  * Helper function to get the role name from a user entity
+ * Normalizes the role name to Title Case (first letter of each word capitalized)
  */
 function getUserRoleName(user: any): string | undefined {
   if (!user) return undefined;
   const userEntityData = user as UserEntity;
-  return userEntityData.departmentRole?.role?.name;
+  const roleName = userEntityData.departmentRole?.role?.name;
+  
+  if (!roleName) return undefined;
+  
+  // Convert to Title Case: capitalize first letter of each word
+  return roleName
+    .toLowerCase()
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
 }
 
 /**
