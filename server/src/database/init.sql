@@ -816,7 +816,7 @@ ON CONFLICT (username) DO NOTHING;
 /*
  * 11. Create test reports
  */
-INSERT INTO reports (reporter_id, title, description, category, location, address, is_anonymous, status, created_at, updated_at)
+INSERT INTO reports (reporter_id, title, description, category, location, address, is_anonymous, status, assignee_id, created_at, updated_at)
 VALUES (
     (SELECT id FROM users WHERE username = 'user'),
     'Dangerous Road Sign',
@@ -826,12 +826,13 @@ VALUES (
     'Via Legnano, Torino, TO, Italy',
     false,
     'Assigned',
+    (SELECT id FROM users WHERE username = 'staff_traffic'),
     CURRENT_TIMESTAMP,
     CURRENT_TIMESTAMP
 )
 ON CONFLICT DO NOTHING;
 
-INSERT INTO reports (reporter_id, title, description, category, location, address, is_anonymous, status, created_at, updated_at)
+INSERT INTO reports (reporter_id, title, description, category, location, address, is_anonymous, status, assignee_id, created_at, updated_at)
 VALUES (
     (SELECT id FROM users WHERE username = 'user2'),
     'Damaged Traffic Light',
@@ -841,12 +842,13 @@ VALUES (
     'Corso Duca degli Abbruzzi, 52, Torino, TO, Italy',
     false,
     'Assigned',
+    (SELECT id FROM users WHERE username = 'staff_traffic'),
     CURRENT_TIMESTAMP,
     CURRENT_TIMESTAMP
 )
 ON CONFLICT DO NOTHING;
 
-INSERT INTO reports (reporter_id, title, description, category, location, address, is_anonymous, status, created_at, updated_at)
+INSERT INTO reports (reporter_id, title, description, category, location, address, is_anonymous, status, assignee_id, created_at, updated_at)
 VALUES (
     (SELECT id FROM users WHERE username = 'user2'),
     'Scattered Waste on Street',
@@ -856,6 +858,7 @@ VALUES (
     'Via Giuseppe Giusti, 3, Torino, TO, Italy',
     false,
     'Assigned',
+    (SELECT id FROM users WHERE username = 'staff_waste'),
     CURRENT_TIMESTAMP,
     CURRENT_TIMESTAMP
 )
@@ -882,7 +885,7 @@ ON CONFLICT DO NOTHING;
 INSERT INTO photos (report_id, storage_url, created_at)
 VALUES (
     (SELECT id FROM reports WHERE title = 'Dangerous Road Sign' LIMIT 1),
-    '/uploads/reports/1/1.jpg',
+    '/seed-data/photos/1/1.jpg',
     CURRENT_TIMESTAMP
 )
 ON CONFLICT DO NOTHING;
@@ -890,25 +893,15 @@ ON CONFLICT DO NOTHING;
 INSERT INTO photos (report_id, storage_url, created_at)
 VALUES (
     (SELECT id FROM reports WHERE title = 'Damaged Traffic Light' LIMIT 1),
-    '/uploads/reports/2/2.jpg',
+    '/seed-data/photos/2/2.jpg',
     CURRENT_TIMESTAMP
 )
 ON CONFLICT DO NOTHING;
 
--- Second photo for Report 2 from folder 2
 INSERT INTO photos (report_id, storage_url, created_at)
 VALUES (
     (SELECT id FROM reports WHERE title = 'Damaged Traffic Light' LIMIT 1),
-    '/uploads/reports/2/2_2.jpg',
-    CURRENT_TIMESTAMP
-)
-ON CONFLICT DO NOTHING;
-
--- Photos from folder 3 (2_2.jpg and 5.jpg)
-INSERT INTO photos (report_id, storage_url, created_at)
-VALUES (
-    (SELECT id FROM reports WHERE title = 'Scattered Waste on Street' LIMIT 1),
-    '/uploads/reports/3/2_2.jpg',
+    '/seed-data/photos/3/2_2.jpg',
     CURRENT_TIMESTAMP
 )
 ON CONFLICT DO NOTHING;
@@ -916,7 +909,7 @@ ON CONFLICT DO NOTHING;
 INSERT INTO photos (report_id, storage_url, created_at)
 VALUES (
     (SELECT id FROM reports WHERE title = 'Scattered Waste on Street' LIMIT 1),
-    '/uploads/reports/3/5.jpg',
+    '/seed-data/photos/5/5.jpg',
     CURRENT_TIMESTAMP
 )
 ON CONFLICT DO NOTHING;
@@ -925,25 +918,7 @@ ON CONFLICT DO NOTHING;
 INSERT INTO photos (report_id, storage_url, created_at)
 VALUES (
     (SELECT id FROM reports WHERE title = 'Tilting Street Lamp' LIMIT 1),
-    '/uploads/reports/4/4.jpg',
-    CURRENT_TIMESTAMP
-)
-ON CONFLICT DO NOTHING;
-
--- Photo from folder 5
-INSERT INTO photos (report_id, storage_url, created_at)
-VALUES (
-    (SELECT id FROM reports WHERE title = 'Tilting Street Lamp' LIMIT 1),
-    '/uploads/reports/5/4.jpg',
-    CURRENT_TIMESTAMP
-)
-ON CONFLICT DO NOTHING;
-
--- Photo from folder 6
-INSERT INTO photos (report_id, storage_url, created_at)
-VALUES (
-    (SELECT id FROM reports WHERE title = 'Scattered Waste on Street' LIMIT 1),
-    '/uploads/reports/6/5.jpg',
+    '/seed-data/photos/4/4.jpg',
     CURRENT_TIMESTAMP
 )
 ON CONFLICT DO NOTHING;

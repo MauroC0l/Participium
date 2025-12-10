@@ -32,7 +32,14 @@ export function createErrorDTO(
  * Generate full URL for photo storage path
  */ 
 function getPhotoUrl(storageUrl: string): string {
-  return storageUrl;
+  // If the storage URL already includes the protocol (http/https), return as-is
+  if (storageUrl.startsWith('http://') || storageUrl.startsWith('https://')) {
+    return storageUrl;
+  }
+  
+  // Otherwise, construct the full URL using the base URL
+  const baseUrl = process.env.PUBLIC_BASE_URL || 'http://localhost:3001';
+  return `${baseUrl}${storageUrl}`;
 }
 
 /**

@@ -33,6 +33,11 @@ const uploadsPath = path.join(process.cwd(), 'uploads');
 app.use('/uploads', express.static(uploadsPath));
 console.log(`Serving static files from: ${uploadsPath}`);
 
+// Serve seed data photos for demo/testing purposes
+const seedDataPath = path.join(process.cwd(), 'seed-data');
+app.use('/seed-data', express.static(seedDataPath));
+console.log(`Serving seed data from: ${seedDataPath}`);
+
 // Session configuration
 app.use(session({
   secret: process.env.SESSION_SECRET || 'participium-secret-key',
