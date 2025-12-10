@@ -44,7 +44,7 @@ const ROLE_DEPARTMENT_MAPPING = {
   "building maintenance staff member": "Architectural Barriers",
   "accessibility staff member": "Architectural Barriers",
   "recycling program staff member": "Waste",
-  "parks maintenance staff member": "Parks and Recreation",
+  "parks maintenance staff member": "Public Green Areas and Playgrounds",
 };
 
 const getStatusBadgeVariant = (status) => {
@@ -83,6 +83,13 @@ export default function MunicipalityUserHome({ user }) {
     );
   }, [userRole]);
 
+  const availableStatuses = useMemo(() => {
+    if (isStaffMember) {
+      return ["Assigned", "In Progress", "Suspended", "Resolved"];
+    }
+    return ALL_STATUSES;
+  }, [isStaffMember]);
+
   const userDepartmentCategory = useMemo(() => {
     return isStaffMember ? getDepartmentCategory(user?.role_name) : null;
   }, [isStaffMember, user?.role_name]);
@@ -115,15 +122,22 @@ export default function MunicipalityUserHome({ user }) {
   // --- EFFECT: Handle User Role Changes ---
   useEffect(() => {
     if (isStaffMember) {
-      setStatusFilter("All Statuses");
       setCategoryFilter(userDepartmentCategory || "");
+
+      // Define the valid statuses for a staff member locally
+      const validStaffStatuses = ["Assigned", "In Progress", "Suspended", "Resolved"];
+
+      // If the current filter is not valid for a staff member, reset it
+      if (!validStaffStatuses.includes(statusFilter) && statusFilter !== "All Statuses") {
+        setStatusFilter("All Statuses");
+      }
     } else if (
       userRole === "administrator" ||
       userRole === "municipal public relations officer"
     ) {
       if (!statusFilter) setStatusFilter("Pending Approval");
     }
-  }, [isStaffMember, userDepartmentCategory, userRole]);
+  }, [isStaffMember, userDepartmentCategory, userRole, statusFilter]);
 
   // --- FETCHING LOGIC ---
 
@@ -305,83 +319,82 @@ export default function MunicipalityUserHome({ user }) {
         </div>
 
         <div className="mu-filters">
-            <>
-              {/* Category Filter */}
-              <InputGroup className="mu-filter-group">
-                <InputGroup.Text className="mu-filter-icon">
-                  <FaList />
-                </InputGroup.Text>
-                <Dropdown
-                  onSelect={setCategoryFilter}
-                  className="mu-custom-dropdown"
+            {/* Category Filter */}
+            <InputGroup className="mu-filter-group">
+              <InputGroup.Text className="mu-filter-icon">
+                <FaList />
+              </InputGroup.Text>
+              <Dropdown
+                onSelect={setCategoryFilter}
+                className="mu-custom-dropdown"
+              >
+                <Dropdown.Toggle
+                  variant="light"
+                  className="mu-filter-toggle"
+                  id="category-filter"
+                  disabled={isStaffMember}
                 >
-                  <Dropdown.Toggle
-                    variant="light"
-                    className="mu-filter-toggle"
-                    id="category-filter"
-                  >
-                    <div className="d-flex align-items-center justify-content-between w-100">
-                      <span className="text-truncate">
-                        {categoryFilter || "All Categories"}
-                      </span>
-                      <FaChevronDown className="mu-dropdown-arrow ms-2" />
-                    </div>
-                  </Dropdown.Toggle>
-                  <Dropdown.Menu className="modern-dropdown-menu">
-                    <Dropdown.Item eventKey="" active={categoryFilter === ""}>
-                      All Categories
+                  <div className="d-flex align-items-center justify-content-between w-100">
+                    <span className="text-truncate">
+                      {categoryFilter || "All Categories"}
+                    </span>
+                    <FaChevronDown className="mu-dropdown-arrow ms-2" />
+                  </div>
+                </Dropdown.Toggle>
+                <Dropdown.Menu className="modern-dropdown-menu">
+                  <Dropdown.Item eventKey="" active={categoryFilter === ""}>
+                    All Categories
+                  </Dropdown.Item>
+                  {allCategories.map((cat, idx) => (
+                    <Dropdown.Item
+                      key={idx}
+                      eventKey={cat}
+                      active={categoryFilter === cat}
+                    >
+                      {cat}
                     </Dropdown.Item>
-                    {allCategories.map((cat, idx) => (
-                      <Dropdown.Item
-                        key={idx}
-                        eventKey={cat}
-                        active={categoryFilter === cat}
-                      >
-                        {cat}
-                      </Dropdown.Item>
-                    ))}
-                  </Dropdown.Menu>
-                </Dropdown>
-              </InputGroup>
+                  ))}
+                </Dropdown.Menu>
+              </Dropdown>
+            </InputGroup>
 
-              {/* Status Filter */}
-              <InputGroup className="mu-filter-group">
-                <InputGroup.Text className="mu-filter-icon">
-                  <FaFilter />
-                </InputGroup.Text>
-                <Dropdown
-                  onSelect={setStatusFilter}
-                  className="mu-custom-dropdown"
+            {/* Status Filter */}
+            <InputGroup className="mu-filter-group">
+              <InputGroup.Text className="mu-filter-icon">
+                <FaFilter />
+              </InputGroup.Text>
+              <Dropdown
+                onSelect={setStatusFilter}
+                className="mu-custom-dropdown"
+              >
+                <Dropdown.Toggle
+                  variant="light"
+                  className="mu-filter-toggle"
+                  id="status-filter"
                 >
-                  <Dropdown.Toggle
-                    variant="light"
-                    className="mu-filter-toggle"
-                    id="status-filter"
-                  >
-                    <div className="d-flex align-items-center justify-content-between w-100">
-                      <span className="text-truncate">
-                        {statusFilter || "All Statuses"}
-                      </span>
-                      <FaChevronDown className="mu-dropdown-arrow ms-2" />
-                    </div>
-                  </Dropdown.Toggle>
-                  <Dropdown.Menu className="modern-dropdown-menu">
-                    <Dropdown.Item eventKey="" active={statusFilter === ""}>
-                      All Statuses
+                  <div className="d-flex align-items-center justify-content-between w-100">
+                    <span className="text-truncate">
+                      {statusFilter || "All Statuses"}
+                    </span>
+                    <FaChevronDown className="mu-dropdown-arrow ms-2" />
+                  </div>
+                </Dropdown.Toggle>
+                <Dropdown.Menu className="modern-dropdown-menu">
+                  <Dropdown.Item eventKey="" active={statusFilter === ""}>
+                    All Statuses
+                  </Dropdown.Item>
+                  {availableStatuses.map((st, idx) => (
+                    <Dropdown.Item
+                      key={idx}
+                      eventKey={st}
+                      active={statusFilter === st}
+                    >
+                      {st}
                     </Dropdown.Item>
-                    {ALL_STATUSES.map((st, idx) => (
-                      <Dropdown.Item
-                        key={idx}
-                        eventKey={st}
-                        active={statusFilter === st}
-                      >
-                        {st}
-                      </Dropdown.Item>
-                    ))}
-                  </Dropdown.Menu>
-                </Dropdown>
-              </InputGroup>
-            </>
+                  ))}
+                </Dropdown.Menu>
+              </Dropdown>
+            </InputGroup>
         </div>
       </div>
 
