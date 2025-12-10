@@ -93,11 +93,7 @@ const ReportSidebar = ({
   
   const getExternalAssigneeName = () => {
       if (report.externalAssigneeId) {
-          // Il campo externalAssignee potrebbe essere un ID o un oggetto completo. 
-          // Se è un oggetto (aggiornato da onReportUpdated), usiamo quello.
-          if (report.externalAssignee && report.externalAssignee.first_name) {
-              return `${report.externalAssignee.first_name} ${report.externalAssignee.last_name}`;
-          }
+          // *** MODIFICA: Mostra solo l'ID, non il nome/cognome/username ***
           return `ID #${report.externalAssigneeId}`;
       }
       return <span className="text-muted">Not assigned</span>;
@@ -106,10 +102,12 @@ const ReportSidebar = ({
   const getInternalAssigneeName = () => {
       if (report.assignee) {
           // Il campo assignee potrebbe essere un ID o un oggetto completo.
-          if (report.assignee.first_name) {
-              return `${report.assignee.first_name} ${report.assignee.last_name}`;
+          const assigneeId = report.assignee.id || report.assignee;
+          
+          if (assigneeId) {
+             // *** MODIFICA: Mostra solo l'ID, non il nome/cognome/username ***
+             return `ID #${assigneeId}`;
           }
-          return `ID #${report.assignee.id}`;
       }
       return <span className="text-muted">Not assigned</span>;
   }
