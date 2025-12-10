@@ -113,7 +113,8 @@ const ReportDetails = ({
           if (userData && userData.id) {
             setCurrentUserId(userData.id);
             // Assumiamo che il ruolo sia fornito dall'API (es. 'admin', 'manager', 'citizen')
-            setCurrentUserRole(userData.role || 'citizen'); // Default a 'citizen' se non specificato
+            // Se l'utente è un oggetto con un ruolo, usiamo quello, altrimenti 'citizen' di default
+            setCurrentUserRole(userData.role_name || userData.role || 'citizen'); // Modificato per supportare role_name o role
           } else {
             setCurrentUserId(null);
             setCurrentUserRole('citizen'); // Utente non loggato trattato come 'citizen'
@@ -134,7 +135,8 @@ const ReportDetails = ({
   }, [show, hideToast, showToast]); // Dipendenze aggiornate
 
   // 💥 NUOVO: Logica di visibilità basata sul ruolo
-  const isCitizen = currentUserRole === 'citizen';
+  // NOTA: il check è in minuscolo, quindi tutti i ruoli non-citizen sono inclusi
+  const isCitizen = currentUserRole?.toLowerCase() === 'citizen';
   const showRestrictedContent = !isCitizen && currentUserRole !== null;
   // La mappa e i commenti saranno visualizzati solo se showRestrictedContent è true
 
@@ -189,10 +191,10 @@ const ReportDetails = ({
               onReportUpdated={onReportUpdated}
               onHide={onHide}
               onOpenImage={(img) => { setSelectedImage(img); setShowImageModal(true); }}
-              showMap={showMap && showRestrictedContent} // 💥 NUOVO: Mappa visibile solo se non è citizen E showMap è true
+              showMap={showMap && showRestrictedContent} // Mappa visibile solo se non è citizen E showMap è true
               mapCoordinates={mapCoordinates}
               showToast={showToast}
-              showComments={showRestrictedContent} // 💥 NUOVO: Commenti visibili solo se non è citizen
+              showComments={showRestrictedContent} // Commenti visibili solo se non è citizen
             />
 
             {/* --- RIGHT COLUMN: SIDEBAR --- */}
@@ -205,7 +207,7 @@ const ReportDetails = ({
               setShowMap={setShowMap}
               mapCoordinates={mapCoordinates}
               showToast={showToast}
-              isCitizen={isCitizen} // 💥 NUOVO: Passa l'informazione del ruolo per nascondere toggle/sezioni nella sidebar
+              isCitizen={isCitizen} // Passa l'informazione del ruolo
             />
             
           </div>

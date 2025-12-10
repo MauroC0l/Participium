@@ -10,7 +10,7 @@ const DEFAULT_AVATAR = "https://upload.wikimedia.org/wikipedia/commons/7/7c/Prof
 
 const ReportComments = ({ reportId, currentUserId, showToast }) => { // NUOVA PROP RICEVUTA
     // Stato per gestire l'apertura/chiusura (True = aperto all'inizio, False = chiuso)
-    const [isExpanded, setIsExpanded] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(false); // Inizializza a FALSE, si espande quando si apre la modale
 
     const [comments, setComments] = useState([]);
     const [loadingComments, setLoadingComments] = useState(false);
@@ -23,14 +23,18 @@ const ReportComments = ({ reportId, currentUserId, showToast }) => { // NUOVA PR
 
     const commentsEndRef = useRef(null);
 
+    const scrollToBottom = (behavior = "smooth") => {
+        commentsEndRef.current?.scrollIntoView({ behavior: behavior });
+    };
+
     const fetchComments = async () => {
         setLoadingComments(true);
         try {
             const data = await getAllReportComments(reportId);
             setComments(data || []);
-            // Scrolla solo se è aperto
+            // Se la tendina è già aperta, scrolla. Altrimenti lo farà l'useEffect sotto.
             if (isExpanded) {
-                setTimeout(() => commentsEndRef.current?.scrollIntoView({ behavior: "smooth" }), 300);
+                setTimeout(() => scrollToBottom("auto"), 300); // Uso "auto" per lo scroll su caricamento iniziale/refresh
             }
         } catch (error) {
             console.error("Failed to load comments", error);
@@ -40,18 +44,19 @@ const ReportComments = ({ reportId, currentUserId, showToast }) => { // NUOVA PR
         }
     };
 
-    // Carica i commenti all'avvio (o potresti farlo solo quando si apre la tendina)
+    // Carica i commenti all'avvio del componente
     useEffect(() => {
         if (reportId) fetchComments();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [reportId]);
 
-    // Scrolla in basso quando si apre la tendina
+    // Scrolla in basso quando si apre la tendina (transizione da 0 a 1fr)
     useEffect(() => {
         if (isExpanded && commentsEndRef.current) {
-            setTimeout(() => commentsEndRef.current?.scrollIntoView({ behavior: "smooth" }), 300);
+            // Un breve timeout per permettere all'animazione CSS di finire prima dello scroll
+            setTimeout(() => scrollToBottom("smooth"), 300);
         }
-    }, [isExpanded]);
+    }, [isExpanded, comments.length]); // Aggiunto comments.length per scrollare anche quando si aggiunge un commento
 
     const handlePostComment = async (e) => {
         e.preventDefault();
@@ -59,10 +64,11 @@ const ReportComments = ({ reportId, currentUserId, showToast }) => { // NUOVA PR
         setSubmittingComment(true);
         try {
             await addReportComment(reportId, { content: newCommentText });
-            await fetchComments();
+            // Aggiorno solo l'array di commenti per innescare l'useEffect per lo scroll
+            await fetchComments(); 
             setNewCommentText("");
             showToast("Comment added successfully!", "success"); // Toast per successo post
-            // Se scrivi un commento, assicurati che la tendina rimanga aperta e scrolli
+            // Se si aggiunge un commento, assicurati che la tendina sia aperta
             if (!isExpanded) setIsExpanded(true);
         } catch (error) { 
             console.error("Error posting comment:", error); 
@@ -135,7 +141,7 @@ const ReportComments = ({ reportId, currentUserId, showToast }) => { // NUOVA PR
                     <div className="rdm-comments-container">
                         {loadingComments ? (
                             <div className="text-center py-4 text-muted small">Loading conversation...</div>
-                        ) : comments.length === 0 ? (
+                        ) : comments.length === 0 && !loadingComments ? (
                             <div className="rdm-empty-comments">
                                 <FaRegCommentDots size={24} className="mb-2" />
                                 <p>No internal notes yet.</p>
@@ -155,11 +161,18 @@ const ReportComments = ({ reportId, currentUserId, showToast }) => { // NUOVA PR
                                     return (
                                         <div key={comment.id} className={`rdm-comment-item ${containerClass}`}>
                                             <div className="rdm-comment-avatar">
-                                                <img 
-                                                    src={avatarSrc} 
-                                                    alt="user avatar" 
-                                                    style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }}
-                                                />
+                                                {/* Se avatarSrc è DEFAULT_AVATAR e non ci sono nome/cognome, mostra icona o iniziali */}
+                                                {avatarSrc === DEFAULT_AVATAR || !comment.author?.personalPhotoUrl ? (
+                                                  <div className="d-flex align-items-center justify-content-center h-100 w-100" style={{ fontSize: '0.9rem' }}>
+                                                    {authorFullName.split(' ').map(n => n[0]).join('').substring(0, 2)}
+                                                  </div>
+                                                ) : (
+                                                  <img 
+                                                      src={avatarSrc} 
+                                                      alt="user avatar" 
+                                                      style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }}
+                                                  />
+                                                )}
                                             </div>
 
                                             <div className="rdm-comment-body">

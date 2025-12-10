@@ -12,7 +12,7 @@ const ReportSidebar = ({
   showMap, 
   setShowMap,
   mapCoordinates,
-  isCitizen,
+  isCitizen, // <--- PROP RICEVUTA
   showToast // NUOVA PROP RICEVUTA
 }) => {
   const [externalUsers, setExternalUsers] = useState([]);
@@ -200,6 +200,7 @@ const ReportSidebar = ({
           </div>
         </div>
         
+        {/* MODIFICA: Mostra il pulsante solo se l'utente NON è un Citizen E le coordinate sono disponibili */}
         {!isCitizen && mapCoordinates && (
           <button
           className={`rdm-btn-map-toggle ${showMap ? "active" : ""}`}
