@@ -49,7 +49,7 @@ export const validateStatusUpdate = (req: Request, res: Response, next: NextFunc
 
   // Special handling for IN_PROGRESS and SUSPENDED - allow only technical staff
   if ([ReportStatus.IN_PROGRESS, ReportStatus.SUSPENDED].includes(newStatus as ReportStatus)) {
-    if (!isTechnicalStaff(roleName)) {
+    if (isCitizen(roleName)) {
       return next(new InsufficientRightsError(
         `Only technical staff can set status to ${newStatus}`
       ));

@@ -19,7 +19,7 @@ L.Icon.Default.mergeOptions({ iconRetinaUrl: iconMarker2x, iconUrl: iconMarker, 
 import "../css/ReportDetails.css";
 
 // -------------------------------------------------------------------------
-// COMPONENTE FITTIZIO: TOAST MESSAGE 
+// COMPONENTE FITTIZIO: TOAST MESSAGE (Estesa per matchare lo stile MapPage)
 // -------------------------------------------------------------------------
 const ToastMessage = ({ message, type, onClose }) => {
   useEffect(() => {
@@ -31,38 +31,28 @@ const ToastMessage = ({ message, type, onClose }) => {
 
   const getIconAndClass = (msgType) => {
     switch (msgType) {
-      case 'error': return { icon: <FaTimesCircle />, className: 'rdm-alert-error' };
-      case 'warning': return { icon: <FaExclamationTriangle />, className: 'rdm-alert-warning' };
-      case 'info': return { icon: <FaInfoCircle />, className: 'rdm-alert-info' };
-      case 'success': default: return { icon: <FaCheckCircle />, className: 'rdm-alert-success' };
+      case 'error': return { icon: <FaTimesCircle />, className: 'error' };
+      case 'warning': return { icon: <FaExclamationTriangle />, className: 'warning' };
+      case 'info': return { icon: <FaInfoCircle />, className: 'info' };
+      case 'success': default: return { icon: <FaCheckCircle />, className: 'success' };
     }
   };
 
   const { icon, className } = getIconAndClass(type);
 
-  const toastStyle = {
-    position: 'fixed',
-    top: '20px',
-    right: '20px',
-    zIndex: 9999,
-    maxWidth: '400px',
-    display: 'flex',
-    alignItems: 'center',
-    padding: '16px',
-    borderRadius: '8px',
-    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-  };
-
+  // Stili replicati da MapPage.css per il componente mp-notification
   return (
-    <div style={toastStyle} className={`rdm-alert ${className} animate-fadeIn`}>
-      <span style={{ marginRight: '10px', fontSize: '1.2rem' }}>{icon}</span>
-      <div style={{ flexGrow: 1 }}>{message}</div>
-      <button 
-        onClick={onClose} 
-        style={{ background: 'none', border: 'none', color: 'inherit', marginLeft: '10px', cursor: 'pointer', fontSize: '1rem' }}
-      >
-        <FaTimes />
-      </button>
+    <div className={`mp-notification ${className}`}>
+        <div className="mp-notification-content">
+            {icon && <span className="mp-notification-icon">{icon}</span>}
+            <span className="mp-notification-message">{message}</span>
+            <button 
+                onClick={onClose} 
+                style={{ background: 'none', border: 'none', color: 'inherit', marginLeft: '10px', cursor: 'pointer', fontSize: '1rem' }}
+            >
+                <FaTimes />
+            </button>
+        </div>
     </div>
   );
 };
@@ -71,15 +61,17 @@ const ToastMessage = ({ message, type, onClose }) => {
 const ReportDetails = ({
   show,
   onHide,
-  report,
+  report: initialReport, // Rinomino la prop per usare lo stato locale
   user,
   onApprove,
   onReject,
   onStatusUpdate,
-  onReportUpdated,
+  onReportUpdated, // AGGIUNTO: Propagazione dell'aggiornamento al componente genitore
 }) => {
+  // NUOVO STATO: Mantiene il report aggiornato all'interno della modale
+  const [report, setReport] = useState(initialReport); 
   const [currentUserId, setCurrentUserId] = useState(null);
-  const [currentUserRole, setCurrentUserRole] = useState(null); // 💥 NUOVO: Stato per il ruolo utente
+  const [currentUserRole, setCurrentUserRole] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
   const [showImageModal, setShowImageModal] = useState(false);
   const [showMap, setShowMap] = useState(false);
@@ -93,12 +85,28 @@ const ReportDetails = ({
    * @param {'success'|'error'|'warning'|'info'} type - Il tipo di notifica.
    */
   const showToast = useCallback((message, type = "success") => {
-    setToast({ show: true, message, type });
+    // Nascondi il precedente prima di mostrarne uno nuovo per evitare sovrapposizioni
+    setToast({ show: false, message: "", type: "" }); 
+    // Un piccolo ritardo per permettere l'animazione di chiusura (opzionale)
+    setTimeout(() => setToast({ show: true, message, type }), 100); 
   }, []);
 
   const hideToast = useCallback(() => {
     setToast({ show: false, message: "", type: "" });
   }, []);
+
+  // Sync dello stato locale quando la prop esterna cambia (necessario per l'aggiornamento)
+  useEffect(() => {
+    setReport(initialReport);
+  }, [initialReport]);
+  
+  // Funzione per aggiornare lo stato del report localmente E notificare il genitore
+  // Uso useCallback per evitare che venga ricreata inutilmente, ma in questo caso non serve in un useEffect
+  const handleReportUpdate = (reportId, updates) => {
+    setReport(prev => ({ ...prev, ...updates }));
+    // NOTA IMPORTANTE: Qui l'onReportUpdated esterno notificherà il genitore di fare un re-fetch
+    if (onReportUpdated) onReportUpdated(reportId, updates);
+  };
 
 
   // Reset e fetch User ID e Ruolo
@@ -112,38 +120,30 @@ const ReportDetails = ({
           const userData = await getCurrentUser();
           if (userData && userData.id) {
             setCurrentUserId(userData.id);
-            // Assumiamo che il ruolo sia fornito dall'API (es. 'admin', 'manager', 'citizen')
-            // Se l'utente è un oggetto con un ruolo, usiamo quello, altrimenti 'citizen' di default
-            setCurrentUserRole(userData.role_name || userData.role || 'citizen'); // Modificato per supportare role_name o role
+            setCurrentUserRole(userData.role_name || userData.role || 'citizen');
           } else {
             setCurrentUserId(null);
-            setCurrentUserRole('citizen'); // Utente non loggato trattato come 'citizen'
+            setCurrentUserRole('citizen');
           }
         } catch (error) { 
           console.error("Error fetching user:", error);
           setCurrentUserId(null);
-          setCurrentUserRole('citizen'); // In caso di errore, assumiamo il ruolo più restrittivo
-          showToast("Impossibile recuperare l'utente corrente.", "error"); 
+          setCurrentUserRole('citizen');
         }
       };
       fetchCurrentUser();
     } else {
-        // Resetta lo stato del ruolo e id quando la modale è chiusa
         setCurrentUserId(null);
         setCurrentUserRole(null);
     }
-  }, [show, hideToast, showToast]); // Dipendenze aggiornate
+  }, [show, hideToast]); 
 
-  // 💥 NUOVO: Logica di visibilità basata sul ruolo
-  // NOTA: il check è in minuscolo, quindi tutti i ruoli non-citizen sono inclusi
   const isCitizen = currentUserRole?.toLowerCase() === 'citizen';
   const showRestrictedContent = !isCitizen && currentUserRole !== null;
-  // La mappa e i commenti saranno visualizzati solo se showRestrictedContent è true
 
   const mapCoordinates = useMemo(() => {
     if (!report || !report.location) return null;
     const loc = report.location;
-    // Gestione di diversi formati di coordinate (GeoJSON Point [lng, lat] o oggetti lat/lng)
     if (loc.latitude && loc.longitude) return [loc.latitude, loc.longitude];
     if (loc.type === "Point" && Array.isArray(loc.coordinates)) return [loc.coordinates[1], loc.coordinates[0]];
     return null;
@@ -187,27 +187,27 @@ const ReportDetails = ({
               currentUserId={currentUserId}
               onApprove={onApprove}
               onReject={onReject}
-              onStatusUpdate={onStatusUpdate}
-              onReportUpdated={onReportUpdated}
+              onStatusUpdate={onStatusUpdate} // Lasciato, ma ReportMainContent userà onReportUpdated per forzare il re-fetch esterno
+              onReportUpdated={handleReportUpdate} // Usa il gestore locale (che invoca il genitore onReportUpdated)
               onHide={onHide}
               onOpenImage={(img) => { setSelectedImage(img); setShowImageModal(true); }}
-              showMap={showMap && showRestrictedContent} // Mappa visibile solo se non è citizen E showMap è true
+              showMap={showMap && showRestrictedContent}
               mapCoordinates={mapCoordinates}
               showToast={showToast}
-              showComments={showRestrictedContent} // Commenti visibili solo se non è citizen
+              showComments={showRestrictedContent}
             />
 
             {/* --- RIGHT COLUMN: SIDEBAR --- */}
             <ReportSidebar 
               report={report}
               currentUserId={currentUserId}
-              onReportUpdated={onReportUpdated}
-              onStatusUpdate={onStatusUpdate}
+              onReportUpdated={handleReportUpdate} // Usa il gestore locale (che invoca il genitore onReportUpdated)
+              onStatusUpdate={onStatusUpdate} // Lasciato per compatibilità, ma non è più la funzione principale di re-fetch
               showMap={showMap}
               setShowMap={setShowMap}
               mapCoordinates={mapCoordinates}
               showToast={showToast}
-              isCitizen={isCitizen} // Passa l'informazione del ruolo
+              isCitizen={isCitizen}
             />
             
           </div>
