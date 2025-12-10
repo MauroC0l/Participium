@@ -1,17 +1,27 @@
 import { Request, Response, NextFunction } from 'express';
 import { ReportStatus } from '@dto/ReportStatus';
-import { SystemRoles, isTechnicalStaff, isCitizen } from '@models/dto/UserRole';
+import { SystemRoles, isTechnicalStaff } from '@models/dto/UserRole';
 import { InsufficientRightsError } from '@errors/InsufficientRightsError';
 import { BadRequestError } from '@errors/BadRequestError';
 import { UserEntity } from '@models/entity/userEntity';
 
 /**
  * Helper function to get the role name from a user entity
+ * Normalizes the role name to Title Case (first letter of each word capitalized)
  */
 function getUserRoleName(user: any): string | undefined {
   if (!user) return undefined;
   const userEntityData = user as UserEntity;
-  return userEntityData.departmentRole?.role?.name;
+  const roleName = userEntityData.departmentRole?.role?.name;
+  
+  if (!roleName) return undefined;
+  
+  // Convert to Title Case: capitalize first letter of each word
+  return roleName
+    .toLowerCase()
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
 }
 
 /**
@@ -49,9 +59,9 @@ export const validateStatusUpdate = (req: Request, res: Response, next: NextFunc
 
   // Special handling for IN_PROGRESS and SUSPENDED - allow only technical staff
   if ([ReportStatus.IN_PROGRESS, ReportStatus.SUSPENDED].includes(newStatus as ReportStatus)) {
-    if (isCitizen(roleName)) {
+    if (!isTechnicalStaff(roleName) || roleName !== SystemRoles.EXTERNAL_MAINTAINER) {
       return next(new InsufficientRightsError(
-        `Only technical staff can set status to ${newStatus}`
+        `Only external maintainers can set status to ${newStatus}`
       ));
     }
     return next();

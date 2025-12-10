@@ -52,6 +52,31 @@ const createMockReport = (overrides?: Partial<ReportEntity>): ReportEntity => {
   return mockReport;
 };
 
+// Helper functions for mapping reports - moved to module level to reduce nesting
+const createMappedReportFinder = (mockMappedReports: any[]) => {
+  return (report: any) => mockMappedReports.find(m => m.id === report.id);
+};
+
+const mapReportToMock = (r: ReportEntity) => ({
+  id: r.id,
+  title: r.title,
+  status: r.status,
+});
+
+const mapReportToIdAndStatus = (r: ReportEntity) => ({
+  id: r.id,
+  status: r.status
+});
+
+const mapReportToIdAndCategory = (r: ReportEntity) => ({
+  id: r.id,
+  category: r.category
+});
+
+const mapReportToId = (r: ReportEntity) => ({
+  id: r.id
+});
+
 describe('ReportService', () => {
 
   beforeEach(() => {
@@ -193,13 +218,9 @@ describe('ReportService', () => {
         createMockReport({ id: 3, assigneeId: userId, status: ReportStatus.RESOLVED }),
       ];
 
-      const mockMappedReports = mockReports.map(r => ({
-        id: r.id,
-        title: r.title,
-        status: r.status,
-      }));
+      const mockMappedReports = mockReports.map(mapReportToMock);
 
-      const findMappedReport = (report: any) => mockMappedReports.find(m => m.id === report.id);
+      const findMappedReport = createMappedReportFinder(mockMappedReports);
 
       (userRepository.findUserById as jest.Mock).mockResolvedValue(mockUser);
       jest.spyOn(reportRepository, 'findByAssigneeId').mockResolvedValue(mockReports);
@@ -259,9 +280,8 @@ describe('ReportService', () => {
         createMockReport({ id: 2, assigneeId: userId, status: ReportStatus.ASSIGNED }),
       ];
 
-      const mockMappedReports = mockReports.map(r => ({ id: r.id, status: r.status }));
-
-      const findMappedReport = (report: any) => mockMappedReports.find(m => m.id === report.id);
+      const mockMappedReports = mockReports.map(mapReportToIdAndStatus);
+      const findMappedReport = createMappedReportFinder(mockMappedReports);
 
       (userRepository.findUserById as jest.Mock).mockResolvedValue(mockUser);
       jest.spyOn(reportRepository, 'findByAssigneeId').mockResolvedValue(mockReports);
@@ -286,9 +306,8 @@ describe('ReportService', () => {
         createMockReport({ id: 3, assigneeId: userId, status: ReportStatus.IN_PROGRESS }),
       ];
 
-      const mockMappedReports = mockReports.map(r => ({ id: r.id, status: r.status }));
-
-      const findMappedReport = (report: any) => mockMappedReports.find(m => m.id === report.id);
+      const mockMappedReports = mockReports.map(mapReportToIdAndStatus);
+      const findMappedReport = createMappedReportFinder(mockMappedReports);
 
       (userRepository.findUserById as jest.Mock).mockResolvedValue(mockUser);
       jest.spyOn(reportRepository, 'findByAssigneeId').mockResolvedValue(mockReports);
@@ -313,9 +332,8 @@ describe('ReportService', () => {
         createMockReport({ id: 2, assigneeId: userId, status: ReportStatus.RESOLVED }),
       ];
 
-      const mockMappedReports = mockReports.map(r => ({ id: r.id, status: r.status }));
-
-      const findMappedReport = (report: any) => mockMappedReports.find(m => m.id === report.id);
+      const mockMappedReports = mockReports.map(mapReportToIdAndStatus);
+      const findMappedReport = createMappedReportFinder(mockMappedReports);
 
       (userRepository.findUserById as jest.Mock).mockResolvedValue(mockUser);
       jest.spyOn(reportRepository, 'findByAssigneeId').mockResolvedValue(mockReports);
@@ -355,9 +373,8 @@ describe('ReportService', () => {
         createMockReport({ id: 2, assigneeId: userId, category: ReportCategory.ROADS }),
       ];
 
-      const mockMappedReports = mockReports.map(r => ({ id: r.id, category: r.category }));
-
-      const findMappedReport = (report: any) => mockMappedReports.find(m => m.id === report.id);
+      const mockMappedReports = mockReports.map(mapReportToIdAndCategory);
+      const findMappedReport = createMappedReportFinder(mockMappedReports);
 
       (userRepository.findUserById as jest.Mock).mockResolvedValue(mockUser);
       jest.spyOn(reportRepository, 'findByAssigneeId').mockResolvedValue(mockReports);
@@ -441,11 +458,13 @@ describe('ReportService', () => {
       const mockUser = createMockUser('Water Network staff member');
       const mockReports: ReportEntity[] = [createMockReport({ id: 1, assigneeId: userId })];
 
+      const mapperErrorImplementation = () => {
+        throw new Error('Mapping error');
+      };
+
       (userRepository.findUserById as jest.Mock).mockResolvedValue(mockUser);
       jest.spyOn(reportRepository, 'findByAssigneeId').mockResolvedValue(mockReports);
-      (mapReportEntityToReportResponse as jest.Mock).mockImplementation(() => {
-        throw new Error('Mapping error');
-      });
+      (mapReportEntityToReportResponse as jest.Mock).mockImplementation(mapperErrorImplementation);
 
       // Act & Assert
       await expect(reportService.getMyAssignedReports(userId))
@@ -552,9 +571,8 @@ describe('ReportService', () => {
         createMockReport({ id: 2, assigneeId: userId })
       ];
 
-      const mockMappedReports = mockReports.map(r => ({ id: r.id }));
-
-      const findMappedReport = (report: any) => mockMappedReports.find(m => m.id === report.id);
+      const mockMappedReports = mockReports.map(mapReportToId);
+      const findMappedReport = createMappedReportFinder(mockMappedReports);
 
       (userRepository.findUserById as jest.Mock).mockResolvedValue(mockUser);
       jest.spyOn(reportRepository, 'findByExternalAssigneeId').mockResolvedValue(mockReports);
@@ -603,13 +621,15 @@ describe('ReportService', () => {
     it('should return all reports assigned to the external maintainer without status filter', async () => {
       // Arrange
       const mockReports: ReportEntity[] = [mockReportAssigned, mockReportInProgress, mockReportResolved];
-      jest.spyOn(reportRepository, 'findByExternalAssigneeId').mockResolvedValue(mockReports);
-      (mapReportEntityToReportResponse as jest.Mock).mockImplementation((report) => {
+      const mapperImplementation = (report: any) => {
         if (report.id === 1) return mockMappedReportAssigned;
         if (report.id === 2) return mockMappedReportInProgress;
         if (report.id === 3) return mockMappedReportResolved;
         return {};
-      });
+      };
+
+      jest.spyOn(reportRepository, 'findByExternalAssigneeId').mockResolvedValue(mockReports);
+      (mapReportEntityToReportResponse as jest.Mock).mockImplementation(mapperImplementation);
 
       // Act
       const result = await reportService.getAssignedReportsToExternalMaintainer(externalMaintainerId);
@@ -664,10 +684,12 @@ describe('ReportService', () => {
     it('should propagate mapper errors', async () => {
       // Arrange
       const mockReports: ReportEntity[] = [mockReportAssigned];
-      jest.spyOn(reportRepository, 'findByExternalAssigneeId').mockResolvedValue(mockReports);
-      (mapReportEntityToReportResponse as jest.Mock).mockImplementation(() => {
+      const mapperErrorImplementation = () => {
         throw new Error('Mapping failed');
-      });
+      };
+
+      jest.spyOn(reportRepository, 'findByExternalAssigneeId').mockResolvedValue(mockReports);
+      (mapReportEntityToReportResponse as jest.Mock).mockImplementation(mapperErrorImplementation);
 
       // Act & Assert
       await expect(reportService.getAssignedReportsToExternalMaintainer(externalMaintainerId))
