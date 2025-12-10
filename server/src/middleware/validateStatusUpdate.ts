@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { ReportStatus } from '@dto/ReportStatus';
-import { SystemRoles, isTechnicalStaff, isCitizen } from '@models/dto/UserRole';
+import { SystemRoles, isTechnicalStaff } from '@models/dto/UserRole';
 import { InsufficientRightsError } from '@errors/InsufficientRightsError';
 import { BadRequestError } from '@errors/BadRequestError';
 import { UserEntity } from '@models/entity/userEntity';

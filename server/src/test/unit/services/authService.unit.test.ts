@@ -101,14 +101,8 @@ describe('AuthService Unit Tests', () => {
       (userRepository.isUserVerified as jest.Mock).mockResolvedValue(false);
       (userRepository.verifyEmailCode as jest.Mock).mockResolvedValue(false);
 
-      // Act
-      try {
-        await authService.verifyEmailCode(email, validCode);
-      } catch (error) {
-        // Expected to throw
-      }
-
-      // Assert
+      // Act & Assert
+      await expect(authService.verifyEmailCode(email, validCode)).rejects.toThrow();
       expect(userRepository.updateUserIsVerified).not.toHaveBeenCalled();
     });
   });
