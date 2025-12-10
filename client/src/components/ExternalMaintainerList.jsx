@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Alert, Modal, Dropdown, InputGroup, Tooltip, OverlayTrigger } from "react-bootstrap";
-import { FaBuilding, FaChevronDown, FaUndo, FaSave } from "react-icons/fa"; 
+import { FaBuilding, FaChevronDown, FaUndo } from "react-icons/fa"; 
 import { getAllExternals, deleteMunicipalityUser, updateMunicipalityUser } from "../api/municipalityUserApi";
 import { getAllCompanies } from "../api/companyApi";
 import UserDetails from "./UserDetails"; 
@@ -17,7 +17,17 @@ export default function ExternalMaintainerList({ refreshTrigger }) {
   // Modal states
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
-  const [editForm, setEditForm] = useState({ username: "", email: "", first_name: "", last_name: "", role: "", companyName: "" });
+  
+  // CORREZIONE QUI: Usa firstName e lastName (camelCase) per lo stato del form
+  // in modo che corrisponda agli input del componente UserDetails
+  const [editForm, setEditForm] = useState({ 
+      username: "", 
+      email: "", 
+      firstName: "", 
+      lastName: "", 
+      role: "", 
+      companyName: "" 
+  });
   const [editLoading, setEditLoading] = useState(false);
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -48,7 +58,6 @@ export default function ExternalMaintainerList({ refreshTrigger }) {
     return () => { isMounted = false; };
   }, [refreshTrigger]);
 
-  // Funzione per ricaricare la lista dopo modifiche locali (edit/delete)
   const reloadList = async () => {
     try {
         const list = await getAllExternals();
@@ -60,11 +69,12 @@ export default function ExternalMaintainerList({ refreshTrigger }) {
 
   const handleEdit = (user) => {
     setEditingUser(user);
+    // CORREZIONE QUI: Mappiamo i dati snake_case (dal DB) alle chiavi camelCase (per il Form)
     setEditForm({
       username: user.username,
       email: user.email,
-      first_name: user.first_name || "",
-      last_name: user.last_name || "",
+      firstName: user.first_name || "", 
+      lastName: user.last_name || "",
       role: user.role_name,
       companyName: user.company_name || "" 
     });
@@ -80,10 +90,11 @@ export default function ExternalMaintainerList({ refreshTrigger }) {
     if (e && e.preventDefault) e.preventDefault();
     setEditLoading(true);
     try {
+      // CORREZIONE QUI: Rimappiamo i dati del form (camelCase) al payload dell'API (snake_case)
       const payload = {
         email: editForm.email,
-        first_name: editForm.first_name,
-        last_name: editForm.last_name,
+        first_name: editForm.firstName,
+        last_name: editForm.lastName,
         role: editForm.role, 
       };
       await updateMunicipalityUser(editingUser.id, payload);
@@ -202,10 +213,11 @@ export default function ExternalMaintainerList({ refreshTrigger }) {
         </div>
       </div>
 
-       {/* Modals omitted for brevity, logic identical to previous files */}
        <Modal show={showEditModal} onHide={() => setShowEditModal(false)} centered>
         <Modal.Header closeButton><Modal.Title>Edit</Modal.Title></Modal.Header>
-        <Modal.Body><UserDetails formData={editForm} onChange={handleEditChange} onSubmit={handleEditSubmit} loading={editLoading}/></Modal.Body>
+        <Modal.Body>
+            <UserDetails formData={editForm} onChange={handleEditChange} onSubmit={handleEditSubmit} loading={editLoading}/>
+        </Modal.Body>
         <Modal.Footer>
             <button className="eml-modal-btn eml-modal-btn-confirm" onClick={handleEditSubmit}>Save</button>
         </Modal.Footer>

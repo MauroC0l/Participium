@@ -8,6 +8,7 @@
   --muf-radius: 12px;
   --muf-error-color: var(--muf-brand); 
   --muf-error-bg: #FFF8F8; 
+  --muf-blue-accent: #3b82f6; /* Blu professionale per External */
 }
 
 /* Container Principale */
@@ -56,6 +57,124 @@
   border-bottom: 2px solid #f1f1f1;
 }
 
+/* --- MODERN SELECTION CARDS --- */
+
+.muf-selection-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 20px;
+    background-color: #ffffff;
+    border: 2px solid var(--muf-border);
+    border-radius: var(--muf-radius);
+    cursor: pointer;
+    position: relative;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    height: 100%; /* Assicura stessa altezza in Row */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+/* Hover State: Leggero sollevamento e ombra */
+.muf-selection-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.06);
+    border-color: #d1d5db;
+}
+
+/* ACTIVE STATE - BASE */
+.muf-selection-card.active {
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+}
+
+/* ACTIVE STATE - INTERNAL (Brand Red) */
+.muf-selection-card.active.internal {
+    border-color: var(--muf-brand);
+    background-color: rgba(138, 30, 43, 0.03); /* Tinta rossa leggerissima */
+    box-shadow: 0 0 0 4px rgba(138, 30, 43, 0.1); /* Effetto "Glow" esterno */
+}
+
+/* ACTIVE STATE - EXTERNAL (Accent Blue) */
+.muf-selection-card.active.external {
+    border-color: var(--muf-blue-accent);
+    background-color: rgba(59, 130, 246, 0.03); /* Tinta blu leggerissima */
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); /* Effetto "Glow" esterno */
+}
+
+/* Icon Styling */
+.muf-card-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    flex-shrink: 0;
+    transition: all 0.3s ease;
+}
+
+.internal .muf-card-icon {
+    background-color: #f8f9fa;
+    color: var(--muf-text-muted);
+}
+.active.internal .muf-card-icon {
+    background-color: var(--muf-brand);
+    color: white;
+    box-shadow: 0 4px 10px rgba(138, 30, 43, 0.3);
+}
+
+.external .muf-card-icon {
+    background-color: #f8f9fa;
+    color: var(--muf-text-muted);
+}
+.active.external .muf-card-icon {
+    background-color: var(--muf-blue-accent);
+    color: white;
+    box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+}
+
+/* Content Styling */
+.muf-card-content {
+    flex: 1;
+}
+
+.muf-card-title {
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--muf-text-dark);
+    margin-bottom: 6px;
+    transition: color 0.3s ease;
+}
+
+.active.internal .muf-card-title { color: var(--muf-brand); }
+.active.external .muf-card-title { color: var(--muf-blue-accent); }
+
+.muf-card-desc {
+    font-size: 0.85rem;
+    color: var(--muf-text-muted);
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* Checkmark Indicator (Absolute Positioned) */
+.muf-card-check {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    font-size: 1.2rem;
+    animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.active.internal .muf-card-check { color: var(--muf-brand); }
+.active.external .muf-card-check { color: var(--muf-blue-accent); }
+
+@keyframes popIn {
+  from { transform: scale(0.5); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* --- FINE CARDS --- */
+
 /* --- LABELS E INPUT --- */
 .muf-label {
   font-weight: 700;
@@ -65,7 +184,6 @@
   display: block;
 }
 
-/* Classe aggiuntiva per colorare la label di rosso se c'è errore (Bootstrap standard text-danger) */
 .muf-label.text-danger {
     color: var(--muf-error-color) !important;
 }
@@ -125,22 +243,18 @@
 }
 
 /* --- ERROR STATE STYLING --- */
-
-/* L'input stesso quando è in errore */
 .muf-input-error {
     border-color: var(--muf-error-color) !important;
     background-color: var(--muf-error-bg) !important; 
     box-shadow: none !important; 
 }
 
-/* L'icona quando il gruppo è in errore */
 .muf-input-group.has-error .muf-icon {
     border-color: var(--muf-error-color) !important;
     color: var(--muf-error-color) !important;
     background-color: var(--muf-error-bg) !important;
 }
 
-/* Il testo di errore sotto il campo */
 .muf-field-error {
     color: var(--muf-error-color);
     font-size: 0.75rem;
@@ -156,7 +270,6 @@
 }
 
 /* --- DROPDOWN CUSTOM STYLE --- */
-
 .muf-custom-dropdown {
   flex: 1; 
   min-width: 0;
@@ -364,7 +477,6 @@
     cursor: pointer !important;
 }
 
-/* FIX: Se è disabilitato MA ha errore, forza il colore rosso scavalcando lo stile disabilitato */
 .dropdown-toggle.muf-dropdown-toggle:disabled.muf-input-error {
     border-color: var(--muf-error-color) !important;
     background-color: var(--muf-error-bg) !important;
@@ -384,32 +496,6 @@
     border-left: none !important;
 }
 
-/* FIX per hover su disabilitato con errore: se ho errore, mantieni il rosso anche in hover */
 .muf-input-group.has-error:hover .dropdown-toggle.muf-dropdown-toggle:disabled {
     border-color: var(--muf-error-color) !important;
-}
-
-
-/* Styling per lo switch personalizzato */
-.muf-custom-switch .form-check-input {
-    cursor: pointer;
-    width: 3em; 
-    height: 1.5em;
-    background-color: #e2e8f0;
-    border-color: #cbd5e1;
-}
-
-.muf-custom-switch .form-check-input:checked {
-    background-color: var(--muf-brand);
-    border-color: var(--muf-brand);
-}
-
-.muf-custom-switch .form-check-input:focus {
-    box-shadow: 0 0 0 0.25rem rgba(138, 30, 43, 0.25);
-    border-color: var(--muf-brand);
-}
-
-.muf-type-toggle {
-    font-size: 0.9rem;
-    user-select: none;
 }

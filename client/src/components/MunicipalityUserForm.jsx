@@ -6,7 +6,7 @@ import { getAllCompanies } from "../api/companyApi";
 import "../css/MunicipalityUserForm.css";
 import {
     FaEye, FaEyeSlash, FaSave, FaTimes,
-    FaUser, FaIdCard, FaEnvelope, FaBuilding, FaUserShield, FaLock, FaChevronDown
+    FaUser, FaIdCard, FaEnvelope, FaBuilding, FaUserShield, FaLock, FaChevronDown, FaCheckCircle
 } from "react-icons/fa";
 
 // Utility Functions
@@ -153,7 +153,7 @@ export default function MunicipalityUserForm({ onSuccess, onCancel, refreshTrigg
         fetchRoles();
     }, [formData.department]);
 
-    // >>> NUOVO CODICE AGGIUNTO: Nasconde il messaggio di successo dopo 3 secondi <<<
+    // Nasconde il messaggio di successo dopo 3 secondi 
     useEffect(() => {
         let timer;
         if (status.success) {
@@ -163,7 +163,6 @@ export default function MunicipalityUserForm({ onSuccess, onCancel, refreshTrigg
         }
         return () => clearTimeout(timer);
     }, [status.success]);
-    // >>> FINE NUOVO CODICE <<<
 
     // --- Derived Data ---
     const displayDepartments = useMemo(() => {
@@ -176,27 +175,17 @@ export default function MunicipalityUserForm({ onSuccess, onCancel, refreshTrigg
         return data.roles;
     }, [data.roles, isExternal]);
 
-    // --- Handle External Toggle ---
-    const handleTypeToggle = () => {
-        const nextIsExternal = !isExternal;
-        setIsExternal(nextIsExternal);
+    // --- Handle User Type Selection (Card Click) ---
+    const handleTypeSelect = (targetIsExternal) => {
+        if (isExternal === targetIsExternal) return;
+        setIsExternal(targetIsExternal);
         setErrors({});
 
-        if (nextIsExternal) {
+        if (targetIsExternal) {
             const extDept = data.departments.find(d => d.name.toLowerCase() === "external service providers");
-            setFormData(prev => ({
-                ...prev,
-                company: "",
-                department: extDept ? extDept.id : "",
-                role: ""
-            }));
+            setFormData(prev => ({ ...prev, company: "", department: extDept ? extDept.id : "", role: "" }));
         } else {
-            setFormData(prev => ({
-                ...prev,
-                department: "",
-                role: "",
-                company: ""
-            }));
+            setFormData(prev => ({ ...prev, department: "", role: "", company: "" }));
         }
     };
 
@@ -282,19 +271,7 @@ export default function MunicipalityUserForm({ onSuccess, onCancel, refreshTrigg
         <div className="muf-container-styled fade-in">
             <div className="muf-header-styled">
                 <h4 className="muf-title"><FaUserShield className="me-2" />New Officer</h4>
-                <div className="muf-header-actions d-flex align-items-center gap-3">
-                    <div className="d-flex align-items-center muf-type-toggle">
-                        <span className={`me-2 ${!isExternal ? "fw-bold text-dark" : "text-muted"}`}>Internal</span>
-                        <Form.Check
-                            type="switch"
-                            id="user-type-switch"
-                            checked={isExternal}
-                            onChange={handleTypeToggle}
-                            className="muf-custom-switch"
-                        />
-                        <span className={`ms-2 ${isExternal ? "fw-bold text-dark" : "text-muted"}`}>External</span>
-                    </div>
-
+                <div className="muf-header-actions">
                     <button type="button" className="muf-btn-text" onClick={onCancel} disabled={status.loading}>
                         <FaTimes /> Cancel
                     </button>
@@ -302,7 +279,51 @@ export default function MunicipalityUserForm({ onSuccess, onCancel, refreshTrigg
             </div>
 
             <Form noValidate onSubmit={handleSubmit} className="muf-body-styled">
-                {/* Visualizzazione Alert (che svanirà dopo 3s se è success) */}
+                
+                {/* --- SEZIONE SELEZIONE TIPO UTENTE (MODERN CARDS) --- */}
+                <div className="mb-4">
+                    <Row className="g-3">
+                        {/* Internal Card */}
+                        <Col md={6}>
+                             <div 
+                                className={`muf-selection-card internal ${!isExternal ? 'active' : ''}`}
+                                onClick={() => handleTypeSelect(false)}
+                            >
+                                {!isExternal && <div className="muf-card-check"><FaCheckCircle /></div>}
+                                <div className="muf-card-icon">
+                                    <FaUserShield />
+                                </div>
+                                <div className="muf-card-content">
+                                    <h6 className="muf-card-title">Internal Officer</h6>
+                                    <p className="muf-card-desc">
+                                        Full access for municipal employees to internal departments and tools.
+                                    </p>
+                                </div>
+                            </div>
+                        </Col>
+
+                        {/* External Card */}
+                        <Col md={6}>
+                            <div 
+                                className={`muf-selection-card external ${isExternal ? 'active' : ''}`}
+                                onClick={() => handleTypeSelect(true)}
+                            >
+                                {isExternal && <div className="muf-card-check"><FaCheckCircle /></div>}
+                                <div className="muf-card-icon">
+                                    <FaBuilding />
+                                </div>
+                                <div className="muf-card-content">
+                                    <h6 className="muf-card-title">External Maintainer</h6>
+                                    <p className="muf-card-desc">
+                                        Limited access for third-party contractors linked to a company.
+                                    </p>
+                                </div>
+                            </div>
+                        </Col>
+                    </Row>
+                </div>
+                {/* ------------------------------------------- */}
+
                 {(status.globalError || status.success) && (
                     <Alert variant={status.globalError ? "danger" : "success"} className="muf-alert mb-4 fade-in">
                         {status.globalError || status.success}
