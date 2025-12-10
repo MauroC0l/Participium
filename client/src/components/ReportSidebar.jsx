@@ -12,6 +12,7 @@ const ReportSidebar = ({
   showMap, 
   setShowMap,
   mapCoordinates,
+  isCitizen,
   showToast // NUOVA PROP RICEVUTA
 }) => {
   const [externalUsers, setExternalUsers] = useState([]);
@@ -198,7 +199,9 @@ const ReportSidebar = ({
             <div className="rdm-value font-monospace">{formatLocation()}</div>
           </div>
         </div>
-        <button
+        
+        {!isCitizen && mapCoordinates && (
+          <button
           className={`rdm-btn-map-toggle ${showMap ? "active" : ""}`}
           onClick={() => setShowMap(!showMap)}
           disabled={!mapCoordinates}
@@ -206,6 +209,7 @@ const ReportSidebar = ({
           <FaMapMarkedAlt className="me-2" />
           {showMap ? "Hide Map" : "Show Map"}
         </button>
+        )}
       </div>
     </div>
   );

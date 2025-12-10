@@ -19,7 +19,7 @@ L.Icon.Default.mergeOptions({ iconRetinaUrl: iconMarker2x, iconUrl: iconMarker, 
 import "../css/ReportDetails.css";
 
 // -------------------------------------------------------------------------
-// COMPONENTE FITTIZIO: TOAST MESSAGE (Da definire in un file separato)
+// COMPONENTE FITTIZIO: TOAST MESSAGE 
 // -------------------------------------------------------------------------
 const ToastMessage = ({ message, type, onClose }) => {
   useEffect(() => {
@@ -79,6 +79,7 @@ const ReportDetails = ({
   onReportUpdated,
 }) => {
   const [currentUserId, setCurrentUserId] = useState(null);
+  const [currentUserRole, setCurrentUserRole] = useState(null); // 💥 NUOVO: Stato per il ruolo utente
   const [selectedImage, setSelectedImage] = useState(null);
   const [showImageModal, setShowImageModal] = useState(false);
   const [showMap, setShowMap] = useState(false);
@@ -100,24 +101,42 @@ const ReportDetails = ({
   }, []);
 
 
-  // Reset e fetch User ID
+  // Reset e fetch User ID e Ruolo
   useEffect(() => {
     if (show) {
       setShowMap(false);
       hideToast(); // Nasconde eventuali toast precedenti all'apertura
+      
       const fetchCurrentUser = async () => {
         try {
           const userData = await getCurrentUser();
-          if (userData && userData.id) setCurrentUserId(userData.id);
+          if (userData && userData.id) {
+            setCurrentUserId(userData.id);
+            // Assumiamo che il ruolo sia fornito dall'API (es. 'admin', 'manager', 'citizen')
+            setCurrentUserRole(userData.role || 'citizen'); // Default a 'citizen' se non specificato
+          } else {
+            setCurrentUserId(null);
+            setCurrentUserRole('citizen'); // Utente non loggato trattato come 'citizen'
+          }
         } catch (error) { 
           console.error("Error fetching user:", error);
-          // Usa il toast in caso di errore critico (es. fetch user)
+          setCurrentUserId(null);
+          setCurrentUserRole('citizen'); // In caso di errore, assumiamo il ruolo più restrittivo
           showToast("Impossibile recuperare l'utente corrente.", "error"); 
         }
       };
       fetchCurrentUser();
+    } else {
+        // Resetta lo stato del ruolo e id quando la modale è chiusa
+        setCurrentUserId(null);
+        setCurrentUserRole(null);
     }
   }, [show, hideToast, showToast]); // Dipendenze aggiornate
+
+  // 💥 NUOVO: Logica di visibilità basata sul ruolo
+  const isCitizen = currentUserRole === 'citizen';
+  const showRestrictedContent = !isCitizen && currentUserRole !== null;
+  // La mappa e i commenti saranno visualizzati solo se showRestrictedContent è true
 
   const mapCoordinates = useMemo(() => {
     if (!report || !report.location) return null;
@@ -170,9 +189,10 @@ const ReportDetails = ({
               onReportUpdated={onReportUpdated}
               onHide={onHide}
               onOpenImage={(img) => { setSelectedImage(img); setShowImageModal(true); }}
-              showMap={showMap}
+              showMap={showMap && showRestrictedContent} // 💥 NUOVO: Mappa visibile solo se non è citizen E showMap è true
               mapCoordinates={mapCoordinates}
-              showToast={showToast} // Passa la funzione Toast
+              showToast={showToast}
+              showComments={showRestrictedContent} // 💥 NUOVO: Commenti visibili solo se non è citizen
             />
 
             {/* --- RIGHT COLUMN: SIDEBAR --- */}
@@ -184,7 +204,8 @@ const ReportDetails = ({
               showMap={showMap}
               setShowMap={setShowMap}
               mapCoordinates={mapCoordinates}
-              showToast={showToast} // Passa la funzione Toast
+              showToast={showToast}
+              isCitizen={isCitizen} // 💥 NUOVO: Passa l'informazione del ruolo per nascondere toggle/sezioni nella sidebar
             />
             
           </div>
@@ -198,7 +219,7 @@ const ReportDetails = ({
         </div>
       </Modal>
       
-      {/* 💥 NUOVO: MESSAGGIO TOAST PERSONALIZZATO 💥 */}
+      {/* MESSAGGIO TOAST PERSONALIZZATO */}
       {toast.show && (
         <ToastMessage 
           message={toast.message} 

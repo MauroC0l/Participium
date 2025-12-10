@@ -20,6 +20,7 @@ const ReportMainContent = ({
   showMap,
   mapCoordinates,
   onHide,
+  showComments,
   showToast // NUOVA PROP RICEVUTA
 }) => {
   // Stati per le azioni
@@ -157,7 +158,9 @@ const ReportMainContent = ({
 
         {/* === COMMENTS COMPONENT === */}
         {/* Passa showToast a ReportComments, se gestisce le sue API */}
-        <ReportComments reportId={report.id} currentUserId={currentUserId} showToast={showToast} />
+        {showComments && (
+          <ReportComments reportId={report.id} currentUserId={currentUserId} showToast={showToast} />
+        )}
       </div>
 
       {/* ACTION BUTTONS & FOOTER */}
