@@ -94,16 +94,36 @@ describe('AuthController Unit Tests', () => {
       password: 'Password123!',
     };
 
+    const createAuthMiddleware = (callback: Function) => {
+      return (req: Request, res: Response, next: NextFunction) => {
+        callback(null, mockUser, { message: 'Success' });
+      };
+    };
+
+    const createAuthFailureMiddleware = (callback: Function) => {
+      return (req: Request, res: Response, next: NextFunction) => {
+        callback(null, false, { message: 'Invalid credentials' });
+      };
+    };
+
+    const createAuthErrorMiddleware = (error: Error, callback: Function) => {
+      return (req: Request, res: Response, next: NextFunction) => {
+        callback(error, false, {});
+      };
+    };
+
+    const createAuthEmptyInfoMiddleware = (callback: Function) => {
+      return (req: Request, res: Response, next: NextFunction) => {
+        callback(null, false, {});
+      };
+    };
+
     it('should login successfully with valid credentials', () => {
       // Arrange
       mockRequest.body = loginData;
       (authService.createUserResponse as jest.Mock).mockReturnValue(mockUserResponse);
-
-      // Mock passport.authenticate per simulare successo
       (passport.authenticate as jest.Mock).mockImplementation((strategy, callback) => {
-        return (req: Request, res: Response, next: NextFunction) => {
-          callback(null, mockUser, { message: 'Success' });
-        };
+        return createAuthMiddleware(callback);
       });
 
       // Act
@@ -121,12 +141,8 @@ describe('AuthController Unit Tests', () => {
     it('should return 401 for invalid credentials', () => {
       // Arrange
       mockRequest.body = loginData;
-
-      // Mock passport.authenticate per simulare fallimento
       (passport.authenticate as jest.Mock).mockImplementation((strategy, callback) => {
-        return (req: Request, res: Response, next: NextFunction) => {
-          callback(null, false, { message: 'Invalid credentials' });
-        };
+        return createAuthFailureMiddleware(callback);
       });
 
       // Act
@@ -142,12 +158,8 @@ describe('AuthController Unit Tests', () => {
       // Arrange
       mockRequest.body = loginData;
       const authError = new Error('Authentication failed');
-
-      // Mock passport.authenticate per simulare errore
       (passport.authenticate as jest.Mock).mockImplementation((strategy, callback) => {
-        return (req: Request, res: Response, next: NextFunction) => {
-          callback(authError, false, {});
-        };
+        return createAuthErrorMiddleware(authError, callback);
       });
 
       // Act
@@ -164,12 +176,8 @@ describe('AuthController Unit Tests', () => {
       mockRequest.body = loginData;
       const loginError = new Error('Login failed');
       mockRequest.logIn = jest.fn((user, callback) => callback(loginError)) as any;
-
-      // Mock passport.authenticate per simulare successo
       (passport.authenticate as jest.Mock).mockImplementation((strategy, callback) => {
-        return (req: Request, res: Response, next: NextFunction) => {
-          callback(null, mockUser, { message: 'Success' });
-        };
+        return createAuthMiddleware(callback);
       });
 
       // Act
@@ -184,12 +192,8 @@ describe('AuthController Unit Tests', () => {
     it('should use default message if info.message is not provided', () => {
       // Arrange
       mockRequest.body = loginData;
-
-      // Mock passport.authenticate con info vuoto
       (passport.authenticate as jest.Mock).mockImplementation((strategy, callback) => {
-        return (req: Request, res: Response, next: NextFunction) => {
-          callback(null, false, {});
-        };
+        return createAuthEmptyInfoMiddleware(callback);
       });
 
       // Act
@@ -210,9 +214,7 @@ describe('AuthController Unit Tests', () => {
 
       // Mock passport.authenticate per simulare successo
       (passport.authenticate as jest.Mock).mockImplementation((strategy, callback) => {
-        return (req: Request, res: Response, next: NextFunction) => {
-          callback(null, mockUser, { message: 'Success' });
-        };
+        return createAuthMiddleware(callback);
       });
 
       // Act
