@@ -985,27 +985,6 @@ const MapPage = () => {
                   onSubmit={handleSubmit}
                   className="mp-location-form compact"
                 >
-                  {/* Coordinates Row (Compact) */}
-                  <div className="mp-coords-group compact-coords">
-                    <div className="mp-form-group">
-                      <label className="mp-form-label-sm">Lat</label>
-                      <input
-                        type="text"
-                        className="mp-input-sm"
-                        value={formData.latitude}
-                        readOnly
-                      />
-                    </div>
-                    <div className="mp-form-group">
-                      <label className="mp-form-label-sm">Lng</label>
-                      <input
-                        type="text"
-                        className="mp-input-sm"
-                        value={formData.longitude}
-                        readOnly
-                      />
-                    </div>
-                  </div>
 
                   {/* Address Field (UNIFICATO) */}
                   <div className="mp-form-group">
