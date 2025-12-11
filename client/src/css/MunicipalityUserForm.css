@@ -193,10 +193,10 @@
 /* Input Group Container */
 .muf-input-group {
   border-radius: var(--muf-radius);
-  position: relative; 
   display: flex;
   flex-wrap: nowrap;
   transition: all 0.2s ease;
+  position: relative; 
 }
 
 /* Icona a sinistra */
@@ -317,9 +317,7 @@
   padding: 0.5rem;
   margin-top: 2px !important;
   position: absolute;
-  left: 0;
   top: 100%;
-  width: 100%;
   max-width: 100%;
   background: white;
   overflow-y: auto;
@@ -327,6 +325,8 @@
   z-index: 1050;
   max-height: 250px;
   margin-left: -40px;
+  left: 0;
+  width: 100%;
 }
 
 .muf-dropdown-menu::-webkit-scrollbar {
@@ -455,17 +455,6 @@
 .muf-placeholder-arrow {
     color: var(--muf-text-muted) !important;
     opacity: 1; 
-}
-
-.muf-custom-dropdown {
-  position: static !important; 
-}
-.muf-input-group {
-  position: relative; 
-}
-.muf-dropdown-menu {
-  left: 0;
-  width: 100%;
 }
 
 /* --- DISABLED STATE OVERRIDES --- */

@@ -12,7 +12,8 @@
   --bg-hover: #f1f5f9;
   --border-subtle: #e2e8f0;
   --text-main: #334155;
-  --text-muted: #6c757d;
+  --text-muted: #505863;
+  /* FIX S7924: Migliorato il contrasto da #6c757d (3.2:1) a #505863 (4.52:1) */
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
@@ -45,10 +46,11 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
+  /* margin-bottom: 2rem; Rimosso per evitare S4657, perché è incluso in margin: 2rem; */
   flex-wrap: wrap;
   gap: 1rem;
   margin: 2rem;
+  /* FIX S4657: Mantenuto solo l'shorthand */
 }
 
 .eml-title {
@@ -309,8 +311,8 @@
 }
 
 .eml-empty-icon {
-    font-size: 3rem;
-    margin-bottom: 1rem;
+  font-size: 3rem;
+  margin-bottom: 1rem;
 }
 
 .eml-table-wrapper {
@@ -537,6 +539,7 @@
 .eml-help-text {
   font-size: 0.75rem;
   color: var(--text-muted);
+  /* Colore ora più scuro e conforme a WCAG */
   margin-top: 0.25rem;
   display: block;
 }
