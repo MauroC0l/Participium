@@ -1,10 +1,55 @@
 import { useState, useEffect } from "react";
+import PropTypes from "prop-types"; // Importato PropTypes
 import { Alert, Card, Form, Button, Container, Row, Col, Spinner } from "react-bootstrap";
-// Nota: Assicurati di esportare verifyCitizen dal tuo api file
-import { registerCitizen, verifyEmailCode } from "../api/citizenApi"; 
+import { registerCitizen, verifyEmailCode } from "../api/citizenApi";
 import { useNavigate, useLocation } from "react-router-dom";
 import { FaEye, FaEyeSlash, FaUser, FaEnvelope, FaLock, FaArrowLeft, FaIdCard, FaCheckCircle } from "react-icons/fa";
 import "../css/Register.css";
+
+// --- Componente Estratto per risolvere S6478 ---
+const PasswordToggleButton = ({
+  field,
+  showPassword,
+  showConfirmPassword,
+  setShowPassword,
+  setShowConfirmPassword,
+  loading
+}) => {
+  const isPasswordField = field === "password";
+  const isConfirmPasswordField = field === "confirmPassword";
+
+  let iconToShow;
+  if (isPasswordField) {
+    iconToShow = showPassword ? <FaEyeSlash /> : <FaEye />;
+  } else if (isConfirmPasswordField) {
+    iconToShow = showConfirmPassword ? <FaEyeSlash /> : <FaEye />;
+  }
+
+  const handleClick = () => {
+    if (isPasswordField) setShowPassword(!showPassword);
+    else if (isConfirmPasswordField) setShowConfirmPassword(!showConfirmPassword);
+  };
+
+  return (
+    <Button
+      variant="outline-secondary"
+      onClick={handleClick}
+      disabled={loading}
+      className="reg-password-toggle-btn"
+    >
+      {iconToShow}
+    </Button>
+  );
+};
+
+PasswordToggleButton.propTypes = {
+  field: PropTypes.string.isRequired,
+  showPassword: PropTypes.bool.isRequired,
+  showConfirmPassword: PropTypes.bool.isRequired,
+  setShowPassword: PropTypes.func.isRequired,
+  setShowConfirmPassword: PropTypes.func.isRequired,
+  loading: PropTypes.bool.isRequired,
+};
 
 export default function Register() {
   const navigate = useNavigate();
@@ -12,13 +57,13 @@ export default function Register() {
 
   // --- STATO ---
   // Step 1: Registrazione, Step 2: Verifica OTP
-  const [step, setStep] = useState(1); 
+  const [step, setStep] = useState(1);
   const [otp, setOtp] = useState("");
 
   const [formData, setFormData] = useState({
     firstName: "", lastName: "", email: "", username: "", password: "", confirmPassword: ""
   });
-  
+
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
@@ -31,20 +76,21 @@ export default function Register() {
   useEffect(() => {
     if (location.state?.error) {
       setError(location.state.error);
-      window.history.replaceState({}, document.title);
+      history.replaceState({}, document.title);
     }
   }, [location]);
 
   // --- UTILS ---
   const trimValue = (value) => typeof value === 'string' ? value.trim() : value;
-  const removeAllSpaces = (value) => typeof value === 'string' ? value.replace(/\s/g, '') : value;
+
+  const removeAllSpaces = (value) => typeof value === 'string' ? value.replaceAll(' ', '') : value;
 
   const calculatePasswordStrength = (password) => {
     let strength = 0;
     if (password.length >= 6) strength += 1;
     if (password.length >= 8) strength += 1;
     if (/[A-Z]/.test(password)) strength += 1;
-    if (/[0-9]/.test(password)) strength += 1;
+    if (/\d/.test(password)) strength += 1;
     if (/[^A-Za-z0-9]/.test(password)) strength += 1;
     return strength;
   };
@@ -58,15 +104,15 @@ export default function Register() {
 
   const handleInputChange = (field, value) => {
     let cleanedValue = value;
-    
+
     if (field === "email") {
       cleanedValue = removeAllSpaces(value).toLowerCase();
     } else if (["firstName", "lastName", "username"].includes(field)) {
       cleanedValue = trimValue(value);
     }
-    
+
     setFormData(prev => ({ ...prev, [field]: cleanedValue }));
-    
+
     if (field === "password") {
       setPasswordStrength(calculatePasswordStrength(cleanedValue));
     }
@@ -77,14 +123,14 @@ export default function Register() {
   const handleBlur = (field) => {
     const currentValue = formData[field];
     let cleanedValue = currentValue;
-    
+
     if (typeof currentValue === 'string') {
       if (field === "email") {
         cleanedValue = removeAllSpaces(currentValue).toLowerCase();
       } else if (["firstName", "lastName", "username"].includes(field)) {
         cleanedValue = trimValue(currentValue);
       }
-      
+
       if (cleanedValue !== currentValue) {
         setFormData(prev => ({ ...prev, [field]: cleanedValue }));
       }
@@ -100,7 +146,7 @@ export default function Register() {
     if (field === "email") {
       e.preventDefault();
       const pastedText = e.clipboardData.getData('text');
-      const cleanedText = removeAllSpaces(pastedText).toLowerCase();
+      const cleanedText = pastedText.replaceAll(' ', '').toLowerCase();
       const target = e.target;
       const start = target.selectionStart;
       const end = target.selectionEnd;
@@ -133,14 +179,14 @@ export default function Register() {
     if (!cleanedFormData.firstName) return setError("Please enter your first name");
     if (!cleanedFormData.lastName) return setError("Please enter your last name");
     if (!cleanedFormData.email) return setError("Please enter your email");
-    
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(cleanedFormData.email)) return setError("Please enter a valid email address");
     if (/[A-Z]/.test(cleanedFormData.email)) return setError("Email must not contain uppercase letters");
-    
+
     if (!cleanedFormData.username) return setError("Please choose a username");
     if (cleanedFormData.username.length < 3) return setError("Username must be at least 3 characters long");
-    
+
     if (!cleanedFormData.password) return setError("Please enter a password");
     if (cleanedFormData.password.length < 6) return setError("Password must be at least 6 characters long");
     if (cleanedFormData.password !== cleanedFormData.confirmPassword) return setError("Passwords do not match");
@@ -152,22 +198,22 @@ export default function Register() {
         username: cleanedFormData.username,
         email: cleanedFormData.email,
         password: cleanedFormData.password,
-        first_name: cleanedFormData.firstName, 
-        last_name: cleanedFormData.lastName,   
+        first_name: cleanedFormData.firstName,
+        last_name: cleanedFormData.lastName,
         role: "Citizen",
       };
 
       // Chiamata API per la registrazione.
       // Il backend dovrebbe salvare l'utente in con stato isVerified: undefined e inviare l'email.
       await registerCitizen(payload);
-      
+
       setSuccess("Registration started! Please check your email for the OTP code.");
-      
+
       // Passaggio allo Step 2 (OTP)
       setTimeout(() => {
-          setSuccess(""); // Pulisco il messaggio per mostrare il form pulito
-          setStep(2);
-          setLoading(false);
+        setSuccess(""); // Pulisco il messaggio per mostrare il form pulito
+        setStep(2);
+        setLoading(false);
       }, 1500);
 
     } catch (err) {
@@ -184,46 +230,57 @@ export default function Register() {
     setSuccess("");
 
     if (!otp || otp.length < 4) {
-        setError("Please enter a valid OTP code.");
-        return;
+      setError("Please enter a valid OTP code.");
+      return;
     }
 
     setLoading(true);
 
     try {
-        // Payload per la verifica: Email (o username) + OTP
-        const payload = {
-            email: formData.email,
-            otp_code: otp // Adatta questo nome al tuo backend
-        };
+      // Payload per la verifica: Email (o username) + OTP
+      const payload = {
+        email: formData.email,
+        otp_code: otp // Adatta questo nome al tuo backend
+      };
 
-        await verifyEmailCode(payload.email, payload.otp_code);
+      await verifyEmailCode(payload.email, payload.otp_code);
 
-        setSuccess("Account verified successfully! Redirecting to login...");
-        setTimeout(() => navigate("/login"), 2000);
+      setSuccess("Account verified successfully! Redirecting to login...");
+      setTimeout(() => navigate("/login"), 2000);
     } catch (err) {
-        console.error("Verification failed:", err);
-        handleApiError(err);
-        setLoading(false);
+      console.error("Verification failed:", err);
+      handleApiError(err);
+      setLoading(false);
     }
   };
 
   // Helper per gestione errori API
   const handleApiError = (err) => {
-      if (!err.status && (err.message === "Failed to fetch" || err.message.includes("Network"))) {
-        setError("Unable to contact the server. Check your connection.");
-      } else if (err.status === 409) {
-        setError("Username or email already exists.");
-      } else if (err.status === 400) {
-        setError(err.message || "Invalid data or incorrect code.");
-      } else if (err.status >= 500) {
-        setError("Internal server error.");
-      } else {
-        setError(err.message || "Operation failed. Please try again.");
-      }
+    if (!err.status && (err.message === "Failed to fetch" || err.message.includes("Network"))) {
+      setError("Unable to contact the server. Check your connection.");
+    } else if (err.status === 409) {
+      setError("Username or email already exists.");
+    } else if (err.status === 400) {
+      setError(err.message || "Invalid data or incorrect code.");
+    } else if (err.status >= 500) {
+      setError("Internal server error.");
+    } else {
+      setError(err.message || "Operation failed. Please try again.");
+    }
   };
 
   const isFieldActive = (field) => focusedField === field || formData[field];
+
+  // VARIABILI ESTRATTE PER LA PULIZIA DEL JSX
+  const backButtonText = step === 2 ? "Back to Details" : "Back to Home";
+  const headerTitle = step === 1 ? "Join Participium" : "Verify Account";
+  const headerSubtitle = step === 1 ? "Create your account" : `Code sent to ${formData.email}`;
+
+  const getFieldName = (field) => field === "firstName" ? "First Name" : "Last Name";
+  const getFieldPlaceholder = (field) => isFieldActive(field) ? '' : (field === "firstName" ? "first name" : "last name");
+  const getFieldIcon = (field) => field === "email" ? <FaEnvelope className="reg-input-icon" /> : <FaIdCard className="reg-input-icon" />;
+  const getPasswordFieldType = (field) => field === "password" ? (showPassword ? "text" : "password") : (showConfirmPassword ? "text" : "password");
+  const getPasswordPlaceholder = (field) => isFieldActive(field) ? '' : (field === "password" ? "password" : "confirm password");
 
   return (
     <Container fluid className="reg-page-container">
@@ -231,7 +288,7 @@ export default function Register() {
         <Col xs={12} sm={10} md={8} lg={6} xl={5}>
           <Card className="reg-card">
             <Card.Body className="reg-card-body">
-              
+
               <Button
                 variant="link"
                 className="reg-back-btn"
@@ -239,19 +296,15 @@ export default function Register() {
                 disabled={loading}
               >
                 <FaArrowLeft className="me-2" />
-                {step === 2 ? "Back to Details" : "Back to Home"}
+                {backButtonText}
               </Button>
 
               <div className="reg-header">
                 <div className="reg-logo-container">
                   <img src="/participium-logo.png" alt="Participium Logo" className="reg-logo" />
                 </div>
-                <h1 className="reg-title">
-                    {step === 1 ? "Join Participium" : "Verify Account"}
-                </h1>
-                <p className="reg-subtitle">
-                    {step === 1 ? "Create your account" : `Code sent to ${formData.email}`}
-                </p>
+                <h1 className="reg-title">{headerTitle}</h1>
+                <p className="reg-subtitle">{headerSubtitle}</p>
               </div>
 
               {error && (
@@ -268,142 +321,142 @@ export default function Register() {
 
               {/* --- STEP 1: REGISTRATION FORM --- */}
               {step === 1 && (
-                  <Form onSubmit={handleRegister} noValidate className="reg-form">
-                    <Row>
-                      {["firstName", "lastName"].map(field => (
-                        <Col xs={12} md={6} key={field}>
-                          <Form.Group className="reg-form-group">
-                            <div className={`reg-form-control-container ${isFieldActive(field) ? 'focused' : ''}`}>
-                              <FaUser className="reg-input-icon" />
-                              <Form.Control
-                                type="text"
-                                placeholder={isFieldActive(field) ? '' : field === "firstName" ? "first name" : "last name"}
-                                value={formData[field]}
-                                onChange={(e) => handleInputChange(field, e.target.value)}
-                                onFocus={() => setFocusedField(field)}
-                                onBlur={() => handleBlur(field)}
-                                disabled={loading}
-                                className="reg-modern-input"
-                              />
-                              <Form.Label className="reg-floating-label">
-                                {field === "firstName" ? "First Name" : "Last Name"}
-                              </Form.Label>
-                            </div>
-                          </Form.Group>
-                        </Col>
-                      ))}
-                    </Row>
-
-                    {["email", "username"].map(field => (
-                      <Form.Group className="reg-form-group" key={field}>
-                        <div className={`reg-form-control-container ${isFieldActive(field) ? 'focused' : ''}`}>
-                          {field === "email" ? <FaEnvelope className="reg-input-icon" /> : <FaIdCard className="reg-input-icon" />}
-                          <Form.Control
-                            type={field === "email" ? "email" : "text"}
-                            placeholder={isFieldActive(field) ? '' : field}
-                            value={formData[field]}
-                            onChange={(e) => handleInputChange(field, e.target.value)}
-                            onFocus={() => setFocusedField(field)}
-                            onBlur={() => handleBlur(field)}
-                            onKeyDown={(e) => field === "email" && handleKeyDown(e, field)}
-                            onPaste={(e) => field === "email" && handlePaste(e, field)}
-                            disabled={loading}
-                            className="reg-modern-input"
-                          />
-                          <Form.Label className="reg-floating-label">
-                            {field === "email" ? "Email" : "Username"}
-                          </Form.Label>
-                        </div>
-                      </Form.Group>
-                    ))}
-
-                    {["password", "confirmPassword"].map(field => (
-                      <Form.Group className="reg-form-group" key={field}>
-                        <div className={`reg-form-control-container ${isFieldActive(field) ? 'focused' : ''}`}>
-                          <FaLock className="reg-input-icon" />
-                          <Form.Control
-                            type={field === "password" ? (showPassword ? "text" : "password") : (showConfirmPassword ? "text" : "password")}
-                            placeholder={isFieldActive(field) ? '' : field === "password" ? "password" : "confirm password"}
-                            value={formData[field]}
-                            onChange={(e) => handleInputChange(field, e.target.value)}
-                            onFocus={() => setFocusedField(field)}
-                            onBlur={() => handleBlur(field)}
-                            disabled={loading}
-                            className="reg-modern-input reg-password-input"
-                          />
-                          <Form.Label className="reg-floating-label">
-                            {field === "password" ? "Password" : "Confirm Password"}
-                          </Form.Label>
-                          <Button
-                            variant="outline-secondary"
-                            onClick={() => field === "password" ? setShowPassword(!showPassword) : setShowConfirmPassword(!showConfirmPassword)}
-                            disabled={loading}
-                            className="reg-password-toggle-btn"
-                          >
-                            {field === "password" ? (showPassword ? <FaEyeSlash /> : <FaEye />) : (showConfirmPassword ? <FaEyeSlash /> : <FaEye />)}
-                          </Button>
-                        </div>
-                        {field === "password" && formData.password && (
-                          <div className="reg-password-strength">
-                            <div className="reg-strength-bar">
-                              <div
-                                className="reg-strength-fill"
-                                style={{
-                                  width: `${(passwordStrength / 5) * 100}%`,
-                                  backgroundColor: getPasswordStrengthColor()
-                                }}
-                              />
-                            </div>
-                            <div className="reg-strength-labels">
-                              <span>Weak</span>
-                              <span>Strong</span>
-                            </div>
+                <Form onSubmit={handleRegister} noValidate className="reg-form">
+                  <Row>
+                    {["firstName", "lastName"].map(field => (
+                      <Col xs={12} md={6} key={field}>
+                        <Form.Group className="reg-form-group">
+                          <div className={`reg-form-control-container ${isFieldActive(field) ? 'focused' : ''}`}>
+                            <FaUser className="reg-input-icon" />
+                            <Form.Control
+                              type="text"
+                              placeholder={getFieldPlaceholder(field)}
+                              value={formData[field]}
+                              onChange={(e) => handleInputChange(field, e.target.value)}
+                              onFocus={() => setFocusedField(field)}
+                              onBlur={() => handleBlur(field)}
+                              disabled={loading}
+                              className="reg-modern-input"
+                            />
+                            <Form.Label className="reg-floating-label">
+                              {getFieldName(field)}
+                            </Form.Label>
                           </div>
-                        )}
-                      </Form.Group>
+                        </Form.Group>
+                      </Col>
                     ))}
+                  </Row>
 
-                    <button type="submit" className="btn reg-btn-custom-primary reg-btn" disabled={loading}>
-                      {loading ? <><Spinner animation="border" size="sm" className="me-2" /> Sending...</> : "Create Account"}
-                    </button>
-                  </Form>
+                  {["email", "username"].map(field => (
+                    <Form.Group className="reg-form-group" key={field}>
+                      <div className={`reg-form-control-container ${isFieldActive(field) ? 'focused' : ''}`}>
+                        {getFieldIcon(field)}
+                        <Form.Control
+                          type={field === "email" ? "email" : "text"}
+                          placeholder={isFieldActive(field) ? '' : field}
+                          value={formData[field]}
+                          onChange={(e) => handleInputChange(field, e.target.value)}
+                          onFocus={() => setFocusedField(field)}
+                          onBlur={() => handleBlur(field)}
+                          onKeyDown={(e) => field === "email" && handleKeyDown(e, field)}
+                          onPaste={(e) => field === "email" && handlePaste(e, field)}
+                          disabled={loading}
+                          className="reg-modern-input"
+                        />
+                        <Form.Label className="reg-floating-label">
+                          {field === "email" ? "Email" : "Username"}
+                        </Form.Label>
+                      </div>
+                    </Form.Group>
+                  ))}
+
+                  {["password", "confirmPassword"].map(field => (
+                    <Form.Group className="reg-form-group" key={field}>
+                      <div className={`reg-form-control-container ${isFieldActive(field) ? 'focused' : ''}`}>
+                        <FaLock className="reg-input-icon" />
+                        <Form.Control
+                          type={getPasswordFieldType(field)}
+                          placeholder={getPasswordPlaceholder(field)}
+                          value={formData[field]}
+                          onChange={(e) => handleInputChange(field, e.target.value)}
+                          onFocus={() => setFocusedField(field)}
+                          onBlur={() => handleBlur(field)}
+                          disabled={loading}
+                          className="reg-modern-input reg-password-input"
+                        />
+                        <Form.Label className="reg-floating-label">
+                          {field === "password" ? "Password" : "Confirm Password"}
+                        </Form.Label>
+                        <PasswordToggleButton
+                          field={field}
+                          showPassword={showPassword}
+                          showConfirmPassword={showConfirmPassword}
+                          setShowPassword={setShowPassword}
+                          setShowConfirmPassword={setShowConfirmPassword}
+                          loading={loading}
+                        />
+                      </div>
+                      {field === "password" && formData.password && (
+                        <div className="reg-password-strength">
+                          <div className="reg-strength-bar">
+                            <div
+                              className="reg-strength-fill"
+                              style={{
+                                width: `${(passwordStrength / 5) * 100}%`,
+                                backgroundColor: getPasswordStrengthColor()
+                              }}
+                            />
+                          </div>
+                          <div className="reg-strength-labels">
+                            <span>Weak</span>
+                            <span>Strong</span>
+                          </div>
+                        </div>
+                      )}
+                    </Form.Group>
+                  ))}
+
+                  <button type="submit" className="btn reg-btn-custom-primary reg-btn" disabled={loading}>
+                    {loading ? <><Spinner animation="border" size="sm" className="me-2" /> Sending...</> : "Create Account"}
+                  </button>
+                </Form>
               )}
 
               {/* --- STEP 2: OTP VERIFICATION FORM --- */}
               {step === 2 && (
-                  <Form onSubmit={handleVerifyOtp} noValidate className="reg-form">
-                      <Form.Group className="reg-form-group">
-                          <div className={`reg-form-control-container ${focusedField === 'otp' || otp ? 'focused' : ''}`}>
-                              <FaCheckCircle className="reg-input-icon" />
-                              <Form.Control
-                                  type="text"
-                                  placeholder={focusedField === 'otp' ? '' : "Enter OTP Code"}
-                                  value={otp}
-                                  onChange={(e) => setOtp(e.target.value)}
-                                  onFocus={() => setFocusedField('otp')}
-                                  onBlur={() => setFocusedField('')}
-                                  disabled={loading}
-                                  className="reg-modern-input text-center letter-spacing-2"
-                                  style={{ letterSpacing: '0.2em', fontSize: '1.2rem' }}
-                                  maxLength={6}
-                              />
-                              <Form.Label className="reg-floating-label">Confirmation Code</Form.Label>
-                          </div>
-                          <Form.Text className="text-muted text-center d-block mt-2">
-                              Please check your email inbox (and spam folder) for the 6-digit code.
-                          </Form.Text>
-                      </Form.Group>
+                <Form onSubmit={handleVerifyOtp} noValidate className="reg-form">
+                  <Form.Group className="reg-form-group">
+                    <div className={`reg-form-control-container ${focusedField === 'otp' || otp ? 'focused' : ''}`}>
+                      <FaCheckCircle className="reg-input-icon" />
+                      <Form.Control
+                        type="text"
+                        placeholder={focusedField === 'otp' ? '' : "Enter OTP Code"}
+                        value={otp}
+                        onChange={(e) => setOtp(e.target.value)}
+                        onFocus={() => setFocusedField('otp')}
+                        onBlur={() => setFocusedField('')}
+                        disabled={loading}
+                        className="reg-modern-input text-center letter-spacing-2"
+                        style={{ letterSpacing: '0.2em', fontSize: '1.2rem' }}
+                        maxLength={6}
+                      />
+                      <Form.Label className="reg-floating-label">Confirmation Code</Form.Label>
+                    </div>
+                    <Form.Text className="text-muted text-center d-block mt-2">
+                      Please check your email inbox (and spam folder) for the 6-digit code.
+                    </Form.Text>
+                  </Form.Group>
 
-                      <button type="submit" className="btn reg-btn-custom-primary reg-btn mt-3" disabled={loading}>
-                          {loading ? <><Spinner animation="border" size="sm" className="me-2" /> Verifying...</> : "Verify & Login"}
-                      </button>
-                      
-                      <div className="text-center mt-3">
-                        <Button variant="link" className="text-decoration-none" onClick={() => { /* Logica Resend OTP */ }}>
-                            Resend Code
-                        </Button>
-                      </div>
-                  </Form>
+                  <button type="submit" className="btn reg-btn-custom-primary reg-btn mt-3" disabled={loading}>
+                    {loading ? <><Spinner animation="border" size="sm" className="me-2" /> Verifying...</> : "Verify & Login"}
+                  </button>
+
+                  <div className="text-center mt-3">
+                    <Button variant="link" className="text-decoration-none" onClick={() => { /* Logica Resend OTP */ }}>
+                      Resend Code
+                    </Button>
+                  </div>
+                </Form>
               )}
 
               <div className="reg-footer">

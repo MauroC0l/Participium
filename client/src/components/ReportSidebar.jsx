@@ -1,23 +1,37 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
+import PropTypes from "prop-types";
 import { Dropdown } from "react-bootstrap";
 import { FaCalendarAlt, FaUser, FaHardHat, FaBuilding, FaUserPlus, FaChevronDown, FaMapPin, FaMapMarkerAlt, FaMapMarkedAlt } from "react-icons/fa";
 import { getAllExternals } from "../api/municipalityUserApi";
 import { assignToExternalUser } from "../api/reportApi";
 
-const ReportSidebar = ({ 
-  report, 
-  currentUserId, 
-  onReportUpdated, // Mantenuta per la richiesta di aggiornamento report (e notifica al genitore)
-  onStatusUpdate, // Mantenuta per compatibilità, ma non usata per il re-fetch generale
-  showMap, 
+const ReportSidebar = ({
+  report,
+  currentUserId,
+  onReportUpdated,
+  showMap,
   setShowMap,
   mapCoordinates,
-  isCitizen, 
-  showToast 
+  isCitizen,
+  showToast
 }) => {
   const [externalUsers, setExternalUsers] = useState([]);
   const [loadingExternal, setLoadingExternal] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  // FIX S3776: Usato useCallback per stabilizzare l'handler
+  const fetchExternalUsers = useCallback(async () => {
+    setLoadingExternal(true);
+    try {
+      const users = await getAllExternals(report.category);
+      setExternalUsers(users || []);
+    } catch (err) {
+      console.error("Failed to load external users", err);
+      showToast("Failed to load external users.", "error");
+    } finally {
+      setLoadingExternal(false);
+    }
+  }, [report.category, showToast]);
 
   // Helper date
   const formatDate = (dateString) => {
@@ -37,38 +51,26 @@ const ReportSidebar = ({
     currentUserId &&
     report.assignee &&
     ((typeof report.assignee === "object" && Number(report.assignee.id) === Number(currentUserId)) ||
-    (typeof report.assignee === "number" && Number(report.assignee) === Number(currentUserId)));
+      (typeof report.assignee === "number" && Number(report.assignee) === Number(currentUserId)));
 
   // External Assignment Logic
   const handleDropdownToggle = async (isOpen) => {
     setIsDropdownOpen(isOpen);
     if (isOpen && externalUsers.length === 0) {
-      setLoadingExternal(true);
-      try {
-        const users = await getAllExternals(report.category);
-        setExternalUsers(users || []);
-      } catch (err) {
-        console.error("Failed to load external users", err);
-        showToast("Failed to load external users.", "error"); // Toast per errore
-      } finally {
-        setLoadingExternal(false);
-      }
+      await fetchExternalUsers();
     }
   };
 
   const handleAssignToExternal = async (externalUser) => {
-    // Prima di assegnare, chiudiamo il dropdown
-    setIsDropdownOpen(false); 
-    
+    setIsDropdownOpen(false);
+
     try {
       await assignToExternalUser(report.id, externalUser.id);
-      
-      // Aggiorna lo stato locale del report e notifica il genitore
+
       if (onReportUpdated) {
         onReportUpdated(report.id, {
           status: "Assigned",
           externalAssigneeId: externalUser.id,
-          // Aggiorna l'oggetto dell'assegnatario esterno per visualizzare il nome completo
           externalAssignee: {
             id: externalUser.id,
             first_name: externalUser.first_name,
@@ -77,12 +79,12 @@ const ReportSidebar = ({
           }
         });
       }
-      
+
       showToast(`Assigned to ${externalUser.first_name} ${externalUser.last_name} (ID: ${externalUser.id})`, "success");
 
     } catch (err) {
       console.error("Failed to assign", err);
-      showToast("Failed to assign to external user. Report can't be reassigned if it is resolved or already in progress.", "error"); 
+      showToast("Failed to assign to external user. Report can't be reassigned if it is resolved or already in progress.", "error");
     }
   };
 
@@ -90,27 +92,59 @@ const ReportSidebar = ({
     if (mapCoordinates) return `${mapCoordinates[0].toFixed(5)}, ${mapCoordinates[1].toFixed(5)}`;
     return "N/A";
   };
-  
+
   const getExternalAssigneeName = () => {
-      if (report.externalAssigneeId) {
-          // *** MODIFICA: Mostra solo l'ID, non il nome/cognome/username ***
-          return `ID #${report.externalAssigneeId}`;
-      }
-      return <span className="text-muted">Not assigned</span>;
+    if (report.externalAssigneeId) {
+      return `ID #${report.externalAssigneeId}`;
+    }
+    return <span className="text-muted">Not assigned</span>;
   };
-  
+
   const getInternalAssigneeName = () => {
-      if (report.assignee) {
-          // Il campo assignee potrebbe essere un ID o un oggetto completo.
-          const assigneeId = report.assignee.id || report.assignee;
-          
-          if (assigneeId) {
-             // *** MODIFICA: Mostra solo l'ID, non il nome/cognome/username ***
-             return `ID #${assigneeId}`;
-          }
+    if (report.assignee) {
+      const assigneeId = report.assignee.id || report.assignee;
+
+      if (assigneeId) {
+        return `ID #${assigneeId}`;
       }
-      return <span className="text-muted">Not assigned</span>;
+    }
+    return <span className="text-muted">Not assigned</span>;
   }
+
+  // RISOLTO S3358: Estraggo la logica ternaria annidata in una funzione di rendering locale
+  const renderDropdownContent = () => {
+    if (loadingExternal) {
+      return <div className="rdm-loading-state">Loading...</div>;
+    }
+
+    if (externalUsers.length > 0) {
+      return (
+        <>
+          <div className="rdm-dropdown-header">Select External Maintainer</div>
+          <div className="rdm-dropdown-scroll-area">
+            {externalUsers.map((extUser) => (
+              <Dropdown.Item key={extUser.id} onClick={() => handleAssignToExternal(extUser)} className="rdm-dropdown-item">
+                <div className="d-flex align-items-center w-100">
+                  <div className="rdm-avatar-circle me-3 flex-shrink-0">
+                    {extUser.first_name.charAt(0)}{extUser.last_name.charAt(0)}
+                  </div>
+                  <div className="flex-grow-1 overflow-hidden me-2">
+                    <div className="rdm-user-name text-truncate">{extUser.first_name} {extUser.last_name}</div>
+                    {extUser.company_name && (
+                      <div className="rdm-company-name text-truncate"><FaBuilding className="me-1" size={10} />{extUser.company_name}</div>
+                    )}
+                  </div>
+                  <div className="rdm-dropdown-id-badge">ID #{extUser.id}</div>
+                </div>
+              </Dropdown.Item>
+            ))}
+          </div>
+        </>
+      );
+    }
+
+    return <div className="rdm-empty-state">No users found.</div>;
+  };
 
   return (
     <div className="rdm-sidebar">
@@ -129,15 +163,15 @@ const ReportSidebar = ({
 
         {/* Info Updated (Placeholder) */}
         {report.updatedAt && report.updatedAt !== report.createdAt && (
-            <div className="rdm-info-row mt-2 pt-2 border-top">
-                <div className="rdm-icon-box">
-                    <FaCalendarAlt />
-                </div>
-                <div>
-                    <span className="rdm-label">Last Updated</span>
-                    <div className="rdm-value">{formatDate(report.updatedAt)}</div>
-                </div>
+          <div className="rdm-info-row mt-2 pt-2 border-top">
+            <div className="rdm-icon-box">
+              <FaCalendarAlt />
             </div>
+            <div>
+              <span className="rdm-label">Last Updated</span>
+              <div className="rdm-value">{formatDate(report.updatedAt)}</div>
+            </div>
+          </div>
         )}
       </div>
 
@@ -190,33 +224,8 @@ const ReportSidebar = ({
                 <FaChevronDown className={`rdm-chevron ${isDropdownOpen ? "rotate" : ""}`} />
               </Dropdown.Toggle>
               <Dropdown.Menu className="rdm-dropdown-menu shadow-lg border-0">
-                {loadingExternal ? (
-                  <div className="rdm-loading-state">Loading...</div>
-                ) : externalUsers.length > 0 ? (
-                  <>
-                     <div className="rdm-dropdown-header">Select External Maintainer</div>
-                     <div className="rdm-dropdown-scroll-area">
-                        {externalUsers.map((extUser) => (
-                          <Dropdown.Item key={extUser.id} onClick={() => handleAssignToExternal(extUser)} className="rdm-dropdown-item">
-                             <div className="d-flex align-items-center w-100">
-                                <div className="rdm-avatar-circle me-3 flex-shrink-0">
-                                    {extUser.first_name.charAt(0)}{extUser.last_name.charAt(0)}
-                                </div>
-                                <div className="flex-grow-1 overflow-hidden me-2">
-                                    <div className="rdm-user-name text-truncate">{extUser.first_name} {extUser.last_name}</div>
-                                    {extUser.company_name && (
-                                      <div className="rdm-company-name text-truncate"><FaBuilding className="me-1" size={10} />{extUser.company_name}</div>
-                                    )}
-                                </div>
-                                <div className="rdm-dropdown-id-badge">ID #{extUser.id}</div>
-                             </div>
-                          </Dropdown.Item>
-                        ))}
-                     </div>
-                  </>
-                ) : (
-                  <div className="rdm-empty-state">No users found.</div>
-                )}
+                {/* Utilizzo della funzione estratta per risolvere S3358 */}
+                {renderDropdownContent()}
               </Dropdown.Menu>
             </Dropdown>
           </div>
@@ -240,21 +249,50 @@ const ReportSidebar = ({
             <div className="rdm-value font-monospace">{formatLocation()}</div>
           </div>
         </div>
-        
+
         {/* MODIFICA: Mostra il pulsante solo se l'utente NON è un Citizen E le coordinate sono disponibili */}
-        {!isCitizen && mapCoordinates && (
+        {(!isCitizen && mapCoordinates) && ( // FIX S7735
           <button
-          className={`rdm-btn-map-toggle ${showMap ? "active" : ""}`}
-          onClick={() => setShowMap(!showMap)}
-          disabled={!mapCoordinates}
-        >
-          <FaMapMarkedAlt className="me-2" />
-          {showMap ? "Hide Map" : "Show Map"}
-        </button>
+            className={`rdm-btn-map-toggle ${showMap ? "active" : ""}`}
+            onClick={() => setShowMap(!showMap)}
+            disabled={!mapCoordinates}
+          >
+            <FaMapMarkedAlt className="me-2" />
+            {showMap ? "Hide Map" : "Show Map"}
+          </button>
         )}
       </div>
     </div>
   );
+};
+
+// VALIDAZIONE PROPS
+ReportSidebar.propTypes = {
+  report: PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+    createdAt: PropTypes.string,
+    updatedAt: PropTypes.string,
+    isAnonymous: PropTypes.bool,
+    is_anonymous: PropTypes.bool,
+    reporter: PropTypes.shape({
+      first_name: PropTypes.string,
+      last_name: PropTypes.string,
+    }),
+    assignee: PropTypes.oneOfType([
+      PropTypes.object,
+      PropTypes.number,
+    ]),
+    externalAssigneeId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    category: PropTypes.string.isRequired,
+    address: PropTypes.string,
+  }).isRequired,
+  currentUserId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  onReportUpdated: PropTypes.func.isRequired,
+  showMap: PropTypes.bool.isRequired,
+  setShowMap: PropTypes.func.isRequired,
+  mapCoordinates: PropTypes.arrayOf(PropTypes.number),
+  isCitizen: PropTypes.bool.isRequired,
+  showToast: PropTypes.func.isRequired,
 };
 
 export default ReportSidebar;
