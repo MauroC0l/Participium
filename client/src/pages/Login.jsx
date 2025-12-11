@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import PropTypes from "prop-types"; // Importato PropTypes
 import { Alert, Card, Form, Button, Container, Row, Col, Spinner } from "react-bootstrap";
 import { login } from "../api/authApi";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -8,12 +9,12 @@ import "../css/Login.css";
 export default function Login({ onLoginSuccess }) {
   const navigate = useNavigate();
   const location = useLocation(); // Hook to read navigation state (incoming errors)
-  
+
   const [formData, setFormData] = useState({
     username: "",
     password: ""
   });
-  
+
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -28,7 +29,8 @@ export default function Login({ onLoginSuccess }) {
     if (location.state?.error) {
       setError(location.state.error);
       // Clear history state to avoid showing error if user refreshes the page
-      window.history.replaceState({}, document.title);
+      // FIX S7764: Usare history (che è globale) o globalThis.history invece di window.history
+      history.replaceState({}, document.title);
     }
   }, [location]);
 
@@ -81,7 +83,7 @@ export default function Login({ onLoginSuccess }) {
     try {
       const userData = await login(trimmedUsername, formData.password);
 
-      localStorage.setItem("isLoggedIn", "true"); 
+      localStorage.setItem("isLoggedIn", "true");
 
       if (onLoginSuccess) {
         onLoginSuccess(userData);
@@ -90,25 +92,22 @@ export default function Login({ onLoginSuccess }) {
       navigate("/home");
     } catch (err) {
       console.error("Login failed:", err);
-      
+
       // Reset password on error for security
       setFormData(prev => ({ ...prev, password: "" }));
 
       // --- LOGICA AGGIORNATA ---
-      
+
       // 1. Cerchiamo prima un messaggio specifico dal server.
-      // Solitamente i messaggi del backend si trovano in err.data.error o err.data.message
-      // o direttamente in err.message se l'API wrapper lo ha estratto.
       const serverMessage = err.data?.error || err.data?.message || err.message;
 
       // Se l'errore è di rete (fetch failed), lo gestiamo specificamente
       if (!err.status && (err.message === "Failed to fetch" || err.message.includes("Network"))) {
-         setError("Unable to contact the server. Check your connection.");
-      } 
+        setError("Unable to contact the server. Check your connection.");
+      }
       // 2. Se il server ci ha mandato un messaggio specifico (es. "Email not verified"), usiamo quello!
-      // Escludiamo il caso in cui serverMessage sia generico come "Failed to fetch" (già gestito sopra)
       else if (serverMessage && serverMessage !== "Failed to fetch") {
-         setError(serverMessage);
+        setError(serverMessage);
       }
       // 3. Fallback sui codici di stato (se il server non ha mandato un messaggio chiaro)
       else if (err.status === 401) {
@@ -133,7 +132,7 @@ export default function Login({ onLoginSuccess }) {
         <Col xs={12} sm={10} md={8} lg={6} xl={4}>
           <Card className="log-card">
             <Card.Body className="log-card-body">
-              
+
               {/* Back Button */}
               <Button
                 variant="link"
@@ -266,3 +265,8 @@ export default function Login({ onLoginSuccess }) {
     </Container>
   );
 }
+
+// FIX S6774: Aggiunto PropTypes per onLoginSuccess
+Login.propTypes = {
+  onLoginSuccess: PropTypes.func, // Non è required se è opzionale
+};

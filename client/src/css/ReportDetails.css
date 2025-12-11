@@ -169,6 +169,7 @@
 
 .rdm-section-title svg {
   color: var(--rdm-brand);
+  color: inherit;
 }
 
 /* Description Box */
@@ -584,10 +585,6 @@
 /* 3. The Dropdown Menu (Fixed Positioning) */
 .rdm-dropdown-menu {
   position: absolute !important;
-  top: 100% !important;
-  left: 0 !important;
-  right: 0 !important;
-  transform: none !important;
   inset: auto !important;
 
   width: 100%;
@@ -785,10 +782,6 @@
   line-height: 1.6;
   font-weight: 500;
   box-shadow: 0 1px 2px rgba(239, 68, 68, 0.05);
-}
-
-.rdm-section-title svg {
-  color: inherit;
 }
 
 
