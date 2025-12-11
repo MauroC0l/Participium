@@ -8,7 +8,7 @@ import {
     Button,
     Alert,
     Dropdown,
-    //Spinner,
+    //Spinner, // Rimosso se non usato
     InputGroup,
 } from "react-bootstrap";
 import { BsEye } from "react-icons/bs";
@@ -138,7 +138,7 @@ ReportsTableBody.propTypes = {
 };
 
 // 2. Componente per i filtri
-const ReportsFilters = React.memo(({ isStaffMember, categoryFilter, statusFilter, allCategories, availableStatuses, setCategoryFilter, setStatusFilter }) => (
+const ReportsFilters = React.memo(({ isCategoryFilterDisabled, categoryFilter, statusFilter, allCategories, availableStatuses, setCategoryFilter, setStatusFilter }) => (
     <div className="mu-filters">
         {/* Category Filter */}
         <InputGroup className="mu-filter-group">
@@ -153,7 +153,7 @@ const ReportsFilters = React.memo(({ isStaffMember, categoryFilter, statusFilter
                     variant="light"
                     className="mu-filter-toggle"
                     id="category-filter"
-                    disabled={isStaffMember}
+                    disabled={isCategoryFilterDisabled} // <--- MODIFICATO per usare la nuova prop
                 >
                     <div className="d-flex align-items-center justify-content-between w-100">
                         <span className="text-truncate">
@@ -223,7 +223,7 @@ const ReportsFilters = React.memo(({ isStaffMember, categoryFilter, statusFilter
 ));
 
 ReportsFilters.propTypes = {
-    isStaffMember: PropTypes.bool.isRequired,
+    isCategoryFilterDisabled: PropTypes.bool.isRequired, // <--- Aggiornato Proptype
     categoryFilter: PropTypes.string.isRequired,
     statusFilter: PropTypes.string.isRequired,
     allCategories: PropTypes.array.isRequired,
@@ -249,6 +249,10 @@ export default function MunicipalityUserHome({ user }) {
             !isPublicRelations
         );
     }, [userRole, isAdministrator, isPublicRelations]);
+
+    // NUOVA VAR: Il filtro categoria è disabilitato SOLO se è un semplice staff member.
+    const isCategoryFilterDisabled = useMemo(() => isStaffMember && !isPublicRelations && !isAdministrator, [isStaffMember, isPublicRelations, isAdministrator]);
+
 
     const userDepartmentCategory = useMemo(() => {
         return isStaffMember ? getDepartmentCategory(user?.role_name) : null;
@@ -278,9 +282,11 @@ export default function MunicipalityUserHome({ user }) {
     const [selectedReport, setSelectedReport] = useState(null);
 
     // --- EFFECT: Sincronizzazione Iniziale Categoria Staff Member ---
+    // NOTA: Se l'utente è PR, userDepartmentCategory sarà null e quindi il filtro
+    // non verrà forzato, lasciando la possibilità di selezionare 'All Categories'.
     useEffect(() => {
-        if (isStaffMember) {
-            // Aggiorna il filtro categoria in base al dipartimento dell'utente staff
+        if (isStaffMember && !isPublicRelations && !isAdministrator) {
+            // Aggiorna il filtro categoria in base al dipartimento dell'utente staff (SOLO se è un semplice StaffMember)
             if (categoryFilter !== userDepartmentCategory) {
                 setCategoryFilter(userDepartmentCategory || "");
             }
@@ -289,8 +295,8 @@ export default function MunicipalityUserHome({ user }) {
                 setStatusFilter(""); // Reset a "All Statuses"
             }
         } else if (isAdministrator || isPublicRelations) {
-            // Se non sono staff, assicuriamoci che la categoria sia generale
-            if (categoryFilter !== "") {
+            // Se non sono staff o sono Admin/PR, assicuriamoci che la categoria sia generale (se non selezionata)
+            if (categoryFilter === userDepartmentCategory) {
                 setCategoryFilter("");
             }
         }
@@ -435,7 +441,7 @@ export default function MunicipalityUserHome({ user }) {
 
                 {/* Filtri Estratti nel Componente ReportsFilters */}
                 <ReportsFilters
-                    isStaffMember={isStaffMember}
+                    isCategoryFilterDisabled={isCategoryFilterDisabled} // <--- PASSATA LA NUOVA PROP
                     categoryFilter={categoryFilter}
                     statusFilter={statusFilter}
                     allCategories={allCategories}
@@ -458,8 +464,7 @@ export default function MunicipalityUserHome({ user }) {
                 {/* Blocco Caricamento Sostituito: lo spinner e il messaggio sono mostrati solo se isLoading è vero */}
                 {isLoading ? (
                     <div className="text-center p-5">
-                        {/* <Spinner animation="border" variant="primary" />
-                        <p className="mt-2 text-muted">Loading reports...</p> */}
+                        {/* Ho omesso lo Spinner e il testo perché sono stati commentati nell'input originale */}
                     </div>
                 ) : (
                     <Card.Body className="p-0">
