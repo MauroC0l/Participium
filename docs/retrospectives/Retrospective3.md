@@ -102,19 +102,19 @@ $$\text{Sample standard deviation }(s)=\sqrt{\frac{1}{n-1}\sum_{i=1}^n (x_i-\mu)
 ## ASSESSMENT
 
 - What caused your errors in estimation (if any)?
-  - We did a bit of overestimation on time for the code review.
-  - We had an extra task that was not needed.
+  - We did a bit of overestimation on time for the code review and a bit of underestimation on tests.
+  - We had an extra task that was not needed. We realized it was not needed only during the Sprint, as the task covered work that was already completed in another task. 
 
 - What lessons did you learn (both positive and negative) in this sprint?
   - We learned we are able to keep the pace in a balanced way as we had same story points done as previous.
-  - It's not necessary to rush the last day of the Sprint if we plan and respect internal deadlines
+  - It's not necessary to rush the last day of the Sprint if we plan and respect internal deadlines.
 
 - Which improvement goals set in the previous retrospective were you able to achieve? 
-  - We have set internal deadlines and we were on time
-  - We improve our Sprint Planning skills
+  - We had set internal deadlines and we were on time.
+  - We improved our Sprint Planning skills.
 
 - Which ones you were not able to achieve? Why?
-  - We had a little bit of overestimation in some tasks
+  - Even though we improved in Sprint Planning, we still made some small mistakes.
 
 - Improvement goals for the next sprint and how to achieve them (technical tasks, team coordination, etc.)
   - We still need to be more precise with the estimation of tasks so we would be able to not overestimate or underestimate them.
