@@ -809,7 +809,7 @@ router.get(
  *               message: "An unexpected error occurred while retrieving map reports"
  *  
  */
-router.get('/map', isLoggedIn,validateMapQuery, reportController.getMapReports);
+router.get('/map',validateMapQuery, reportController.getMapReports);
 
 /**
  * @swagger
