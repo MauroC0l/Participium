@@ -1,6 +1,5 @@
 :root {
-  /* --- Brand Colors (Turin Theme) --- */
-  --brand-primary: #A12B32;       /* Rosso Brand */
+  --brand-primary: #A12B32;
   --brand-primary-dark: #7f1d23;
   --brand-primary-soft: rgba(161, 43, 50, 0.08);
   
@@ -9,13 +8,15 @@
   --brand-gray: #64748b;
   --brand-light: #f8fafc;
   
-  /* --- Status Colors (Coerenti con MapPage/Bootstrap) --- */
-  --status-resolved: #28a745;     /* Verde */
-  --status-assigned: #007bff;     /* Blu */
-  --status-progress: #fd7e14;     /* Arancione */
-  --status-pending: #ffc107;      /* Giallo */
-  --status-rejected: #dc3545;     /* Rosso */
-  --status-suspended: #6c757d;    /* Grigio */
+  /* --- Status Colors --- */
+  --status-pending-bg: #fff7ed;
+  --status-pending-text: #c2410c;
+  --status-progress-bg: #eff6ff;
+  --status-progress-text: #1d4ed8;
+  --status-resolved-bg: #ecfdf5;
+  --status-resolved-text: #047857;
+  --status-rejected-bg: #fef2f2;
+  --status-rejected-text: #b91c1c;
 
   /* --- Modern Effects --- */
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
@@ -54,6 +55,8 @@
   margin-bottom: 2.5rem;
   padding-bottom: 1.5rem;
   border-bottom: 1px solid rgba(0,0,0,0.05);
+  gap: 1.5rem;
+  flex-wrap: wrap; /* Importante per il responsive */
 }
 
 .mu-home-title {
@@ -86,25 +89,32 @@
   color: var(--brand-gray);
   font-weight: 400;
   padding-left: 1rem;
+  margin-bottom: 0;
 }
 
 /* --- Filters Area --- */
 .mu-filters {
   display: flex;
   gap: 1rem;
+  flex-wrap: wrap;
+  position: relative;
+  z-index: 10; 
 }
 
-/* --- DROPDOWNS & FILTER STYLING --- */
+/* --- DROPDOWNS & FILTER STYLING (REVISED) --- */
 
 .mu-filter-group {
-  width: 350px; 
+  width: 300px; 
   border-radius: 0.75rem;
-  position: relative;
+  /* CRITICO: position relative per ancorare il menu */
+  position: relative !important; 
   display: flex;
   flex-wrap: nowrap;
   transition: all 0.2s ease;
+  background: white; /* Assicura sfondo opaco */
 }
 
+/* Icona a sinistra */
 .mu-filter-icon {
   background-color: #f8f9fa;
   border: 1px solid var(--border-subtle);
@@ -117,11 +127,19 @@
   border-bottom-left-radius: 0.75rem !important;
   transition: all 0.3s ease;
   white-space: nowrap;
-  z-index: 1;
   display: flex;
   align-items: center;
+  justify-content: center;
 }
 
+/* Dropdown Container Wrapper */
+.mu-custom-dropdown {
+  flex: 1;
+  min-width: 0;
+  position: static !important; 
+}
+
+/* Il corpo del dropdown (Toggle) */
 .mu-filter-toggle {
   border: 1px solid var(--border-subtle);
   border-left: none;
@@ -144,7 +162,7 @@
 
 .mu-filter-toggle .text-truncate {
   display: block;
-  max-width: 230px; 
+  max-width: 100%; 
 }
 
 .mu-filter-toggle::after {
@@ -159,17 +177,20 @@
   margin-left: auto;
 }
 
+.mu-filter-group:hover,
+.mu-filter-group:focus-within {
+    z-index: 20;
+}
+
 /* --- HOVER EFFECTS --- */
 .mu-filter-group:hover .mu-filter-icon {
   border-color: var(--brand-primary) !important;
   color: var(--brand-primary) !important;
   background-color: #fff;
-  border-right: none !important;
 }
 
 .mu-filter-group:hover .mu-filter-toggle {
   border-color: var(--brand-primary) !important;
-  border-left: none !important;
 }
 
 .mu-filter-group:hover .mu-dropdown-arrow {
@@ -180,41 +201,30 @@
   border-color: var(--brand-primary) !important;
 }
 
-.mu-custom-dropdown {
-  flex: 1;
-  min-width: 0;
-  position: static !important;
-}
-
-/* --- MENU DEL DROPDOWN --- */
+/* --- MENU DEL DROPDOWN (FIXED) --- */
 .modern-dropdown-menu {
   border: 1px solid var(--border-subtle) !important;
   border-radius: var(--radius-md) !important;
-  box-shadow: var(--shadow-lg) !important;
+  /* Ombra più forte per dare l'effetto "galleggiamento" */
+  box-shadow: 0 10px 40px rgba(0,0,0,0.15) !important; 
   padding: 0.5rem !important;
-  margin-top: 2px !important;
+  margin-top: 4px !important;
+  
+  /* POSITIONING */
   left: 0 !important;
+  right: 0 !important;
   width: 100% !important; 
   min-width: 100% !important;
-  margin-left: -40px !important;
-  max-height: 260px; 
-  overflow-y: auto;
-  overflow-x: hidden;
-}
+  transform: none !important; 
+  top: 100% !important; 
+  margin-left: 0 !important;
 
-.modern-dropdown-menu::-webkit-scrollbar {
-  width: 6px;
-}
-.modern-dropdown-menu::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 3px;
-}
-.modern-dropdown-menu::-webkit-scrollbar-thumb {
-  background: var(--brand-primary);
-  border-radius: 3px;
-}
-.modern-dropdown-menu::-webkit-scrollbar-thumb:hover {
-  background: var(--brand-primary-dark);
+  max-height: 300px; 
+  overflow-y: auto;
+  
+  /* Z-INDEX ALTISSIMO */
+  z-index: 9999 !important; 
+  background-color: white;
 }
 
 .dropdown-item {
@@ -245,7 +255,7 @@
   border: none;
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
-  overflow: visible; 
+  overflow: hidden; /* Importante per i bordi arrotondati della tabella */
   transition: var(--transition-smooth);
 }
 
@@ -256,8 +266,7 @@
 .mu-table {
   margin-bottom: 0;
   width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
+  border-collapse: collapse; /* Better for borders */
 }
 
 .mu-table thead th {
@@ -269,6 +278,7 @@
   letter-spacing: 0.08em;
   padding: 1.5rem;
   border-bottom: 1px solid #e2e8f0;
+  white-space: nowrap;
 }
 
 .mu-table tbody td {
@@ -285,7 +295,7 @@
   background-color: #f8fafc;
 }
 
-/* --- Badges & Colors Override --- */
+/* --- Badges & Buttons --- */
 .badge {
   padding: 0.5em 1em;
   border-radius: 30px;
@@ -293,41 +303,14 @@
   font-size: 0.75rem;
   letter-spacing: 0.02em;
   text-transform: uppercase;
-  color: white !important; /* Testo bianco per contrasto coi colori solidi */
+  display: inline-block;
 }
 
-/* Pending Approval (Yellow/Gold) */
-.bg-warning { 
-  background-color: var(--status-pending) !important; 
-  color: #212529 !important; /* Testo scuro per il giallo */
-}
+.bg-warning { background: var(--status-pending-bg) !important; color: var(--status-pending-text) !important; box-shadow: 0 0 0 1px rgba(194, 65, 12, 0.1); }
+.bg-info { background: var(--status-progress-bg) !important; color: var(--status-progress-text) !important; box-shadow: 0 0 0 1px rgba(29, 78, 216, 0.1); }
+.bg-success { background: var(--status-resolved-bg) !important; color: var(--status-resolved-text) !important; box-shadow: 0 0 0 1px rgba(4, 120, 87, 0.1); }
+.bg-danger { background: var(--status-rejected-bg) !important; color: var(--status-rejected-text) !important; box-shadow: 0 0 0 1px rgba(185, 28, 28, 0.1); }
 
-/* Assigned (Blue) */
-.bg-primary { 
-  background-color: var(--status-assigned) !important; 
-}
-
-/* In Progress (Orange) - Sovrascriviamo 'bg-info' per essere arancione */
-.bg-info { 
-  background-color: var(--status-progress) !important; 
-}
-
-/* Resolved (Green) */
-.bg-success { 
-  background-color: var(--status-resolved) !important; 
-}
-
-/* Rejected (Red) */
-.bg-danger { 
-  background-color: var(--status-rejected) !important; 
-}
-
-/* Suspended (Grey) */
-.bg-secondary {
-  background-color: var(--status-suspended) !important;
-}
-
-/* --- Buttons --- */
 .btn-outline-primary {
   border: 1px solid #e2e8f0;
   color: var(--brand-navy);
@@ -337,6 +320,7 @@
   font-weight: 600;
   font-size: 0.85rem;
   transition: var(--transition-fast);
+  white-space: nowrap;
 }
 
 .btn-outline-primary:hover {
@@ -347,27 +331,125 @@
   transform: translateY(-1px);
 }
 
-/* --- Responsive --- */
-@media (max-width: 768px) {
-  .mu-home-container { padding: 1.5rem; }
-  .mu-header-wrapper { flex-direction: column; align-items: flex-start; gap: 1rem; }
-  .mu-filters, .mu-filter-group { width: 100%; }
-  
-  .mu-table thead { display: none; }
-  .mu-table, .mu-table tbody, .mu-table tr, .mu-table td { display: block; width: 100%; }
-  .mu-table tr {
-    margin-bottom: 1rem;
-    border: 1px solid #e2e8f0;
-    border-radius: 16px;
-    overflow: hidden;
-    box-shadow: var(--shadow-sm);
+/* =========================================
+   RESPONSIVE DESIGN (Modern & Fluid)
+   ========================================= */
+
+/* --- TABLET BREAKPOINT (max-width: 992px) --- */
+@media (max-width: 992px) {
+  .mu-home-container {
+    padding: 2rem;
   }
-  .mu-table td {
+  
+  .mu-header-wrapper {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.5rem;
+  }
+  
+  .mu-filters {
+    width: 100%;
+  }
+  
+  /* I filtri diventano 50% ognuno meno il gap */
+  .mu-filter-group {
+    width: calc(50% - 0.5rem); 
+  }
+}
+
+/* --- MOBILE BREAKPOINT (max-width: 768px) --- */
+@media (max-width: 768px) {
+  .mu-home-container {
     padding: 1rem;
-    text-align: right;
+  }
+  
+  /* Header adjustments */
+  .mu-home-title {
+    font-size: 1.75rem;
+  }
+  
+  /* Filters stack vertically full width */
+  .mu-filters {
+    flex-direction: column;
+    width: 100%;
+    gap: 0.75rem;
+  }
+  
+  .mu-filter-group {
+    width: 100%; /* Full width su mobile */
+  }
+
+  /* --- CARD VIEW FOR TABLES (The "Magic" Part) --- */
+  
+  /* Nascondi l'header della tabella */
+  .mu-table thead {
+    display: none;
+  }
+  
+  /* Rendi la tabella block-level */
+  .mu-table, .mu-table tbody, .mu-table tr, .mu-table td {
+    display: block;
+    width: 100%;
+  }
+  
+  /* Stile Card per ogni riga */
+  .mu-table tbody tr {
+    margin-bottom: 1rem;
+    background: white;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    padding: 1rem;
+    position: relative;
+  }
+  
+  .mu-table tbody tr:last-child {
+    margin-bottom: 0;
+  }
+  
+  /* Stile celle interne */
+  .mu-table td {
+    padding: 0.5rem 0;
+    text-align: right; /* Contenuto a destra */
     border-bottom: 1px solid #f1f5f9;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    font-size: 0.9rem;
+  }
+  
+  .mu-table td:last-child {
+    border-bottom: none;
+    padding-top: 1rem;
+    justify-content: flex-end; /* Bottone a destra */
+  }
+  
+  .mu-table td.ps-4, 
+  .mu-table td.pe-4 {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  /* LABEL GENERATION VIA CSS (Use data-label from React) */
+  .mu-table td::before {
+    content: attr(data-label);
+    float: left;
+    font-weight: 600;
+    color: var(--brand-gray);
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    margin-right: 1rem;
+  }
+  
+  /* Specific styles for specific cells in card view */
+  .mu-table td[data-label="Category"] span {
+    font-size: 1rem;
+    color: var(--brand-primary);
+  }
+  
+  /* Action button full width logic if preferred, or aligned right */
+  .mu-actions-cell::before {
+    display: none; /* Hide label for action button */
   }
 }
