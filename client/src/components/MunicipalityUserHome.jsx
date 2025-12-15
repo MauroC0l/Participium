@@ -86,7 +86,7 @@ const ReportsTableBody = React.memo(({ reports, handleShow }) => {
     if (reports.length === 0) {
         return (
             <tr>
-                <td colSpan="6" className="text-center p-5 text-muted">
+                <td colSpan="6" className="text-center p-5 text-muted"> {/* Aumentato colSpan */}
                     <h5>Nessuna segnalazione trovata</h5>
                     <p className="mb-0">
                         Nessuna segnalazione corrisponde ai criteri di ricerca.
@@ -98,26 +98,27 @@ const ReportsTableBody = React.memo(({ reports, handleShow }) => {
 
     return reports.map((report) => (
         <tr key={report.id}>
-            {/* Aggiunti data-label per la visualizzazione mobile */}
-            <td className="ps-4" data-label="Category">
+            <td className="ps-4">
                 <span className="fw-semibold text-dark">{report.category}</span>
             </td>
-            <td data-label="Title">{report.title}</td>
-            <td data-label="Date">{report.createdAt.toLocaleDateString()}</td>
-            <td data-label="Assigned External">
+            <td>{report.title}</td>
+            <td>{report.createdAt.toLocaleDateString()}</td>
+            <td>
+                {/* Colonna Aggiunta per l'Assegnatario */}
                 {report.assignee?.username || report.assignee?.id || (
                     <span className="text-muted fst-italic">N/A</span>
                 )}
             </td>
-            <td data-label="Status">
+            <td>
                 <Badge
                     bg={getStatusBadgeVariant(report.status)}
                     className="fw-normal"
                 >
+                    {/* Correzione S7781: Uso replaceAll() per sostituire tutti gli underscore */}
                     {report.status.replaceAll("_", " ")}
                 </Badge>
             </td>
-            <td className="text-end pe-4 mu-actions-cell" data-label="Action">
+            <td className="text-end pe-4">
                 <Button
                     variant="outline-primary"
                     size="sm"
@@ -176,6 +177,7 @@ const ReportsFilters = React.memo(({ isCategoryFilterDisabled, categoryFilter, s
                     <Dropdown.Item eventKey="" active={categoryFilter === ""}>
                         All Categories
                     </Dropdown.Item>
+                    {/* Correzione S6479: Uso cat come chiave */}
                     {allCategories.map((cat) => (
                         <Dropdown.Item
                             key={cat}
@@ -211,9 +213,11 @@ const ReportsFilters = React.memo(({ isCategoryFilterDisabled, categoryFilter, s
                     </div>
                 </Dropdown.Toggle>
                 <Dropdown.Menu className="modern-dropdown-menu">
+                    {/* Caso speciale per "All Statuses" */}
                     <Dropdown.Item eventKey="" active={statusFilter === ""}>
                         All Statuses
                     </Dropdown.Item>
+                    {/* Correzione S6479: Uso st come chiave */}
                     {availableStatuses.map((st) => (
                         <Dropdown.Item
                             key={st}
@@ -421,7 +425,7 @@ export default function MunicipalityUserHome({ user }) {
                         <th className="ps-4">Category</th>
                         <th>Title</th>
                         <th>Date</th>
-                        <th>Assigned External </th>
+                        <th>Assigned External </th> {/* COLONNA AGGIUNTA */}
                         <th>Status</th>
                         <th className="text-end pe-4">Action</th>
                     </tr>

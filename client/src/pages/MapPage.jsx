@@ -25,6 +25,7 @@ import {
   FaEye,
   FaEyeSlash,
   FaArrowRight,
+  FaUserSecret, // Nuova icona per anonimato
 } from "react-icons/fa";
 import { Dropdown } from "react-bootstrap";
 
@@ -41,12 +42,10 @@ import "../css/MapPage.css";
 import ReportDetails from "../components/ReportDetails";
 
 // --- ICON CONFIGURATION ---
-// Funzione helper per creare le icone con shadow standard
 const createIcon = (colorUrl) => {
   return new L.Icon({
     iconUrl: colorUrl,
-    shadowUrl:
-      "/marker/marker_shadow.png",
+    shadowUrl: "/marker/marker_shadow.png",
     iconSize: [25, 41],
     iconAnchor: [12, 41],
     popupAnchor: [1, -34],
@@ -55,32 +54,16 @@ const createIcon = (colorUrl) => {
   });
 };
 
-// Definizione dei colori disponibili
 const Icons = {
-  blue: createIcon(
-    "/marker/marker_blue.png"
-  ),
-  green: createIcon(
-    "/marker/marker_green.png"
-  ),
-  orange: createIcon(
-    "/marker/marker_orange.png"
-  ),
-  yellow: createIcon(
-    "/marker/marker_yellow.png"
-  ),
-  red: createIcon(
-    "/marker/marker_red.png"
-  ),
-  grey: createIcon(
-    "/marker/marker_grey.png"
-  ),
-  black: createIcon(
-    "/marker/marker_black.png"
-  ),
+  blue: createIcon("/marker/marker_blue.png"),
+  green: createIcon("/marker/marker_green.png"),
+  orange: createIcon("/marker/marker_orange.png"),
+  yellow: createIcon("/marker/marker_yellow.png"),
+  red: createIcon("/marker/marker_red.png"),
+  grey: createIcon("/marker/marker_grey.png"),
+  black: createIcon("/marker/marker_black.png"),
 };
 
-// Imposta l'icona di default su Blue per fallback
 L.Marker.prototype.options.icon = Icons.blue;
 
 // --- Point-in-Polygon Logic ---
@@ -151,17 +134,14 @@ const MapPage = () => {
   const [turinBounds, setTurinBounds] = useState(null);
   const [turinPolygons, setTurinPolygons] = useState([]);
 
-  // UX State: Form Visibility
+  // UX State
   const [showForm, setShowForm] = useState(false);
-
-  // User State
   const [currentUser, setCurrentUser] = useState(null);
 
   // --- Filter States ---
   const [filterCategory, setFilterCategory] = useState("All");
   const [filterStatus, setFilterStatus] = useState("All");
-
-  const [viewMode, setViewMode] = useState("all"); // 'all' or 'mine'
+  const [viewMode, setViewMode] = useState("all");
   const [hideReports, setHideReports] = useState(false);
 
   const [categories, setCategories] = useState([]);
@@ -169,8 +149,6 @@ const MapPage = () => {
   const [isLoadingMap, setIsLoadingMap] = useState(true);
   const [photos, setPhotos] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // New State for Address Loading
   const [isLoadingAddress, setIsLoadingAddress] = useState(false);
 
   const [selectedReport, setSelectedReport] = useState(null);
@@ -180,7 +158,7 @@ const MapPage = () => {
     title: "",
     description: "",
     category: "",
-    is_anonymous: false,
+    is_anonymous: false, // Default false
     latitude: "",
     longitude: "",
     address: "",
@@ -361,12 +339,11 @@ const MapPage = () => {
     loadBoundaries();
   }, []);
 
-  // --- Effect per calcolare l'indirizzo appena il marker cambia ---
+  // --- Effect per calcolare l'indirizzo ---
   useEffect(() => {
     if (marker) {
       const fetchAddress = async () => {
         setIsLoadingAddress(true);
-        // Resetta l'indirizzo precedente
         setFormData((prev) => ({ ...prev, address: "" }));
 
         try {
@@ -410,7 +387,6 @@ const MapPage = () => {
         ...prev,
         latitude: lat.toFixed(6),
         longitude: lng.toFixed(6),
-        // address viene gestito dall'useEffect
       }));
 
       setFormErrors((prev) => ({ ...prev, location: "" }));
@@ -511,8 +487,6 @@ const MapPage = () => {
     else if (formData.description.length > maxDescLength)
       errors.description = `Max ${maxDescLength} characters.`;
 
-    // ... (rest of validation)
-
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -545,6 +519,7 @@ const MapPage = () => {
           address: formData.address,
         },
         photos: base64Photos,
+        // Mapping esplicito per compatibilità API
         is_anonymous: formData.is_anonymous,
         isAnonymous: formData.is_anonymous,
       };
@@ -615,16 +590,11 @@ const MapPage = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "Resolved":
-        return "#28a745";
-      case "Rejected":
-        return "#dc3545";
-      case "Assigned":
-        return "#007bff";
-      case "Pending Approval":
-        return "#ffc107";
-      default:
-        return "#fd7e14";
+      case "Resolved": return "#28a745";
+      case "Rejected": return "#dc3545";
+      case "Assigned": return "#007bff";
+      case "Pending Approval": return "#ffc107";
+      default: return "#fd7e14";
     }
   };
 
@@ -872,7 +842,6 @@ const MapPage = () => {
                           <Marker
                             key={report.id}
                             position={position}
-                            // Assegnazione icona dinamica
                             icon={getMarkerIcon(report.status)}
                             eventHandlers={{
                               click: () => {
@@ -953,11 +922,10 @@ const MapPage = () => {
                       <Marker
                         key={`new-${marker.id}`}
                         position={[marker.lat, marker.lng]}
-                        icon={Icons.red} // Icona rossa per nuovo report
+                        icon={Icons.red}
                         zIndexOffset={1000}
                         eventHandlers={{
                           click: () => {
-                            // Rimuove il marker se cliccato
                             handleClear(false);
                           },
                         }}
@@ -998,7 +966,7 @@ const MapPage = () => {
                   </MapContainer>
                 )}
 
-                {/* Floating Action Bar stays inside Map Container */}
+                {/* Floating Action Bar */}
                 {marker && !showForm && (
                   <div className="mp-map-floating-action">
                     <div className="mp-floating-content">
@@ -1033,7 +1001,7 @@ const MapPage = () => {
               )}
             </div>
 
-            {/* RIGHT COLUMN: FORM (Conditionally visible via CSS) */}
+            {/* RIGHT COLUMN: FORM */}
             <div className="mp-form-column" ref={formSectionRef}>
               <div className="mp-form-card side-panel">
                 <div className="mp-form-header-row">
@@ -1054,7 +1022,7 @@ const MapPage = () => {
                   onSubmit={handleSubmit}
                   className="mp-location-form compact"
                 >
-                  {/* Address Field (UNIFICATO) */}
+                  {/* Address Field */}
                   <div className="mp-form-group">
                     <label className="mp-form-label">Address</label>
                     <input
@@ -1147,7 +1115,6 @@ const MapPage = () => {
                       <FormError message={formErrors.description} />
                     )}
 
-                    {/* WRAPPER PER POSIZIONAMENTO */}
                     <div className="mp-textarea-wrapper">
                       <textarea
                         id="description"
@@ -1165,7 +1132,6 @@ const MapPage = () => {
                         rows="3"
                         maxLength={200}
                       />
-                      {/* CONTATORE POSIZIONATO */}
                       <span
                         className={`mp-char-counter ${
                           formData.description.length >= 200
@@ -1178,7 +1144,7 @@ const MapPage = () => {
                     </div>
                   </div>
 
-                  {/* Photos (Compact) */}
+                  {/* Photos */}
                   <div className="mp-form-group">
                     <label className="mp-form-label">
                       Photos ({photos.length}/3)
@@ -1221,6 +1187,27 @@ const MapPage = () => {
                         </div>
                       ))}
                     </div>
+                  </div>
+
+                  {/* MODERN ANONYMOUS SWITCH TOGGLE */}
+                  <div className="mp-toggle-group">
+                    <div className="mp-toggle-info">
+                      <FaUserSecret className={`mp-toggle-icon-visual ${formData.is_anonymous ? 'active' : ''}`} />
+                      <div className="mp-toggle-text">
+                        <span className="mp-toggle-title">Anonymous Report</span>
+                        <span className="mp-toggle-subtitle">
+                          {formData.is_anonymous ? "Your name will be hidden" : "Your name will be visible"}
+                        </span>
+                      </div>
+                    </div>
+                    <label className="mp-toggle-switch">
+                      <input
+                        type="checkbox"
+                        checked={formData.is_anonymous}
+                        onChange={(e) => handleInputChange("is_anonymous", e.target.checked)}
+                      />
+                      <span className="mp-toggle-slider"></span>
+                    </label>
                   </div>
 
                   {/* Actions */}
