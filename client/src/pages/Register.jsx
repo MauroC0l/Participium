@@ -4,7 +4,7 @@ import { Alert, Card, Form, Button, Container, Row, Col, Spinner } from "react-b
 import { registerCitizen } from "../api/citizenApi";
 import { useNavigate, useLocation } from "react-router-dom";
 import { FaEye, FaEyeSlash, FaUser, FaEnvelope, FaLock, FaArrowLeft, FaIdCard } from "react-icons/fa";
-import OtpVerification from "./OtpVerification";
+import OtpVerification from "../components/OtpVerification";
 import "../css/Register.css";
 
 // --- Componente Toggle Password (invariato) ---
@@ -219,11 +219,6 @@ export default function Register() {
     }
   };
 
-  const handleResendOtp = () => {
-    // Logica placeholder per il resend
-    console.log("Resend OTP requested for", formData.email);
-  };
-
   // UI HELPERS
   const isFieldActive = (field) => focusedField === field || formData[field];
   
@@ -380,8 +375,7 @@ export default function Register() {
               {/* --- STEP 2: OTP VERIFICATION COMPONENT --- */}
               {step === 2 && (
                 <OtpVerification 
-                  email={formData.email} 
-                  onResend={handleResendOtp}
+                  username={formData.username} 
                 />
               )}
 

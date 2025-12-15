@@ -388,6 +388,22 @@ class UserRepository {
     return user.isVerified;
   }
 
+  /**
+   * Updates the verification code and expiration date for a user.
+   * Used when resending the OTP.
+   * @param userId The ID of the user to update.
+   * @param data Object containing the new code and expiration.
+   */
+  public async updateVerificationData(
+    userId: number,
+    data: { verificationCode: string; verificationCodeExpiresAt: Date }
+  ): Promise<void> {
+    await this.repository.update(userId, {
+      verificationCode: data.verificationCode,
+      verificationCodeExpiresAt: data.verificationCodeExpiresAt,
+    });
+  }
+
 }
 
 // Export a singleton instance of the repository
