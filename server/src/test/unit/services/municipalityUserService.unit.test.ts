@@ -100,6 +100,35 @@ describe('MunicipalityUserService', () => {
             mockDepartmentRoleRepository.findByDepartmentAndRole.mockResolvedValue(null);
             await expect(municipalityUserService.createMunicipalityUser(registerData)).rejects.toThrow(BadRequestError);
         });
+
+        it('should find department role without department name when department_name is not provided', async () => {
+            const data = { ...registerData, department_name: undefined };
+            mockUserRepository.existsUserByUsername.mockResolvedValue(false);
+            mockUserRepository.existsUserByEmail.mockResolvedValue(false);
+            mockDepartmentRoleRepository.findAll.mockResolvedValue([
+                { id: 1, role: { name: 'Municipal Officer' } } as any,
+                { id: 2, role: { name: 'Other Role' } } as any,
+            ]);
+            mockUserRepository.createUserWithPassword.mockResolvedValue({ id: 1, ...data } as any);
+            mockMapUserEntityToUserResponse.mockReturnValue({ id: 1, username: 'johndoe' } as any);
+
+            const result = await municipalityUserService.createMunicipalityUser(data);
+
+            expect(result).toBeDefined();
+            expect(mockDepartmentRoleRepository.findAll).toHaveBeenCalled();
+            expect(mockDepartmentRoleRepository.findByDepartmentAndRole).not.toHaveBeenCalled();
+        });
+
+        it('should throw BadRequestError if role is not found in any department when department_name is not provided', async () => {
+            const data = { ...registerData, department_name: undefined, role_name: 'NonExistentRole' };
+            mockUserRepository.existsUserByUsername.mockResolvedValue(false);
+            mockUserRepository.existsUserByEmail.mockResolvedValue(false);
+            mockDepartmentRoleRepository.findAll.mockResolvedValue([
+                { id: 1, role: { name: 'Municipal Officer' } } as any,
+            ]);
+
+            await expect(municipalityUserService.createMunicipalityUser(data)).rejects.toThrow(BadRequestError);
+        });
     });
 
     describe('getAllMunicipalityUsers', () => {
@@ -220,6 +249,44 @@ describe('MunicipalityUserService', () => {
 
             await expect(municipalityUserService.assignRole(1, 'New Role', 'New Department')).rejects.toThrow(BadRequestError);
         });
+
+        it('should assign role without department name when department_name is not provided', async () => {
+            const user = { id: 1, username: 'testuser', departmentRole: { role: { name: 'Municipal Officer', departmentRoles: [] } } };
+            const updatedUser = { ...user, departmentRoleId: 2 };
+            mockUserRepository.findUserById.mockResolvedValue(user as any);
+            mockDepartmentRoleRepository.findAll.mockResolvedValue([
+                { id: 2, role: { name: 'New Role' } } as any,
+            ]);
+            mockUserRepository.updateUser.mockResolvedValue(updatedUser as any);
+            mockMapUserEntityToUserResponse.mockReturnValue({ id: 1 } as any);
+
+            await municipalityUserService.assignRole(1, 'New Role');
+
+            expect(mockDepartmentRoleRepository.findAll).toHaveBeenCalled();
+            expect(mockDepartmentRoleRepository.findByDepartmentAndRole).not.toHaveBeenCalled();
+            expect(mockUserRepository.updateUser).toHaveBeenCalledWith(1, { departmentRoleId: 2 });
+        });
+
+        it('should throw BadRequestError if role not found when department_name is not provided', async () => {
+            const user = { id: 1, username: 'testuser', departmentRole: { role: { name: 'Municipal Officer', departmentRoles: [] } } };
+            mockUserRepository.findUserById.mockResolvedValue(user as any);
+            mockDepartmentRoleRepository.findAll.mockResolvedValue([
+                { id: 2, role: { name: 'Other Role' } } as any,
+            ]);
+
+            await expect(municipalityUserService.assignRole(1, 'New Role')).rejects.toThrow(BadRequestError);
+        });
+
+        it('should throw error if mapUserEntityToUserResponse returns null', async () => {
+            const user = { id: 1, username: 'testuser', departmentRole: { role: { name: 'Municipal Officer', departmentRoles: [] } } };
+            const updatedUser = { ...user, departmentRoleId: 2 };
+            mockUserRepository.findUserById.mockResolvedValue(user as any);
+            mockDepartmentRoleRepository.findByDepartmentAndRole.mockResolvedValue({ id: 2 } as any);
+            mockUserRepository.updateUser.mockResolvedValue(updatedUser as any);
+            mockMapUserEntityToUserResponse.mockReturnValue(null);
+
+            await expect(municipalityUserService.assignRole(1, 'New Role', 'New Department')).rejects.toThrow('Failed to map user response after role assignment');
+        });
     });
 
     describe('updateMunicipalityUser', () => {
@@ -257,6 +324,36 @@ describe('MunicipalityUserService', () => {
             mockUserRepository.findUserById.mockResolvedValue(existingUser as any);
             mockUserRepository.existsUserByEmail.mockResolvedValue(true);
             await expect(municipalityUserService.updateMunicipalityUser(1, { email: 'new.email@example.com' })).rejects.toThrow(ConflictError);
+        });
+
+        it('should update user with company information for External Maintainer', async () => {
+            const externalUser = { ...existingUser, departmentRole: { role: { name: 'External Maintainer' } } };
+            const updateDataWithCompany = { ...updateData, company_name: 'New Company' };
+            mockUserRepository.findUserById.mockResolvedValue(externalUser as any);
+            mockCompanyRepository.findByName.mockResolvedValue({ id: 5, name: 'New Company' } as any);
+            mockUserRepository.updateUser.mockResolvedValue({ ...externalUser, firstName: 'Jane', companyId: 5 } as any);
+            mockMapUserEntityToUserResponse.mockReturnValue({ id: 1, first_name: 'Jane' } as any);
+
+            const result = await municipalityUserService.updateMunicipalityUser(1, updateDataWithCompany);
+
+            expect(result).toBeDefined();
+            expect(mockCompanyRepository.findByName).toHaveBeenCalledWith('New Company');
+            expect(mockUserRepository.updateUser).toHaveBeenCalledWith(1, expect.objectContaining({ companyId: 5 }));
+        });
+
+        it('should throw NotFoundError if company not found for External Maintainer update', async () => {
+            const externalUser = { ...existingUser, departmentRole: { role: { name: 'External Maintainer' } } };
+            const updateDataWithCompany = { ...updateData, company_name: 'Ghost Company' };
+            mockUserRepository.findUserById.mockResolvedValue(externalUser as any);
+            mockCompanyRepository.findByName.mockResolvedValue(null);
+
+            await expect(municipalityUserService.updateMunicipalityUser(1, updateDataWithCompany)).rejects.toThrow(NotFoundError);
+        });
+
+        it('should throw BadRequestError when trying to update Administrator', async () => {
+            const adminUser = { ...existingUser, departmentRole: { role: { name: 'Administrator' } } };
+            mockUserRepository.findUserById.mockResolvedValue(adminUser as any);
+            await expect(municipalityUserService.updateMunicipalityUser(1, updateData)).rejects.toThrow(BadRequestError);
         });
     });
 });
