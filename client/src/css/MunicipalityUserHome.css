@@ -1,6 +1,5 @@
 :root {
-  /* --- Brand Colors (Turin Theme) --- */
-  --brand-primary: #A12B32;       /* Rosso Brand */
+  --brand-primary: #A12B32;
   --brand-primary-dark: #7f1d23;
   --brand-primary-soft: rgba(161, 43, 50, 0.08);
   
@@ -9,13 +8,15 @@
   --brand-gray: #64748b;
   --brand-light: #f8fafc;
   
-  /* --- Status Colors (Coerenti con MapPage/Bootstrap) --- */
-  --status-resolved: #28a745;     /* Verde */
-  --status-assigned: #007bff;     /* Blu */
-  --status-progress: #fd7e14;     /* Arancione */
-  --status-pending: #ffc107;      /* Giallo */
-  --status-rejected: #dc3545;     /* Rosso */
-  --status-suspended: #6c757d;    /* Grigio */
+  /* --- Status Colors --- */
+  --status-pending-bg: #fff7ed;
+  --status-pending-text: #c2410c;
+  --status-progress-bg: #eff6ff;
+  --status-progress-text: #1d4ed8;
+  --status-resolved-bg: #ecfdf5;
+  --status-resolved-text: #047857;
+  --status-rejected-bg: #fef2f2;
+  --status-rejected-text: #b91c1c;
 
   /* --- Modern Effects --- */
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
@@ -94,96 +95,101 @@
   gap: 1rem;
 }
 
-/* --- DROPDOWNS & FILTER STYLING --- */
+/* --- DROPDOWNS & FILTER STYLING (NEW) --- */
 
 .mu-filter-group {
-  width: 350px; 
-  border-radius: 0.75rem;
-  position: relative;
-  display: flex;
-  flex-wrap: nowrap;
-  transition: all 0.2s ease;
+    /* Larghezza fissa identica all'altra pagina */
+    width: 350px; 
+    border-radius: 0.75rem;
+    position: relative;
+    display: flex;
+    flex-wrap: nowrap;
+    transition: all 0.2s ease;
 }
 
+/* Icona a sinistra */
 .mu-filter-icon {
-  background-color: #f8f9fa;
-  border: 1px solid var(--border-subtle);
-  border-right: none;
-  color: var(--brand-gray);
-  font-size: 0.9rem;
-  padding-left: 1rem;
-  padding-right: 0.75rem;
-  border-top-left-radius: 0.75rem !important;
-  border-bottom-left-radius: 0.75rem !important;
-  transition: all 0.3s ease;
-  white-space: nowrap;
-  z-index: 1;
-  display: flex;
-  align-items: center;
+    background-color: #f8f9fa;
+    border: 1px solid var(--border-subtle);
+    border-right: none;
+    color: var(--brand-gray);
+    font-size: 0.9rem;
+    padding-left: 1rem;
+    padding-right: 0.75rem;
+    border-top-left-radius: 0.75rem !important;
+    border-bottom-left-radius: 0.75rem !important;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    z-index: 1;
+    display: flex;
+    align-items: center;
 }
 
+/* Il corpo del dropdown */
 .mu-filter-toggle {
-  border: 1px solid var(--border-subtle);
-  border-left: none;
-  background-color: white !important;
-  color: var(--brand-navy) !important;
-  font-size: 0.9rem;
-  padding: 0.75rem 0.75rem 0.75rem 0.5rem;
-  height: auto;
-  font-weight: 500;
-  border-top-right-radius: 0.75rem !important;
-  border-bottom-right-radius: 0.75rem !important;
-  transition: all 0.3s ease;
-  width: 100%;
-  text-align: left;
-  display: flex;
-  align-items: center;
-  box-shadow: var(--shadow-sm);
-  overflow: hidden; 
+    border: 1px solid var(--border-subtle);
+    border-left: none;
+    background-color: white !important;
+    color: var(--brand-navy) !important;
+    font-size: 0.9rem;
+    padding: 0.75rem 0.75rem 0.75rem 0.5rem;
+    height: auto;
+    font-weight: 500;
+    border-top-right-radius: 0.75rem !important;
+    border-bottom-right-radius: 0.75rem !important;
+    transition: all 0.3s ease;
+    width: 100%;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    box-shadow: var(--shadow-sm);
+    overflow: hidden; 
 }
 
+/* Forza dimensione massima testo per ellipsis */
 .mu-filter-toggle .text-truncate {
-  display: block;
-  max-width: 230px; 
+    display: block;
+    max-width: 230px; 
 }
 
 .mu-filter-toggle::after {
-  display: none;
+    display: none;
 }
 
 .mu-dropdown-arrow {
-  font-size: 0.7rem;
-  color: var(--brand-gray);
-  flex-shrink: 0;
-  transition: transform 0.2s;
-  margin-left: auto;
+    font-size: 0.7rem;
+    color: var(--brand-gray);
+    flex-shrink: 0;
+    transition: transform 0.2s;
+    margin-left: auto;
 }
 
 /* --- HOVER EFFECTS --- */
+
 .mu-filter-group:hover .mu-filter-icon {
-  border-color: var(--brand-primary) !important;
-  color: var(--brand-primary) !important;
-  background-color: #fff;
-  border-right: none !important;
+    border-color: var(--brand-primary) !important;
+    color: var(--brand-primary) !important;
+    background-color: #fff;
+    border-right: none !important;
 }
 
 .mu-filter-group:hover .mu-filter-toggle {
-  border-color: var(--brand-primary) !important;
-  border-left: none !important;
+    border-color: var(--brand-primary) !important;
+    border-left: none !important;
 }
 
 .mu-filter-group:hover .mu-dropdown-arrow {
-  color: var(--brand-primary);
+    color: var(--brand-primary);
 }
 
 .mu-filter-toggle[aria-expanded="true"] {
-  border-color: var(--brand-primary) !important;
+    border-color: var(--brand-primary) !important;
 }
 
 .mu-custom-dropdown {
-  flex: 1;
-  min-width: 0;
-  position: static !important;
+    flex: 1;
+    min-width: 0;
+    position: static !important;
 }
 
 /* --- MENU DEL DROPDOWN --- */
@@ -193,10 +199,14 @@
   box-shadow: var(--shadow-lg) !important;
   padding: 0.5rem !important;
   margin-top: 2px !important;
+  
+  /* Allineamento a sinistra (offset icona) */
   left: 0 !important;
   width: 100% !important; 
   min-width: 100% !important;
   margin-left: -40px !important;
+
+  /* Altezza per 6 elementi e no scroll orizzontale */
   max-height: 260px; 
   overflow-y: auto;
   overflow-x: hidden;
@@ -285,7 +295,7 @@
   background-color: #f8fafc;
 }
 
-/* --- Badges & Colors Override --- */
+/* --- Badges --- */
 .badge {
   padding: 0.5em 1em;
   border-radius: 30px;
@@ -293,39 +303,12 @@
   font-size: 0.75rem;
   letter-spacing: 0.02em;
   text-transform: uppercase;
-  color: white !important; /* Testo bianco per contrasto coi colori solidi */
 }
 
-/* Pending Approval (Yellow/Gold) */
-.bg-warning { 
-  background-color: var(--status-pending) !important; 
-  color: #212529 !important; /* Testo scuro per il giallo */
-}
-
-/* Assigned (Blue) */
-.bg-primary { 
-  background-color: var(--status-assigned) !important; 
-}
-
-/* In Progress (Orange) - Sovrascriviamo 'bg-info' per essere arancione */
-.bg-info { 
-  background-color: var(--status-progress) !important; 
-}
-
-/* Resolved (Green) */
-.bg-success { 
-  background-color: var(--status-resolved) !important; 
-}
-
-/* Rejected (Red) */
-.bg-danger { 
-  background-color: var(--status-rejected) !important; 
-}
-
-/* Suspended (Grey) */
-.bg-secondary {
-  background-color: var(--status-suspended) !important;
-}
+.bg-warning { background: var(--status-pending-bg) !important; color: var(--status-pending-text) !important; box-shadow: 0 0 0 1px rgba(194, 65, 12, 0.1); }
+.bg-info { background: var(--status-progress-bg) !important; color: var(--status-progress-text) !important; box-shadow: 0 0 0 1px rgba(29, 78, 216, 0.1); }
+.bg-success { background: var(--status-resolved-bg) !important; color: var(--status-resolved-text) !important; box-shadow: 0 0 0 1px rgba(4, 120, 87, 0.1); }
+.bg-danger { background: var(--status-rejected-bg) !important; color: var(--status-rejected-text) !important; box-shadow: 0 0 0 1px rgba(185, 28, 28, 0.1); }
 
 /* --- Buttons --- */
 .btn-outline-primary {
