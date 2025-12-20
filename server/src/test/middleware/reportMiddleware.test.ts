@@ -115,7 +115,7 @@ describe('validateCreateReport', () => {
   it('should call next() with BadRequestError if isAnonymous is not a boolean', () => {
     mockRequest.body.isAnonymous = 'true';
     validateCreateReport(mockRequest as Request, mockResponse as Response, mockNext);
-    expect(mockNext).toHaveBeenCalledWith(new BadRequestError('isAnonymous must be a boolean'));
+    expect(mockNext).toHaveBeenCalledWith(new BadRequestError('isAnonymous is required and must be a boolean'));
   });
 
   // Line 55: 'Location is required and must be an object'

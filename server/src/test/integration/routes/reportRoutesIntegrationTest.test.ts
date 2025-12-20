@@ -95,6 +95,9 @@ jest.mock('@controllers/reportController', () => ({
     getInternalComments: jest.fn((req, res) => res.status(200).json([])),
     addInternalComment: jest.fn((req, res) => res.status(201).json({})),
     deleteInternalComment: jest.fn((req, res) => res.status(204).send()),
+    getMessages: jest.fn((req, res) => res.status(200).json([])),
+    sendMessage: jest.fn((req, res) => res.status(201).json({})),
+    getReportByAddress: jest.fn((req, res) => res.status(200).json([])),
   },
 }));
 jest.mock('@middleware/reportMiddleware', () => ({
@@ -152,6 +155,7 @@ const mockUpdateReportStatus = reportController.updateReportStatus as jest.Mock;
 const mockCreateReport = reportController.createReport as jest.Mock;
 const mockGetCategories = reportController.getCategories as jest.Mock;
 const mockGetAssignedReportsToExternalMaintainer = reportController.getAssignedReportsToExternalMaintainer as jest.Mock;
+const mockGetReportByAddress = reportController.getReportByAddress as jest.Mock;
 
 const mockReportsResponse = [
   {
