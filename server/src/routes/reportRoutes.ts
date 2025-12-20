@@ -1308,16 +1308,16 @@ router.delete('/:reportId/internal-comments/:commentId',
  * @swagger
  * /api/reports/{id}/messages:
  *   get:
- *     summary: Get public messages for a report
+ *     summary: Get messages for a report
  *     description: |
- *       Retrieve all public messages sent by municipal staff to the citizen reporter.
+ *       Retrieve all messages sent by municipal staff to the citizen reporter.
  *       
- *       **Public Access:** This endpoint does NOT require authentication and is accessible to anyone.
+ *       **Access restriction:** Only the technical staff assigned to the report and the citizen who created the report can view these messages.
  *       
- *       **Message thread:** Messages are communications from staff to inform the reporter about
- *       updates, progress, or request additional information. These messages are visible to anyone
- *       viewing the report.
+ *       **Message thread:** Messages are communications from staff to inform the reporter about updates, progress, or request additional information. These messages are visible only to the assigned staff and the report author.
  *     tags: [Reports]
+ *     security:
+ *       - cookieAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -1377,6 +1377,16 @@ router.delete('/:reportId/internal-comments/:commentId',
  *                   first_name: "Giulia"
  *                   last_name: "Bianchi"
  *                 created_at: "2025-12-10T15:45:00Z"
+ *       403:
+ *         description: Forbidden. Only the assigned staff or the report author can view messages.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               code: 403
+ *               name: "InsufficientRightsError"
+ *               message: "Only the assigned staff or the report author can view messages"
  *       404:
  *         description: Report not found
  *         content:
@@ -1394,7 +1404,7 @@ router.delete('/:reportId/internal-comments/:commentId',
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-//router.get('/:id/messages', validateId('id', 'report'), reportController.getMessages);
+router.get('/:id/messages', isLoggedIn, requireTechnicalStaffOrRole([SystemRoles.CITIZEN]), validateId('id', 'report'), reportController.getMessages);
 
 /**
  * @swagger
@@ -1527,6 +1537,12 @@ router.delete('/:reportId/internal-comments/:commentId',
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-//router.post('/:id/messages',isLoggedIn,validateId('id', 'report'),reportController.sendMessage);
+router.post(
+  '/:id/messages',
+  isLoggedIn,
+  requireTechnicalStaffOrRole(),
+  validateId('id', 'report'),
+  reportController.sendMessage
+);
 
 export default router;
