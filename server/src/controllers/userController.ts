@@ -4,6 +4,7 @@ import { BadRequestError } from '@models/errors/BadRequestError';
 import { RegisterRequest } from '@models/dto/input/RegisterRequest';
 import { NotFoundError } from '@models/errors/NotFoundError';
 import { UnauthorizedError } from '@models/errors/UnauthorizedError';
+import { get } from 'http';
 
 /**
  * Controller for User-related HTTP requests
@@ -87,6 +88,25 @@ class UserController {
       next(err);
     }
   }
+   * 
+  */
+  async findUserByUsername(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { username } = req.params;
+      const user = await userService.getUserByUsername(username);
+      if (!user) {
+        res.status(404).json({ message: 'User not found' });
+        return;
+      }
+      res.status(200).json(user);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+
 }
+
+
 
 export default new UserController();

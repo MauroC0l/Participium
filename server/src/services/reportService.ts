@@ -196,7 +196,7 @@ class ReportService {
         category: reportData.category,
         location: `POINT(${reportData.location.longitude} ${reportData.location.latitude})`,
         address: reportData.address?.trim(),
-        isAnonymous: reportData.isAnonymous || false,
+        isAnonymous: reportData.isAnonymous,
         photos: []
       };
 
@@ -684,6 +684,18 @@ class ReportService {
     const messages = await messageRepository.getMessagesByReportId(reportId);
     return messages.map(mapMessageToResponse);
   }
+   * Retrieve reports located near a specific address
+   * @param address 
+   * @returns 
+   */
+  async getReportByAddress(address: string): Promise<ReportResponse[]> {
+    // Cerchiamo i report tramite il repository
+    const reports = await reportRepository.findReportsByAddress(address);
+    
+    // Mappiamo i risultati aggiungendo i nomi delle aziende se necessario
+    return await this.mapReportsWithCompanyNames(reports);
+  }
+
 }
 
 export const reportService = new ReportService();

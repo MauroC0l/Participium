@@ -180,7 +180,109 @@ const router = express.Router();
  *               message: "An unexpected error occurred"
  */
 router.post('/', requireRole(SystemRoles.CITIZEN), validateCreateReport, reportController.createReport);
+
+/**
+ * @swagger
+ * /api/reports:
+ *   get: 
+ *     summary: Get all reports
+ *     description: |
+ *       Returns the list of all reports with their geographic coordinates.
+ *       Coordinates are provided in WGS84 format (OpenStreetMap standard).
+ *       
+ *     tags: [Reports]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           $ref: '#/components/schemas/ReportStatus'
+ *         description: Filter by report status
+ *         required: false
+ *       - in: query
+ *         name: category
+ *         schema:
+ *           $ref: '#/components/schemas/ReportCategory'
+ *         description: Filter by category
+ *         required: false
+ *     responses:
+ *       200:
+ *         description: List of reports
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/ReportResponse'
+ *       401:
+ *         description: User not authenticated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               code: 401
+ *               name: "UnauthorizedError"
+ *               message: "User not authenticated"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               code: 500
+ *               name: "InternalServerError"
+ *               message: "An unexpected error occurred"
+ */
 router.get('/', isLoggedIn, validateReportStatus, validateReportCategory, reportController.getAllReports);
+
+/**
+ * @swagger
+ * /api/reports/search:
+ *   get: 
+ *     summary: Get all reports located in a specific area near the given address
+ *     description: |
+ *       Returns the list of all reports near a specific area defined by the given address.
+ *       
+ *     tags: [Reports]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           $ref: '#/components/schemas/ReportStatus'
+ *         description: Filter by report status
+ *         required: false
+ *       - in: query
+ *         name: category
+ *         schema:
+ *           $ref: '#/components/schemas/ReportCategory'
+ *         description: Filter by category
+ *         required: false
+ *     responses:
+ *       200:
+ *         description: List of reports
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/ReportResponse'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               code: 500
+ *               name: "InternalServerError"
+ *               message: "An unexpected error occurred"
+ */
+router.get('/search', reportController.getReportByAddress);
 
 /**
  * @swagger
@@ -418,7 +520,6 @@ router.get('/assigned/me', isLoggedIn, validateReportStatus, reportController.ge
  *               name: "InternalServerError"
  *               message: "An unexpected error occurred"
  */
-
 router.put('/:id/status', isLoggedIn, validateId('id', 'report'), validateStatusUpdate, reportController.updateReportStatus);
 
 /**
@@ -634,8 +735,7 @@ router.patch('/:id/assign-external', isLoggedIn, validateId('id', 'report'), rep
  *               name: "InternalServerError"
  *               message: "An unexpected error occurred"
  */
-router.get(
-  '/assigned/external/:externalMaintainerId',
+router.get('/assigned/external/:externalMaintainerId',
   requireTechnicalStaffOrRole([SystemRoles.PUBLIC_RELATIONS_OFFICER, SystemRoles.EXTERNAL_MAINTAINER]),
   validateId('externalMaintainerId', 'external maintainer'),
   reportController.getAssignedReportsToExternalMaintainer
@@ -1379,14 +1479,139 @@ router.delete('/:reportId/internal-comments/:commentId',
  *                 created_at: "2025-12-10T15:45:00Z"
  *       403:
  *         description: Forbidden. Only the assigned staff or the report author can view messages.
+ *       404:
+ *         description: Report not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               code: 404
+ *               name: "NotFoundError"
+ *               message: "Report not found"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+//router.get('/:id/messages', validateId('id', 'report'), reportController.getMessages);
+
+/**
+ * @swagger
+ * /api/reports/{id}/messages:
+ *   post:
+ *     summary: Send a message about a report
+ *     description: |
+ *       Send a public message that will be visible to the citizen reporter.
+ *       
+ *       **Access restriction:** Only Technical Office Staff Members who are assigned to work on the report can send messages.
+ *       
+ *       **Notification:** A notification is automatically created for the citizen reporter when a message is sent.
+ *       
+ *       **Use case:** This allows technical staff working on a report to communicate directly with the citizen
+ *       about updates, progress, or to request additional information.
+ *     tags: [Reports]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Report ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - content
+ *             properties:
+ *               content:
+ *                 type: string
+ *                 description: The message content
+ *                 example: "We need additional information about the exact location. Could you provide more details?"
+ *           examples:
+ *             staffMessage:
+ *               summary: Staff sending update to citizen
+ *               value:
+ *                 content: "We have scheduled the intervention for next Monday at 9:00 AM. No need for you to be present."
+ *     responses:
+ *       201:
+ *         description: Message sent successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: integer
+ *                   example: 3
+ *                 content:
+ *                   type: string
+ *                   example: "We have scheduled the intervention for next Monday at 9:00 AM."
+ *                 author:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 5
+ *                     username:
+ *                       type: string
+ *                       example: "m.rossi"
+ *                     first_name:
+ *                       type: string
+ *                       example: "Mario"
+ *                     last_name:
+ *                       type: string
+ *                       example: "Rossi"
+ *                 created_at:
+ *                   type: string
+ *                   format: date-time
+ *                   example: "2025-12-11T10:15:00Z"
+ *       400:
+ *         description: Validation error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             examples:
+ *               missingMessage:
+ *                 summary: Missing message content
+ *                 value:
+ *                   code: 400
+ *                   name: "BadRequestError"
+ *                   message: "content field is required"
+ *               emptyMessage:
+ *                 summary: Empty message content
+ *                 value:
+ *                   code: 400
+ *                   name: "BadRequestError"
+ *                   message: "content cannot be empty"
+ *       401:
+ *         description: Not authenticated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               code: 401
+ *               name: "UnauthorizedError"
+ *               message: "Not authenticated"
+ *       403:
+ *         description: Access denied - Only Technical Office Staff Members can send messages
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  *             example:
  *               code: 403
- *               name: "InsufficientRightsError"
- *               message: "Only the assigned staff or the report author can view messages"
+ *               name: "ForbiddenError"
+ *               message: "Access denied. Only Technical Office Staff Members assigned to this report can send messages"
  *       404:
  *         description: Report not found
  *         content:

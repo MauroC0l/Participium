@@ -279,13 +279,30 @@ class ReportController {
 
       const message = await reportService.sendMessage(reportId, userId, content);
       res.status(201).json(message);
+   * Retrieve reports located near a specific address
+   * @param req 
+   * @param res 
+   * @param next 
+   */
+  async getReportByAddress(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      // Leggiamo 'address' dai query params, non dai params del path
+      const address = req.query.address as string;
+
+      if (!address) {
+         throw new BadRequestError("Address query parameter is required");
+      }
+
+      const reports = await reportService.getReportByAddress(address);
+      res.status(200).json(reports);
+
     } catch (error) {
       next(error);
     }
   }
 
     /**
-     * Get all public messages for a report
+     * Get all messages for a report
      * GET /api/reports/:id/messages
      */
     async getMessages(req: Request, res: Response, next: NextFunction): Promise<void> {

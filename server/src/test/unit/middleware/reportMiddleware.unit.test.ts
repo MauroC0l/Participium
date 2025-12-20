@@ -83,7 +83,7 @@ describe('reportMiddleware', () => {
         mockRequest.body.isAnonymous = 'true'; // Not a boolean
         validateCreateReport(mockRequest as Request, mockResponse as Response, nextFunction);
         expect(nextFunction).toHaveBeenCalledWith(expect.any(BadRequestError));
-        expect((nextFunction as jest.Mock).mock.calls[0][0].message).toBe('isAnonymous must be a boolean');
+        expect((nextFunction as jest.Mock).mock.calls[0][0].message).toBe('isAnonymous is required and must be a boolean');
     });
 
     // Covers line 44 (location latitude not number)
