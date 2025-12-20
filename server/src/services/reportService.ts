@@ -1,3 +1,4 @@
+import { notificationRepository, createNotification } from '../repositories/notificationRepository';
 import { ReportCategory } from '../models/dto/ReportCategory';
 import { MapReportResponse } from '../models/dto/output/MapReportResponse';
 import { ClusteredReportResponse } from '../models/dto/output/ClusteredReportResponse';
@@ -343,6 +344,8 @@ class ReportService {
     const userRole = user.departmentRole?.role?.name;
 
     const currentStatus = report.status;
+    // save previous status for notification message
+    const previousStatus = report.status;
 
     switch (newStatus) {
       case ReportStatus.ASSIGNED:
@@ -428,6 +431,23 @@ class ReportService {
     report.status = newStatus;
     report.updatedAt = new Date();
     const updatedReport = await reportRepository.save(report);
+
+    // Create notification for reporter about status change
+    if (report.reporterId) {
+      let statusMessage = `Your report "${report.title}" has changed status: ${previousStatus} → ${newStatus}.`;
+      if (body.resolutionNotes && newStatus === ReportStatus.RESOLVED) {
+        statusMessage += ` Resolution notes: ${body.resolutionNotes}`;
+      }
+      if (body.rejectionReason && newStatus === ReportStatus.REJECTED) {
+        statusMessage += ` Rejection reason: ${body.rejectionReason}`;
+      }
+      await createNotification({
+        userId: report.reporterId,
+        reportId: report.id,
+        content: statusMessage
+      });
+    }
+
     return mapReportEntityToDTO(updatedReport);
   }
 
