@@ -13,7 +13,6 @@ import { InsufficientRightsError } from '@models/errors/InsufficientRightsError'
 import { sendVerificationEmail } from '@utils/emailSender';
 import crypto from 'crypto';
 import { notificationRepository } from '../repositories/notificationRepository';
-import { NotFoundError } from '@models/errors/NotFoundError';
 
 /**
  * Service for user-related business logic

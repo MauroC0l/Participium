@@ -625,6 +625,22 @@ class ReportService {
     };
   }
 
+
+    /**
+   * Retrieve reports located near a specific address
+   * @param address 
+   * @returns 
+   */
+  async getReportByAddress(address: string): Promise<ReportResponse[]> {
+    // Cerchiamo i report tramite il repository
+    const reports = await reportRepository.findReportsByAddress(address);
+    
+    // Mappiamo i risultati aggiungendo i nomi delle aziende se necessario
+    return await this.mapReportsWithCompanyNames(reports);
+  }
+
+
+  
   /**
    * Send a message from technical staff to the citizen reporter and notify the citizen
    * @param reportId - The ID of the report
@@ -684,18 +700,7 @@ class ReportService {
     const messages = await messageRepository.getMessagesByReportId(reportId);
     return messages.map(mapMessageToResponse);
   }
-   * Retrieve reports located near a specific address
-   * @param address 
-   * @returns 
-   */
-  async getReportByAddress(address: string): Promise<ReportResponse[]> {
-    // Cerchiamo i report tramite il repository
-    const reports = await reportRepository.findReportsByAddress(address);
-    
-    // Mappiamo i risultati aggiungendo i nomi delle aziende se necessario
-    return await this.mapReportsWithCompanyNames(reports);
-  }
-
+  
 }
 
 export const reportService = new ReportService();

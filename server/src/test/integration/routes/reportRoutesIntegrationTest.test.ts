@@ -96,7 +96,7 @@ jest.mock('@controllers/reportController', () => ({
     addInternalComment: jest.fn((req, res) => res.status(201).json({})),
     deleteInternalComment: jest.fn((req, res) => res.status(204).send()),
     getMessages: jest.fn((req, res) => res.status(200).json([])),
-    sendMessage: jest.fn((req, res) => res.status(201).json({}))
+    sendMessage: jest.fn((req, res) => res.status(201).json({})),
     getReportByAddress: jest.fn((req, res) => res.status(200).json([])),
   },
 }));

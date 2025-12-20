@@ -88,6 +88,8 @@ class UserController {
       next(err);
     }
   }
+
+    /**
    * 
   */
   async findUserByUsername(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -103,7 +105,6 @@ class UserController {
       next(error);
     }
   }
-
 
 }
 
