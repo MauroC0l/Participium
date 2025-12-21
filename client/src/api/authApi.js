@@ -111,4 +111,31 @@ export async function getTelegramStatus() {
   return await handleResponse(response);
 }
 
-export default { login, getCurrentUser, logout, generateTelegramLinkCode, getTelegramStatus };
+// PUT /api/users/telegram-username
+export async function updateTelegramUsername(telegramUsername) {
+  const response = await fetch(`/api/users/telegram-username`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify({ telegramUsername }),
+  });
+
+  return await handleResponse(response);
+}
+
+// DELETE /api/users/telegram-unlink
+export async function unlinkTelegramAccount() {
+  const response = await fetch(`/api/users/telegram-unlink`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+  });
+
+  return await handleResponse(response);
+}
+
+export default { login, getCurrentUser, logout, generateTelegramLinkCode, getTelegramStatus, updateTelegramUsername, unlinkTelegramAccount };

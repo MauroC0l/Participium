@@ -136,6 +136,23 @@ class UserService {
   async generateTelegramLinkCode(userId: number): Promise<string | null> {
     return userRepository.generateTelegramLinkCode(userId);
   }
-}
+  /**
+   * Update Telegram username
+   * @param userId User ID
+   * @param newTelegramUsername New Telegram username
+   * @returns Result with success status and message
+   */
+  async updateTelegramUsername(userId: number, newTelegramUsername: string): Promise<{ success: boolean; message: string }> {
+    return userRepository.updateTelegramUsername(userId, newTelegramUsername);
+  }
+
+  /**
+   * Unlink Telegram account
+   * @param userId User ID
+   * @returns Result with success status and message
+   */
+  async unlinkTelegramAccount(userId: number): Promise<{ success: boolean; message: string }> {
+    return userRepository.unlinkTelegramAccount(userId);
+  }}
 
 export const userService = new UserService();

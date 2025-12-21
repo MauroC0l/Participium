@@ -147,4 +147,148 @@ export class ReportHandler {
       );
     }
   }
+
+  async updateUsername(ctx: Context) {
+    const oldTelegramUsername = ctx.from?.username;
+    if (!oldTelegramUsername) {
+      return ctx.reply(
+        '⚠️ *Username Required*\n\n' +
+        'You need a Telegram username to use this command.\n\n' +
+        'Please set a username in your Telegram settings and try again.',
+        { parse_mode: 'Markdown' }
+      );
+    }
+
+    try {
+      // Find user by current telegram username
+      const user = await userRepository.findUserByTelegramUsername(oldTelegramUsername);
+      if (!user) {
+        return ctx.reply(
+          '❌ *Account Not Linked*\n\n' +
+          'Your Telegram account is not linked to any Participium account.\n\n' +
+          'Use /link to connect your account first.',
+          { parse_mode: 'Markdown' }
+        );
+      }
+
+      // Update the telegram username
+      const result = await userRepository.updateTelegramUsername(user.id, oldTelegramUsername);
+      
+      if (!result.success) {
+        return ctx.reply(
+          `❌ *Update Failed*\n\n${result.message}`,
+          { parse_mode: 'Markdown' }
+        );
+      }
+
+      ctx.reply(
+        '✅ *Username Updated*\n\n' +
+        `Your Telegram username has been updated to: @${oldTelegramUsername}\n\n` +
+        'You can continue using all bot features.',
+        { parse_mode: 'Markdown' }
+      );
+    } catch (error) {
+      console.error('Failed to update Telegram username:', error);
+      ctx.reply(
+        '❌ *Update Failed*\n\n' +
+        'Unable to update your username. Please try again later.',
+        { parse_mode: 'Markdown' }
+      );
+    }
+  }
+
+  async unlinkAccount(ctx: Context) {
+    const telegramUsername = ctx.from?.username;
+    if (!telegramUsername) {
+      return ctx.reply(
+        '⚠️ *Username Required*\n\n' +
+        'You need a Telegram username to use this command.',
+        { parse_mode: 'Markdown' }
+      );
+    }
+
+    try {
+      // Find user by telegram username
+      const user = await userRepository.findUserByTelegramUsername(telegramUsername);
+      if (!user) {
+        return ctx.reply(
+          '❌ *Account Not Linked*\n\n' +
+          'Your Telegram account is not linked to any Participium account.',
+          { parse_mode: 'Markdown' }
+        );
+      }
+
+      // Show confirmation dialog
+      ctx.reply(
+        '⚠️ *Unlink Account*\n\n' +
+        'Are you sure you want to unlink your Telegram account from Participium?\n\n' +
+        'You will no longer be able to:\n' +
+        '• Create reports via Telegram\n' +
+        '• Receive updates about your reports\n\n' +
+        'You can always link again later using /link',
+        {
+          parse_mode: 'Markdown',
+          reply_markup: {
+            inline_keyboard: [
+              [
+                { text: '✅ Yes, Unlink', callback_data: 'unlink_confirm' },
+                { text: '❌ Cancel', callback_data: 'unlink_cancel' }
+              ]
+            ]
+          }
+        }
+      );
+    } catch (error) {
+      console.error('Failed to unlink Telegram account:', error);
+      ctx.reply(
+        '❌ *Unlink Failed*\n\n' +
+        'Unable to unlink your account. Please try again later.',
+        { parse_mode: 'Markdown' }
+      );
+    }
+  }
+
+  async handleUnlinkConfirmation(ctx: Context) {
+    const callbackQuery = ctx.callbackQuery as any;
+    const data = callbackQuery?.data;
+    const telegramUsername = ctx.from?.username;
+
+    if (!telegramUsername) {
+      return ctx.reply('⚠️ Username required.');
+    }
+
+    if (data === 'unlink_confirm') {
+      try {
+        const user = await userRepository.findUserByTelegramUsername(telegramUsername);
+        if (!user) {
+          return ctx.reply('❌ Account not found.');
+        }
+
+        const result = await userRepository.unlinkTelegramAccount(user.id);
+        
+        if (!result.success) {
+          return ctx.reply(
+            `❌ *Unlink Failed*\n\n${result.message}`,
+            { parse_mode: 'Markdown' }
+          );
+        }
+
+        ctx.reply(
+          '✅ *Account Unlinked*\n\n' +
+          'Your Telegram account has been successfully unlinked from Participium.\n\n' +
+          'Use /link to connect again whenever you want.',
+          { parse_mode: 'Markdown' }
+        );
+      } catch (error) {
+        console.error('Failed to unlink account:', error);
+        ctx.reply('❌ Failed to unlink account. Please try again later.');
+      }
+    } else if (data === 'unlink_cancel') {
+      ctx.reply(
+        '❌ *Cancelled*\n\n' +
+        'Your account remains linked.',
+        { parse_mode: 'Markdown' }
+      );
+    }
+  }
 }

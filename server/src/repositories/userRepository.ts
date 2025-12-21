@@ -420,7 +420,7 @@ class UserRepository {
     // Check if another user already has this telegram username
     const existingUser = await this.repository.findOne({ where: { telegramUsername } });
     if (existingUser && existingUser.id !== user.id) {
-      throw new Error('Questo username Telegram è già collegato a un altro account.');
+      throw new Error('This Telegram username is already linked to another account.');
     }
 
     user.telegramUsername = telegramUsername;
@@ -463,7 +463,7 @@ class UserRepository {
     // Check if another user already has this telegram username
     const existingUser = await this.repository.findOne({ where: { telegramUsername } });
     if (existingUser) {
-      return { success: false, message: 'Questo username Telegram è già collegato a un account.' };
+      return { success: false, message: 'This Telegram username is already linked to an account.' };
     }
 
     // Find user by verification code
@@ -474,12 +474,12 @@ class UserRepository {
       .getOne();
 
     if (!user) {
-      return { success: false, message: 'Codice non valido o scaduto.' };
+      return { success: false, message: 'Invalid or expired code.' };
     }
 
     // Check if code is expired
     if (!user.telegramLinkCodeExpiresAt || user.telegramLinkCodeExpiresAt < new Date()) {
-      return { success: false, message: 'Codice scaduto. Generane uno nuovo.' };
+      return { success: false, message: 'Code expired. Please generate a new one.' };
     }
 
     // Link the account
@@ -489,7 +489,55 @@ class UserRepository {
     
     await this.repository.save(user);
     
-    return { success: true, message: `Account collegato con successo! Il tuo username Telegram è ora associato all'account "${user.username}".` };
+    return { success: true, message: `Account linked successfully! Your Telegram username is now associated with the account "${user.username}".` };
+  }
+
+  /**
+   * Updates the Telegram username for a user.
+   * @param userId The ID of the user.
+   * @param newTelegramUsername The new Telegram username.
+   * @returns Object with success status and message.
+   */
+  public async updateTelegramUsername(userId: number, newTelegramUsername: string): Promise<{ success: boolean; message: string }> {
+    const user = await this.repository.findOne({ where: { id: userId } });
+    if (!user) {
+      return { success: false, message: 'User not found.' };
+    }
+
+    // Check if another user already has this telegram username
+    const existingUser = await this.repository.findOne({ where: { telegramUsername: newTelegramUsername } });
+    if (existingUser && existingUser.id !== userId) {
+      return { success: false, message: 'This Telegram username is already linked to another account.' };
+    }
+
+    user.telegramUsername = newTelegramUsername;
+    await this.repository.save(user);
+    
+    return { success: true, message: 'Telegram username updated successfully.' };
+  }
+
+  /**
+   * Unlinks the Telegram account for a user.
+   * @param userId The ID of the user.
+   * @returns Object with success status and message.
+   */
+  public async unlinkTelegramAccount(userId: number): Promise<{ success: boolean; message: string }> {
+    const user = await this.repository.findOne({ where: { id: userId } });
+    if (!user) {
+      return { success: false, message: 'User not found.' };
+    }
+
+    if (!user.telegramUsername) {
+      return { success: false, message: 'No Telegram account linked.' };
+    }
+
+    user.telegramUsername = undefined;
+    user.telegramLinkCode = undefined;
+    user.telegramLinkCodeExpiresAt = undefined;
+    
+    await this.repository.save(user);
+    
+    return { success: true, message: 'Telegram account unlinked successfully.' };
   }
 
 }
