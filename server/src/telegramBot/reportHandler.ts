@@ -17,29 +17,48 @@ export class ReportHandler {
     const telegramUsername = ctx.from?.username;
 
     if (!telegramUsername) {
-      console.log('Attempt to create report without telegram username, chatId:', chatId);
-      return ctx.reply('You must have a Telegram username set in your profile to create reports. Please set a username in Telegram settings and try again.');
+      return ctx.reply(
+        '⚠️ *Username Required*\n\n' +
+        'To create reports, you need to set a Telegram username in your profile.\n\n' +
+        '*How to set a username:*\n' +
+        '1. Open Telegram Settings\n' +
+        '2. Tap on your profile\n' +
+        '3. Add a username\n\n' +
+        'Try again after setting your username.',
+        { parse_mode: 'Markdown' }
+      );
     }
 
-    // Verify if user is registered
-    console.log('Verifying user registration:', telegramUsername);
     const user = await userRepository.findUserByTelegramUsername(telegramUsername);
     if (!user) {
-      console.log('User not found:', telegramUsername);
-      return ctx.reply('❌ Access denied!\n\nYou must be registered on the Participium platform to create reports via Telegram.\n\nVisit the website and register before using this bot.');
+      return ctx.reply(
+        '❌ *Access Denied*\n\n' +
+        'You must be registered on the Participium platform to create reports via Telegram.\n\n' +
+        '🌐 Visit our website to register and link your account using the /link command.\n\n' +
+        'After registration, you\'ll be able to submit reports directly from Telegram.',
+        { parse_mode: 'Markdown' }
+      );
     }
 
-    console.log('✅ Registered user found:', user.id, '- initializing report');
-
-    // Start the session
     userSessions.set(chatId, { step: WizardStep.WAITING_LOCATION, data: {} });
 
-    ctx.reply('Send your location on the Turin map using the paperclip.\n\nAlternatively, you can write an address (e.g. "Via Roma 1, Turin") or manually enter coordinates in the format: "latitude, longitude" (e.g. 45.0703, 7.6869).', {
-      reply_markup: {
-        keyboard: [],
-        one_time_keyboard: true,
-      },
-    });
+    ctx.reply(
+      '📍 *Report Location*\n\n' +
+      'Please provide the location of the issue:\n\n' +
+      '📎 *Option 1:* Send your location using the attachment button\n\n' +
+      '📝 *Option 2:* Write an address\n' +
+      'Example: "Via Roma 1, Turin"\n\n' +
+      '🗺️ *Option 3:* Enter coordinates\n' +
+      'Format: latitude, longitude\n' +
+      'Example: 45.0703, 7.6869',
+      {
+        reply_markup: {
+          keyboard: [],
+          one_time_keyboard: true,
+        },
+        parse_mode: 'Markdown'
+      }
+    );
   }
 
   async handleLocation(ctx: Context) {
@@ -77,30 +96,55 @@ export class ReportHandler {
   async linkAccount(ctx: Context) {
     const telegramUsername = ctx.from?.username;
     if (!telegramUsername) {
-      return ctx.reply('You must have a Telegram username set in your profile to link the account.');
+      return ctx.reply(
+        '⚠️ *Username Required*\n\n' +
+        'You need a Telegram username to link your account.\n\n' +
+        'Please set a username in your Telegram settings and try again.',
+        { parse_mode: 'Markdown' }
+      );
     }
 
     const message = ctx.message as any;
     const text = message?.text;
     if (!text) return;
 
-    // Expected format: /link CODE
     const parts = text.split(' ');
     if (parts.length !== 2) {
-      return ctx.reply('Correct format: /link <code>\n\nGenerate a verification code from the Participium app and enter it here.');
+      return ctx.reply(
+        '🔗 *Link Your Account*\n\n' +
+        '*Usage:* /link <code>\n\n' +
+        '*Steps:*\n' +
+        '1. Log in to the Participium website\n' +
+        '2. Navigate to the related section\n' +
+        '3. Generate a verification code\n' +
+        '4. Send: /link YOUR_CODE',
+        { parse_mode: 'Markdown' }
+      );
     }
 
     const code = parts[1].trim();
     if (!code || !/^\d{6}$/.test(code)) {
-      return ctx.reply('The code must be 6 numeric digits.');
+      return ctx.reply(
+        '❌ *Invalid Code*\n\n' +
+        'The verification code must be exactly 6 digits.\n\n' +
+        'Please check the code and try again.',
+        { parse_mode: 'Markdown' }
+      );
     }
 
     try {
       const result = await userRepository.verifyAndLinkTelegram(telegramUsername, code);
-      ctx.reply(result.message);
+      ctx.reply(`✅ *${result.message}*\n\nYou can now create reports using /newreport`, { parse_mode: 'Markdown' });
     } catch (error) {
-      console.error('Error linking account:', error);
-      ctx.reply('❌ Error linking the account. Try again later.');
+      console.error('Failed to link Telegram account:', error);
+      ctx.reply(
+        '❌ *Linking Failed*\n\n' +
+        'Unable to link your account. This may be due to:\n' +
+        '• Invalid or expired code\n' +
+        '• Code already used\n\n' +
+        'Please generate a new code and try again.',
+        { parse_mode: 'Markdown' }
+      );
     }
   }
 }

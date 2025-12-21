@@ -1,8 +1,9 @@
 import { Telegraf } from 'telegraf';
+import { message } from 'telegraf/filters';
 import { botConfig } from './botConfig';
 import { ReportHandler } from './reportHandler';
 
-let bot: Telegraf | null = null;
+let botInstance: Telegraf | null = null;
 let reportHandler: ReportHandler | null = null;
 
 export const initBot = () => {
@@ -11,28 +12,63 @@ export const initBot = () => {
     return;
   }
 
-  bot = new Telegraf(botConfig.BOT_TOKEN);
-  reportHandler = new ReportHandler(bot);
+  botInstance = new Telegraf(botConfig.BOT_TOKEN);
+  reportHandler = new ReportHandler(botInstance);
 
-  bot.start((ctx) => {
-    ctx.reply('Welcome to Participium!\n\n📋 **Available commands:**\n/link <code> - Link your Telegram account to Participium\n/newreport - Create a new report about an issue in your city');
+  botInstance.start((ctx) => {
+    ctx.reply(
+      '🏟️ *Welcome to Participium!*\n\n' +
+      'Thank you for joining the official channel to improve the city of Turin!\n\n' +
+      'With this bot you can:\n' +
+      '• Quickly report issues in the city\n' +
+      '• Help make Turin a better place for everyone\n\n' +
+      'Type /help to discover all available commands and how to get started.',
+      { parse_mode: 'Markdown' }
+    );
   });
 
-  bot.command('newreport', (ctx) => reportHandler!.startReport(ctx));
-  bot.command('link', (ctx) => reportHandler!.linkAccount(ctx));
-  bot.on('location', (ctx) => reportHandler!.handleLocation(ctx));
-  bot.on('photo', (ctx) => reportHandler!.handlePhotos(ctx));
-  bot.on('text', (ctx) => reportHandler!.handleText(ctx));
-  bot.on('callback_query', (ctx) => {
+  botInstance.command('help', (ctx) => {
+    ctx.reply(
+      '🏛 *Participium Bot - Help*\n\n' +
+      '*Available Commands:*\n\n' +
+      '🔗 /link <code>\n' +
+      'Link your Telegram account to Participium.\n' +
+      'Generate the code from your profile on the website.\n\n' +
+      '📝 /newreport\n' +
+      'Create a new report about an issue in the city.\n' +
+      'You will be guided through the process step by step.\n\n' +
+      '❓ /help\n' +
+      'Display this help message.\n\n' +
+      '━━━━━━━━━━━━━━━━━━━━━━\n\n' +
+      '*How to Report an Issue:*\n' +
+      '1️⃣ Use /newreport command\n' +
+      '2️⃣ Send the location or address\n' +
+      '3️⃣ Provide a title and description\n' +
+      '4️⃣ Select a category\n' +
+      '5️⃣ Attach 1-3 photos\n' +
+      '6️⃣ Choose privacy settings\n' +
+      '7️⃣ Confirm and submit\n\n' +
+      '💡 *Need more help?*\n' +
+      'Visit our website or contact support.',
+      { parse_mode: 'Markdown' }
+    );
+  });
+
+  botInstance.command('newreport', (ctx) => reportHandler!.startReport(ctx));
+  botInstance.command('link', (ctx) => reportHandler!.linkAccount(ctx));
+  botInstance.on(message('location'), (ctx) => reportHandler!.handleLocation(ctx));
+  botInstance.on(message('photo'), (ctx) => reportHandler!.handlePhotos(ctx));
+  botInstance.on(message('text'), (ctx) => reportHandler!.handleText(ctx));
+  botInstance.on('callback_query', (ctx) => {
     reportHandler!.handleCallbackQuery(ctx);
     ctx.answerCbQuery();
   });
 
-  bot.launch().then(() => {
+  botInstance.launch().then(() => {
     console.log('Telegram bot started successfully.');
   }).catch((error) => {
     console.error('Error starting Telegram bot:', error);
   });
 };
 
-export { bot };
+export const getBot = () => botInstance;
