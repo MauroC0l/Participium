@@ -127,6 +127,15 @@ class UserService {
       })
       .filter((user): user is UserResponse => user !== null);
   }
+
+  /**
+   * Generate Telegram link code
+   * @param userId User ID
+   * @returns Generated verification code
+   */
+  async generateTelegramLinkCode(userId: number): Promise<string | null> {
+    return userRepository.generateTelegramLinkCode(userId);
+  }
 }
 
 export const userService = new UserService();

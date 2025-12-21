@@ -92,6 +92,23 @@ class UserRepository {
   }
 
   /**
+   * Finds a user by their Telegram username.
+   * @param telegramUsername The Telegram username of the user.
+   * @returns The user entity or null if not found.
+   */
+  public async findUserByTelegramUsername(telegramUsername: string): Promise<UserEntity | null> {
+    // 'addSelect' is used to explicitly include fields that might be excluded by default
+    return this.repository
+      .createQueryBuilder("user")
+      .leftJoinAndSelect("user.departmentRole", "departmentRole")
+      .leftJoinAndSelect("departmentRole.department", "department")
+      .leftJoinAndSelect("departmentRole.role", "role")
+      .where("user.telegram_username = :telegramUsername", { telegramUsername })
+      .addSelect("user.passwordHash")
+      .getOne();
+  }
+
+  /**
    * Finds a user by their email address.
    * @param email The email of the user.
    * @returns The user entity or null if not found.
@@ -386,6 +403,93 @@ class UserRepository {
     }
 
     return user.isVerified;
+  }
+
+  /**
+   * Links a Telegram username to a user account.
+   * @param username The username of the user.
+   * @param telegramUsername The Telegram username to link.
+   * @returns True if the link was successful, false if the user was not found or already linked.
+   */
+  public async linkTelegramUsername(username: string, telegramUsername: string): Promise<boolean> {
+    const user = await this.repository.findOne({ where: { username } });
+    if (!user) {
+      return false;
+    }
+
+    // Check if another user already has this telegram username
+    const existingUser = await this.repository.findOne({ where: { telegramUsername } });
+    if (existingUser && existingUser.id !== user.id) {
+      throw new Error('Questo username Telegram è già collegato a un altro account.');
+    }
+
+    user.telegramUsername = telegramUsername;
+    await this.repository.save(user);
+    return true;
+  }
+
+  /**
+   * Generates a verification code for linking Telegram account.
+   * @param userId The ID of the user.
+   * @returns The generated code or null if user not found.
+   */
+  public async generateTelegramLinkCode(userId: number): Promise<string | null> {
+    const user = await this.repository.findOne({ where: { id: userId } });
+    if (!user) {
+      return null;
+    }
+
+    // Generate a 6-digit code
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    // Set expiration to 10 minutes from now
+    const expiresAt = new Date();
+    expiresAt.setMinutes(expiresAt.getMinutes() + 10);
+
+    user.telegramLinkCode = code;
+    user.telegramLinkCodeExpiresAt = expiresAt;
+    
+    await this.repository.save(user);
+    return code;
+  }
+
+  /**
+   * Verifies and links Telegram account using the verification code.
+   * @param telegramUsername The Telegram username.
+   * @param code The verification code.
+   * @returns Object with success status and message.
+   */
+  public async verifyAndLinkTelegram(telegramUsername: string, code: string): Promise<{ success: boolean; message: string }> {
+    // Check if another user already has this telegram username
+    const existingUser = await this.repository.findOne({ where: { telegramUsername } });
+    if (existingUser) {
+      return { success: false, message: 'Questo username Telegram è già collegato a un account.' };
+    }
+
+    // Find user by verification code
+    const user = await this.repository
+      .createQueryBuilder("user")
+      .where("user.telegram_link_code = :code", { code })
+      .andWhere("user.telegram_link_code_expires_at > :now", { now: new Date() })
+      .getOne();
+
+    if (!user) {
+      return { success: false, message: 'Codice non valido o scaduto.' };
+    }
+
+    // Check if code is expired
+    if (!user.telegramLinkCodeExpiresAt || user.telegramLinkCodeExpiresAt < new Date()) {
+      return { success: false, message: 'Codice scaduto. Generane uno nuovo.' };
+    }
+
+    // Link the account
+    user.telegramUsername = telegramUsername;
+    user.telegramLinkCode = undefined;
+    user.telegramLinkCodeExpiresAt = undefined;
+    
+    await this.repository.save(user);
+    
+    return { success: true, message: `Account collegato con successo! Il tuo username Telegram è ora associato all'account "${user.username}".` };
   }
 
 }

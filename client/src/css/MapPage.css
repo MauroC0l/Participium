@@ -404,9 +404,6 @@
   --radius-lg: 1rem;
   --radius-xl: 1.25rem;
    
-  /* NUOVA VARIABILE: Altezza unificata per Input, Button e Dropdown */
-  --control-height: 2rem; /* Equivale a 48px */
-
   --transition-fast: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -758,16 +755,6 @@
 @media (max-width: 480px) {
   .mp-notification { right: 0.625rem; left: 0.625rem; max-width: none; }
   .mp-container { height: 22rem; }
-}
-   
-  /* Altezza fissa identica ai bottoni */
-  height: var(--control-height) !important; 
-   
-  /* Padding laterale per allineamento testo */
-  padding: 0 0.75rem !important;
-   
-  color: var(--brand-navy) !important; font-weight: 500 !important; font-size: 0.9rem !important;
-  display: flex; align-items: center; justify-content: space-between; box-shadow: var(--shadow-soft); width: 100%;
 }
 
 .dropdown-toggle.mp-modern-dropdown-toggle::after { display: none; }

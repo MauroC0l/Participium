@@ -1,7 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import { userService } from '@services/userService';
-import { BadRequestError } from '@models/errors/BadRequestError';
-import { RegisterRequest } from '@models/dto/input/RegisterRequest';
+import { BadRequestError } from '@errors/BadRequestError';
+import { RegisterRequest } from '@dto/input/RegisterRequest';
+import { userRepository } from '@repositories/userRepository';
 
 /**
  * Controller for User-related HTTP requests
@@ -46,6 +47,73 @@ class UserController {
 
       const externalMaintainers = await userService.getExternalMaintainersByCategory(category as string || category as undefined);
       res.status(200).json(externalMaintainers);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Generate Telegram link code
+   * Generates a verification code for linking Telegram account
+   */
+  async generateTelegramLinkCode(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const user = req.user as any;
+      const code = await userService.generateTelegramLinkCode(user.id);
+      
+      if (!code) {
+        res.status(404).json({
+          code: 404,
+          name: 'NotFoundError',
+          message: 'User not found'
+        });
+        return;
+      }
+
+      // Calculate expiration time (10 minutes from now)
+      const expiresAt = new Date();
+      expiresAt.setMinutes(expiresAt.getMinutes() + 10);
+
+      res.status(200).json({
+        code,
+        expiresAt: expiresAt.toISOString()
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Get Telegram link status
+   * Returns whether the user's account is linked to Telegram and any active link code
+   */
+  async getTelegramStatus(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const user = req.user as any;
+      const userEntity = await userRepository.findUserById(user.id);
+      
+      if (!userEntity) {
+        res.status(404).json({
+          code: 404,
+          name: 'NotFoundError',
+          message: 'User not found'
+        });
+        return;
+      }
+
+      let activeCode = null;
+      if (userEntity.telegramLinkCode && userEntity.telegramLinkCodeExpiresAt && userEntity.telegramLinkCodeExpiresAt > new Date()) {
+        activeCode = {
+          code: userEntity.telegramLinkCode,
+          expiresAt: userEntity.telegramLinkCodeExpiresAt
+        };
+      }
+
+      res.status(200).json({
+        isLinked: !!userEntity.telegramUsername,
+        telegramUsername: userEntity.telegramUsername,
+        activeCode: activeCode
+      });
     } catch (error) {
       next(error);
     }

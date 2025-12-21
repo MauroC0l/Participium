@@ -85,4 +85,30 @@ export async function logout() {
   }
 }
 
-export default { login, getCurrentUser, logout };
+// POST /api/users/telegram-link-code
+export async function generateTelegramLinkCode() {
+  const response = await fetch(`/api/users/telegram-link-code`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+  });
+
+  return await handleResponse(response);
+}
+
+// GET /api/users/telegram-status
+export async function getTelegramStatus() {
+  const response = await fetch(`/api/users/telegram-status`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+  });
+
+  return await handleResponse(response);
+}
+
+export default { login, getCurrentUser, logout, generateTelegramLinkCode, getTelegramStatus };
