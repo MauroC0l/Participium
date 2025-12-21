@@ -226,6 +226,22 @@ class UserRepository {
       .execute();
   }
 
+  /**
+   * Clears expired Telegram link codes from all users.
+   * @returns void
+   */
+  public async clearExpiredTelegramLinkCodes(): Promise<void> {
+    await this.repository.createQueryBuilder()
+      .update(UserEntity)
+      .set({ 
+        telegramLinkCode: null as any, 
+        telegramLinkCodeExpiresAt: null as any 
+      })
+      .where('telegramLinkCodeExpiresAt < NOW()')
+      .andWhere('telegramLinkCode IS NOT NULL')
+      .execute();
+  }
+
 
   /**
    * Finds all users with optional filters.
@@ -489,7 +505,7 @@ class UserRepository {
     
     await this.repository.save(user);
     
-    return { success: true, message: `Account linked successfully! Your Telegram username is now associated with the account "${user.username}".` };
+    return { success: true, message: `*Account linked successfully!*\n\nYour Telegram username is now associated with the account "${user.username}".` };
   }
 
   /**

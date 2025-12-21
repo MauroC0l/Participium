@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { FaTelegram, FaTimes, FaCopy, FaCheck, FaClock, FaUnlink, FaExclamationTriangle } from 'react-icons/fa';
-import { generateTelegramLinkCode, getTelegramStatus, updateTelegramUsername, unlinkTelegramAccount } from '../api/authApi';
+import { generateTelegramLinkCode, getTelegramStatus, unlinkTelegramAccount } from '../api/authApi';
 import '../css/TelegramLinkModal.css';
 
 const TelegramLinkModal = ({ onClose }) => {
@@ -16,6 +16,7 @@ const TelegramLinkModal = ({ onClose }) => {
   const [showUnlinkConfirm, setShowUnlinkConfirm] = useState(false);
   const [unlinking, setUnlinking] = useState(false);
   const [successMessage, setSuccessMessage] = useState(null);
+  const [checking, setChecking] = useState(false);
 
   useEffect(() => {
     loadTelegramStatus();
@@ -90,6 +91,31 @@ const TelegramLinkModal = ({ onClose }) => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const handleCheckLinkStatus = async () => {
+    try {
+      setChecking(true);
+      setError(null);
+      const telegramStatus = await getTelegramStatus();
+      
+      if (telegramStatus.isLinked) {
+        setSuccessMessage('Telegram account linked successfully!');
+        setStatus(telegramStatus);
+        setCode(null);
+        setExpiresAt(null);
+        setTimeout(() => setSuccessMessage(null), 3000);
+      } else {
+        setError('Telegram account not yet linked. Please complete the linking process in Telegram.');
+        setTimeout(() => setError(null), 3000);
+      }
+    } catch (err) {
+      setError('Error checking link status');
+      console.error('Error checking link status:', err);
+      setTimeout(() => setError(null), 3000);
+    } finally {
+      setChecking(false);
+    }
+  };
+
   const handleUnlinkAccount = async () => {
     try {
       setUnlinking(true);
@@ -98,7 +124,7 @@ const TelegramLinkModal = ({ onClose }) => {
       setSuccessMessage('Telegram account unlinked successfully!');
       setShowUnlinkConfirm(false);
       
-      // Resetta il codice esistente così l'utente deve generarne uno nuovo manualmente
+      // Reset code and expiry
       setCode(null);
       setExpiresAt(null);
       
@@ -249,13 +275,24 @@ const TelegramLinkModal = ({ onClose }) => {
                   <p><strong>Step 2:</strong> Send the command: <code>/link {code}</code></p>
                   <p><strong>Step 3:</strong> The link will be completed automatically</p>
                 </div>
-                <button
-                  className="telegram-action-btn"
-                  onClick={handleGenerateCode}
-                  disabled={generating}
-                >
-                  {generating ? 'Generating...' : 'Generate New Code'}
-                </button>
+                <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
+                  <button
+                    className="telegram-action-btn"
+                    onClick={handleGenerateCode}
+                    disabled={generating || checking}
+                    style={{ flex: 1 }}
+                  >
+                    {generating ? 'Generating...' : 'Generate New Code'}
+                  </button>
+                  <button
+                    className="telegram-action-btn primary"
+                    onClick={handleCheckLinkStatus}
+                    disabled={checking || generating}
+                    style={{ flex: 1 }}
+                  >
+                    {checking ? 'Checking...' : 'Confirm Linking'}
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="generate-section">

@@ -47,14 +47,15 @@ export class ReportHandler {
       'Please provide the location of the issue:\n\n' +
       '📎 *Option 1:* Send your location using the attachment button\n\n' +
       '📝 *Option 2:* Write an address\n' +
-      'Example: "Via Roma 1, Turin"\n\n' +
+      'Example: "53, Corso Vittorio Emanuele II, Torino"\n\n' +
       '🗺️ *Option 3:* Enter coordinates\n' +
       'Format: latitude, longitude\n' +
       'Example: 45.0703, 7.6869',
       {
         reply_markup: {
-          keyboard: [],
+          keyboard: [[{ text: '📍 Send current location', request_location: true }]],
           one_time_keyboard: true,
+          resize_keyboard: true
         },
         parse_mode: 'Markdown'
       }

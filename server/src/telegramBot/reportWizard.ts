@@ -27,9 +27,9 @@ export class ReportWizard {
       ctx.reply('✅ *Location confirmed*\n\nPlease provide a title for your report.');
     } catch (error) {
       if (error instanceof BadRequestError) {
-        return ctx.reply('❌ *Invalid location*\n\nThe selected location must be within the city boundaries of Turin.\n\nPlease send a valid location.');
+        return ctx.reply('❌ Invalid location\n\nThe selected location must be within the city boundaries of Turin.\n\nPlease send a valid location.');
       }
-      return ctx.reply('❌ *Error*\n\nUnable to validate the location. Please try again.');
+      return ctx.reply('❌ Error\n\nUnable to validate the location. Please try again.');
     }
   }
 
@@ -67,12 +67,12 @@ export class ReportWizard {
       session.data.location = coords;
       session.data.address = await reverseGeocode(coords);
       session.step = WizardStep.WAITING_TITLE;
-      ctx.reply('✅ *Coordinates validated*\n\nPlease provide a title for your report.');
+      ctx.reply('✅ Coordinates validated\n\nPlease provide a title for your report.');
     } catch (error) {
       if (error instanceof BadRequestError) {
-        ctx.reply('❌ *Invalid coordinates*\n\nThe location must be within the city boundaries of Turin.\n\nPlease enter valid coordinates or send a location from the map.');
+        ctx.reply('❌ Invalid coordinates\n\nThe location must be within the city boundaries of Turin.\n\nPlease enter valid coordinates or send a location from the map.');
       } else {
-        ctx.reply('❌ *Error*\n\nUnable to validate the coordinates. Please verify the format and try again.');
+        ctx.reply('❌ Error\n\nUnable to validate the coordinates. Please verify the format and try again.');
       }
     }
   }
@@ -83,30 +83,31 @@ export class ReportWizard {
       session.data.location = geocoded.location;
       session.data.address = geocoded.address;
       session.step = WizardStep.WAITING_TITLE;
-      ctx.reply('✅ *Address found*\n\nPlease provide a title for your report.');
+      ctx.reply('✅ Address found\n\nPlease provide a title for your report.');
     } catch (error) {
-      ctx.reply('❌ *Address not found*\n\nUnable to locate the address in Turin.\n\nPlease try with:\n• Coordinates (e.g., 45.0703, 7.6869)\n• A different address\n• Location from map');
+      console.error('Error geocoding address:', error);
+      ctx.reply('❌ Address not found\n\nUnable to locate the address in Turin.\n\nPlease try with:\n• Coordinates (e.g., 45.0703, 7.6869)\n• A different address\n• Location from map');
     }
   }
 
   private handleTitleInput(ctx: Context, session: UserSession, text: string) {
     if (!text || text.trim().length === 0) {
-      return ctx.reply('⚠️ *Title required*\n\nPlease enter a descriptive title for your report.');
+      return ctx.reply('⚠️ Title required\n\nPlease enter a descriptive title for your report.');
     }
     session.data.title = text;
     session.step = WizardStep.WAITING_DESCRIPTION;
-    ctx.reply('📝 *Describe the issue*\n\nProvide a detailed description of the problem.');
+    ctx.reply('📝 Describe the issue\n\nProvide a detailed description of the problem.');
   }
 
   private handleDescriptionInput(ctx: Context, session: UserSession, text: string) {
     if (!text || text.trim().length === 0) {
-      return ctx.reply('⚠️ *Description required*\n\nPlease provide a description of the issue.');
+      return ctx.reply('⚠️ Description required\n\nPlease provide a description of the issue.');
     }
     session.data.description = text;
     session.step = WizardStep.WAITING_CATEGORY;
     const categories = Object.values(ReportCategory);
     const keyboard = categories.map((cat, index) => [{ text: cat, callback_data: `cat_${index}` }]);
-    ctx.reply('🏷️ *Select a category*\n\nChoose the category that best describes your report:', {
+    ctx.reply('🏷️ Select a category\n\nChoose the category that best describes your report:', {
       reply_markup: {
         inline_keyboard: keyboard,
       },
@@ -115,19 +116,19 @@ export class ReportWizard {
 
   private handlePhotosComplete(ctx: Context, session: UserSession) {
     if (!session.data.photos || session.data.photos.length === 0) {
-      return ctx.reply('⚠️ *Photo required*\n\nPlease attach at least one photo before continuing.', {
+      return ctx.reply('⚠️ Photo required\n\nPlease attach at least one photo before continuing.', {
         reply_markup: {
-          inline_keyboard: [[{ text: '✅ Done', callback_data: 'done' }]],
+          inline_keyboard: [[{ text: 'Done', callback_data: 'done' }]],
         },
       });
     }
 
     session.step = WizardStep.WAITING_ANONYMOUS;
-    ctx.reply('👤 *Privacy settings*\n\nWould you like this report to be anonymous?', {
+    ctx.reply('👤 Privacy settings\n\nWould you like this report to be anonymous?', {
       reply_markup: {
         inline_keyboard: [
-          [{ text: '✅ Yes, keep it anonymous', callback_data: 'anon_yes' }],
-          [{ text: '👤 No, show my name', callback_data: 'anon_no' }],
+          [{ text: 'Yes, keep it anonymous', callback_data: 'anon_yes' }],
+          [{ text: 'No, show my name', callback_data: 'anon_no' }],
         ],
       },
     });
@@ -142,26 +143,26 @@ export class ReportWizard {
       const categories = Object.values(ReportCategory);
       session.data.category = categories[index];
       session.step = WizardStep.WAITING_PHOTOS;
-      ctx.reply('📸 *Attach photos*\n\nSend up to 3 photos of the issue.\n\nPress "Done" when finished.', {
+      ctx.reply('📸 Attach photos\n\nSend up to 3 photos of the issue.\n\nPress "Done" when finished.', {
         reply_markup: {
-          inline_keyboard: [[{ text: '✅ Done', callback_data: 'done' }]],
+          inline_keyboard: [[{ text: 'Done', callback_data: 'done' }]],
         },
       });
     } else if (data === 'done' && session.step === WizardStep.WAITING_PHOTOS) {
       if (!session.data.photos || session.data.photos.length === 0) {
-        return ctx.reply('⚠️ *Photo required*\n\nPlease attach at least one photo before continuing.', {
+        return ctx.reply('⚠️ Photo required\n\nPlease attach at least one photo before continuing.', {
           reply_markup: {
-            inline_keyboard: [[{ text: '✅ Done', callback_data: 'done' }]],
+            inline_keyboard: [[{ text: 'Done', callback_data: 'done' }]],
           },
         });
       }
 
       session.step = WizardStep.WAITING_ANONYMOUS;
-      ctx.reply('👤 *Privacy settings*\n\nWould you like this report to be anonymous?', {
+      ctx.reply('👤 Privacy settings\n\nWould you like this report to be anonymous?', {
         reply_markup: {
           inline_keyboard: [
-            [{ text: '✅ Yes, keep it anonymous', callback_data: 'anon_yes' }],
-            [{ text: '👤 No, show my name', callback_data: 'anon_no' }],
+            [{ text: 'Yes, keep it anonymous', callback_data: 'anon_yes' }],
+            [{ text: 'No, show my name', callback_data: 'anon_no' }],
           ],
         },
       });
@@ -196,7 +197,7 @@ export class ReportWizard {
       const telegramUsername = ctx.from?.username!;
       this.saveReport(session.data, ctx.chat!.id, telegramUsername);
     } else if (data === 'confirm_no') {
-      ctx.reply('❌ *Report cancelled*\n\nYou can create a new report at any time using /newreport');
+      ctx.reply('❌ Report cancelled\n\nYou can create a new report at any time using /newreport');
       this.removeSession(ctx.chat!.id);
     }
   }
@@ -243,8 +244,8 @@ Review the information above and confirm to submit your report.
       parse_mode: 'Markdown',
       reply_markup: {
         inline_keyboard: [
-          [{ text: '✅ Confirm and Submit', callback_data: 'confirm_yes' }],
-          [{ text: '❌ Cancel', callback_data: 'confirm_no' }]
+          [{ text: 'Confirm and Submit', callback_data: 'confirm_yes' }],
+          [{ text: 'Cancel', callback_data: 'confirm_no' }]
         ]
       }
     });
@@ -272,7 +273,7 @@ Review the information above and confirm to submit your report.
       const report = await reportService.createReport(createRequest, user.id);
       this.bot.telegram.sendMessage(
         chatId,
-        `✅ *Report successfully created!*\n\n📋 Report ID: #${report.id}\n\nYour report has been submitted and will be reviewed by the municipality team. You will receive updates on its status.\n\nThank you for contributing to improve our city!`,
+        `✅ Report successfully created!\n\n📋 Report ID: #${report.id}\n\nYour report has been submitted and will be reviewed by the municipality team. You will receive updates on its status.\n\nThank you for contributing to improve our city!`,
         { parse_mode: 'Markdown' }
       );
       this.removeSession(chatId);
@@ -285,28 +286,28 @@ Review the information above and confirm to submit your report.
     if (error instanceof BadRequestError) {
       const message = error.message;
       if (message.includes('Location is required') || message.includes('Location must include')) {
-        this.bot.telegram.sendMessage(chatId, '❌ *Invalid Location*\n\nThe location data is missing or incomplete. Please try creating the report again.', { parse_mode: 'Markdown' });
+        this.bot.telegram.sendMessage(chatId, '❌ Invalid Location\n\nThe location data is missing or incomplete. Please try creating the report again.', { parse_mode: 'Markdown' });
       } else if (message.includes('Invalid coordinates')) {
-        this.bot.telegram.sendMessage(chatId, '❌ *Invalid Coordinates*\n\nCoordinates must be valid:\n• Latitude: -90 to 90\n• Longitude: -180 to 180\n\nPlease try again.', { parse_mode: 'Markdown' });
+        this.bot.telegram.sendMessage(chatId, '❌ Invalid Coordinates\n\nCoordinates must be valid:\n• Latitude: -90 to 90\n• Longitude: -180 to 180\n\nPlease try again.', { parse_mode: 'Markdown' });
       } else if (message.includes('outside Turin city boundaries')) {
-        this.bot.telegram.sendMessage(chatId, '❌ *Location Outside Turin*\n\nThe report location must be within the city boundaries of Turin. Please select a valid location.', { parse_mode: 'Markdown' });
+        this.bot.telegram.sendMessage(chatId, '❌ Location Outside Turin\n\nThe report location must be within the city boundaries of Turin. Please select a valid location.', { parse_mode: 'Markdown' });
       } else if (message.includes('Photos must contain')) {
-        this.bot.telegram.sendMessage(chatId, '❌ *Invalid Photos*\n\nYou must attach between 1 and 3 valid photos. Please try again.', { parse_mode: 'Markdown' });
+        this.bot.telegram.sendMessage(chatId, '❌ Invalid Photos\n\nYou must attach between 1 and 3 valid photos. Please try again.', { parse_mode: 'Markdown' });
       } else if (message.includes('unsupported format')) {
-        this.bot.telegram.sendMessage(chatId, '❌ *Unsupported Format*\n\nPlease use one of the following formats:\n• JPEG\n• PNG\n• WebP', { parse_mode: 'Markdown' });
+        this.bot.telegram.sendMessage(chatId, '❌ Unsupported Format\n\nPlease use one of the following formats:\n• JPEG\n• PNG\n• WebP', { parse_mode: 'Markdown' });
       } else if (message.includes('not a valid image data URI')) {
-        this.bot.telegram.sendMessage(chatId, '❌ *Invalid Photo*\n\nThe photo could not be processed. Please try uploading it again.', { parse_mode: 'Markdown' });
+        this.bot.telegram.sendMessage(chatId, '❌ Invalid Photo\n\nThe photo could not be processed. Please try uploading it again.', { parse_mode: 'Markdown' });
       } else {
-        this.bot.telegram.sendMessage(chatId, `❌ *Error*\n\n${message}\n\nPlease try again or contact support if the problem persists.`, { parse_mode: 'Markdown' });
+        this.bot.telegram.sendMessage(chatId, `❌ Error\n\n${message}\n\nPlease try again or contact support if the problem persists.`, { parse_mode: 'Markdown' });
       }
     } else if (error instanceof UnauthorizedError) {
-      this.bot.telegram.sendMessage(chatId, '❌ *Unauthorized*\n\nYou are not authorized to create reports. Please ensure your account is properly registered.', { parse_mode: 'Markdown' });
+      this.bot.telegram.sendMessage(chatId, '❌ Unauthorized\n\nYou are not authorized to create reports. Please ensure your account is properly registered.', { parse_mode: 'Markdown' });
     } else if (error instanceof InsufficientRightsError) {
-      this.bot.telegram.sendMessage(chatId, '❌ *Insufficient Permissions*\n\nYour account does not have the required permissions to create reports.', { parse_mode: 'Markdown' });
+      this.bot.telegram.sendMessage(chatId, '❌ Insufficient Permissions\n\nYour account does not have the required permissions to create reports.', { parse_mode: 'Markdown' });
     } else if (error instanceof NotFoundError) {
-      this.bot.telegram.sendMessage(chatId, '❌ *Resource Not Found*\n\nRequired resources could not be located. Please try again.', { parse_mode: 'Markdown' });
+      this.bot.telegram.sendMessage(chatId, '❌ Resource Not Found\n\nRequired resources could not be located. Please try again.', { parse_mode: 'Markdown' });
     } else {
-      this.bot.telegram.sendMessage(chatId, '❌ *Error Creating Report*\n\nAn unexpected error occurred. Please try again later or contact support if the issue persists.', { parse_mode: 'Markdown' });
+      this.bot.telegram.sendMessage(chatId, '❌ Error Creating Report\n\nAn unexpected error occurred. Please try again later or contact support if the issue persists.', { parse_mode: 'Markdown' });
     }
   }
 
@@ -322,24 +323,24 @@ Review the information above and confirm to submit your report.
       session.data.photos.push(buffer);
 
       if (session.data.photos.length >= 3) {
-        ctx.reply('✅ *Maximum photos reached* (3/3)\n\nPress "Done" to continue with the next step.', {
+        ctx.reply('✅ Maximum photos reached (3/3)\n\nPress "Done" to continue with the next step.', {
           reply_markup: {
-            inline_keyboard: [[{ text: '✅ Done', callback_data: 'done' }]],
+            inline_keyboard: [[{ text: 'Done', callback_data: 'done' }]],
           },
           parse_mode: 'Markdown'
         });
       } else {
-        ctx.reply(`✅ *Photo received* (${session.data.photos.length}/3)\n\nYou can send ${3 - session.data.photos.length} more photo${3 - session.data.photos.length > 1 ? 's' : ''} or press "Done" to continue.`, {
+        ctx.reply(`✅ Photo received (${session.data.photos.length}/3)\n\nYou can send ${3 - session.data.photos.length} more photo${3 - session.data.photos.length > 1 ? 's' : ''} or press "Done" to continue.`, {
           reply_markup: {
-            inline_keyboard: [[{ text: '✅ Done', callback_data: 'done' }]],
+            inline_keyboard: [[{ text: 'Done', callback_data: 'done' }]],
           },
           parse_mode: 'Markdown'
         });
       }
     } else if (text) {
-      ctx.reply('📸 *Waiting for photos*\n\nPlease send photos or press "Done" if finished.', {
+      ctx.reply('📸 Waiting for photos\n\nPlease send photos or press "Done" if finished.', {
         reply_markup: {
-          inline_keyboard: [[{ text: '✅ Done', callback_data: 'done' }]],
+          inline_keyboard: [[{ text: 'Done', callback_data: 'done' }]],
         },
         parse_mode: 'Markdown'
       });
