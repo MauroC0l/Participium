@@ -11,7 +11,6 @@ import MapPage from "./pages/MapPage.jsx";
 import NotFoundPage from "./pages/NotFoundPage.jsx";
 
 import "./App.css";
-import UserProfile from "./components/UserProfile.jsx";
 
 function App() {
   const location = useLocation();
@@ -170,15 +169,6 @@ function App() {
             element={
               <ProtectedRoute>
                 <Home user={user} />
-              </ProtectedRoute>
-            } 
-          />
-
-          <Route 
-            path="/my-profile" 
-            element={
-              <ProtectedRoute>
-                <UserProfile user={user} onUpdateUser={setUser} />
               </ProtectedRoute>
             } 
           />
