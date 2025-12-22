@@ -7,6 +7,7 @@ import { ConflictError } from '@models/errors/ConflictError';
 import { logInfo } from '@services/loggingService';
 import { mapUserEntityToUserResponse } from '@services/mapperService';
 import { AppError } from '@models/errors/AppError';
+import { AppDataSource } from '@database/connection';
 
 import { sendVerificationEmail } from '@utils/emailSender';
 
@@ -19,11 +20,11 @@ class UserService {
   /**
    * Registers a new citizen
    * Validates uniqueness of username and email
-   * @param registerData User registration data
+   * @param registerData User registration data with department_role_ids
    * @returns UserResponse DTO
    */
   async registerCitizen(registerData: RegisterRequest): Promise<UserResponse> {
-    const { username, email, password, first_name, last_name, role_name, department_name } = registerData;
+    const { username, email, password, first_name, last_name, department_role_ids } = registerData;
 
     // Check if username already exists
     const existingUsername = await userRepository.existsUserByUsername(username);
@@ -37,14 +38,9 @@ class UserService {
       throw new ConflictError('Email already exists');
     }
 
-    // Get the department_role_id for Citizen role
-    const citizenDepartmentRole = await departmentRoleRepository.findByDepartmentAndRole(
-      department_name || 'Organization',
-      role_name || 'Citizen'
-    );
-
-    if (!citizenDepartmentRole) {
-      throw new AppError('Citizen role configuration not found in database', 500);
+    // Validate department_role_ids
+    if (!department_role_ids || department_role_ids.length === 0) {
+      throw new AppError('Citizen role IDs must be provided', 400);
     }
 
     // Genera un intero tra 100000 (incluso) e 1000000 (escluso)
@@ -58,16 +54,33 @@ class UserService {
       password,
       firstName: first_name,
       lastName: last_name,
-      departmentRoleId: citizenDepartmentRole.id,
       emailNotificationsEnabled: true,
       isVerified: false,  // New citizens must verify their email
       verificationCode: otpCode,
       verificationCodeExpiresAt: otpExpiration,
     });
 
+    // Insert user roles using raw SQL (same pattern as municipalityUserService)
+    await AppDataSource.createQueryBuilder()
+      .insert()
+      .into('user_roles')
+      .values(
+        department_role_ids.map(roleId => ({
+          user_id: newUser.id,
+          department_role_id: roleId
+        }))
+      )
+      .execute();
+
+    // Reload user with roles
+    const userWithRoles = await userRepository.findUserById(newUser.id);
+    if (!userWithRoles) {
+      throw new AppError('Failed to reload user after role assignment', 500);
+    }
+
     logInfo(`New citizen registered: ${username} (ID: ${newUser.id})`);
     
-    const userResponse = mapUserEntityToUserResponse(newUser);
+    const userResponse = mapUserEntityToUserResponse(userWithRoles);
 
     if (!userResponse) {
       throw new AppError('Failed to map user data', 500);

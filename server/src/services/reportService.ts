@@ -24,6 +24,7 @@ import { mapReportEntityToResponse, mapReportEntityToDTO, mapReportEntityToRepor
 import { commentRepository } from '../repositories/commentRepository';
 import { CommentResponse } from '../models/dto/output/CommentResponse';
 import { CommentEntity } from '../models/entity/commentEntity';
+import { RoleUtils } from '@utils/roleUtils';
 
 /**
  * Report Service
@@ -240,14 +241,16 @@ class ReportService {
       throw new UnauthorizedError('User not found');
     }
     
-    const userRole = userEntity.departmentRole?.role?.name;
+    const userRoles = RoleUtils.getUserRoleNames(userEntity);
     
-    if (!userRole) {
-      throw new UnauthorizedError('User role not found');
+    if (!userRoles || userRoles.length === 0) {
+      throw new UnauthorizedError('User has no roles assigned');
     }
     
+    const hasPublicRelationsRole = RoleUtils.userHasRole(userEntity, 'Municipal Public Relations Officer');
+    
     if (status === ReportStatus.PENDING_APPROVAL) {
-      if (userRole !== 'Municipal Public Relations Officer') {
+      if (!hasPublicRelationsRole) {
         throw new InsufficientRightsError(
           'Only Municipal Public Relations Officers can view pending reports'
         );
@@ -258,7 +261,7 @@ class ReportService {
 
     const filteredReports = reports.filter(report => {
       if (report.status === ReportStatus.PENDING_APPROVAL) {
-        return userRole === 'Municipal Public Relations Officer';
+        return hasPublicRelationsRole;
       }
       return true;
     });
@@ -279,10 +282,11 @@ class ReportService {
       throw new UnauthorizedError('User not found');
     }
 
-    const departmentName = user.departmentRole?.department?.name;
+    // Check if user works in External Service Providers department
+    const isExternalServiceProvider = RoleUtils.userInDepartment(user, 'External Service Providers');
 
     let reports;
-    if (departmentName === 'External Service Providers') {
+    if (isExternalServiceProvider) {
       reports = await reportRepository.findByExternalAssigneeId(userId, status, category);
     } else {
       reports = await reportRepository.findByAssigneeId(userId, status, category);
@@ -340,7 +344,7 @@ class ReportService {
     if (!user) {
       throw new UnauthorizedError('User not found');
     }
-    const userRole = user.departmentRole?.role?.name;
+    const userRoles = RoleUtils.getUserRoleNames(user);
 
     const currentStatus = report.status;
 
@@ -349,7 +353,7 @@ class ReportService {
         if (currentStatus !== ReportStatus.PENDING_APPROVAL) {
           throw new BadRequestError(`Cannot approve report with status ${currentStatus}. Only reports with status Pending Approval can be approved.`);
         }
-        if (userRole !== SystemRoles.PUBLIC_RELATIONS_OFFICER) {
+        if (!RoleUtils.userHasRole(user, SystemRoles.PUBLIC_RELATIONS_OFFICER)) {
           throw new InsufficientRightsError('Only Public Relations Officers can approve reports.');
         }
         if (body.externalAssigneeId) {
@@ -357,7 +361,7 @@ class ReportService {
           if (!assignee) {
             throw new NotFoundError('External assignee not found');
           }
-          if (assignee.departmentRole?.role?.name !== SystemRoles.EXTERNAL_MAINTAINER) {
+          if (!RoleUtils.userHasRole(assignee, SystemRoles.EXTERNAL_MAINTAINER)) {
             throw new BadRequestError('User is not an external maintainer');
           }
           report.assignee = assignee;
@@ -384,7 +388,7 @@ class ReportService {
         if (currentStatus !== ReportStatus.PENDING_APPROVAL) {
             throw new BadRequestError(`Cannot reject report with status ${currentStatus}. Only reports with status Pending Approval can be rejected.`);
         }
-        if (userRole !== SystemRoles.PUBLIC_RELATIONS_OFFICER) {
+        if (!RoleUtils.userHasRole(user, SystemRoles.PUBLIC_RELATIONS_OFFICER)) {
             throw new InsufficientRightsError('Only Public Relations Officers can reject reports.');
         }
         if (!body.rejectionReason || body.rejectionReason.trim() === '') {
@@ -397,11 +401,14 @@ class ReportService {
         if (![ReportStatus.ASSIGNED, ReportStatus.IN_PROGRESS, ReportStatus.SUSPENDED].includes(currentStatus as ReportStatus)) {
           throw new BadRequestError(`Cannot resolve a report with status ${currentStatus}.`);
         }
-        if (userRole === SystemRoles.EXTERNAL_MAINTAINER) {
+        const isExternalMaintainer = RoleUtils.userHasRole(user, SystemRoles.EXTERNAL_MAINTAINER);
+        const hasTechnicalRole = userRoles.some(role => isTechnicalStaff(role));
+        
+        if (isExternalMaintainer) {
           if (report.assigneeId !== userId && report.externalAssigneeId !== userId) {
             throw new InsufficientRightsError('You can only resolve reports assigned to you.');
           }
-        } else if (!isTechnicalStaff(userRole)) {
+        } else if (!hasTechnicalRole) {
           throw new InsufficientRightsError('You are not authorized to resolve reports.');
         }
         if (body.resolutionNotes) {
@@ -410,13 +417,15 @@ class ReportService {
         break;
 
       case ReportStatus.IN_PROGRESS:
-        if (currentStatus !== ReportStatus.ASSIGNED && currentStatus !== ReportStatus.SUSPENDED || isCitizen(userRole)) {
+        const isCitizenInProgress = userRoles.some(role => isCitizen(role));
+        if (currentStatus !== ReportStatus.ASSIGNED && currentStatus !== ReportStatus.SUSPENDED || isCitizenInProgress) {
           throw new InsufficientRightsError('Only staff can mark reports as in progress.');
         }
         break;
 
       case ReportStatus.SUSPENDED:
-        if (currentStatus !== ReportStatus.IN_PROGRESS || isCitizen(userRole)) {
+        const isCitizenSuspended = userRoles.some(role => isCitizen(role));
+        if (currentStatus !== ReportStatus.IN_PROGRESS || isCitizenSuspended) {
           throw new InsufficientRightsError('Only staff can suspend reports.');
         }
         break;
@@ -452,10 +461,11 @@ class ReportService {
     if (!user) {
       throw new UnauthorizedError('User not found');
     }
-    const userRole = user.departmentRole?.role?.name;
+    const userRoles = RoleUtils.getUserRoleNames(user);
 
     // Only technical staff can assign to external maintainers
-    if (!isTechnicalStaff(userRole)) {
+    const hasTechnicalRole = userRoles.some(role => isTechnicalStaff(role));
+    if (!hasTechnicalRole) {
       throw new InsufficientRightsError('Only technical staff can assign reports to external maintainers');
     }
 
@@ -470,7 +480,7 @@ class ReportService {
       throw new NotFoundError('External maintainer not found');
     }
 
-    if (assignee.departmentRole?.role?.name !== SystemRoles.EXTERNAL_MAINTAINER) {
+    if (!RoleUtils.userHasRole(assignee, SystemRoles.EXTERNAL_MAINTAINER)) {
       throw new BadRequestError('Assignee is not an external maintainer');
     }
 
@@ -588,6 +598,10 @@ class ReportService {
    * @returns Comment response DTO
    */
   private mapCommentToResponse(comment: CommentEntity): CommentResponse {
+    // Get first role or 'Unknown' for display purposes
+    const userRoles = RoleUtils.getUserRoleNames(comment.author);
+    const primaryRole = userRoles.length > 0 ? userRoles[0] : 'Unknown';
+
     return {
       id: comment.id,
       reportId: comment.reportId,
@@ -596,7 +610,7 @@ class ReportService {
         username: comment.author.username,
         firstName: comment.author.firstName,
         lastName: comment.author.lastName,
-        role: comment.author.departmentRole?.role?.name || 'Unknown'
+        role: primaryRole
       },
       content: comment.content,
       createdAt: comment.createdAt
