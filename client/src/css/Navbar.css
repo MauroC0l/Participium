@@ -255,3 +255,22 @@
   background: rgba(161, 43, 50, 0.95);
   backdrop-filter: blur(20px);
 }
+
+/* Rende il badge interattivo */
+.user-info-card.clickable-profile {
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Effetto hover specifico per il pulsante profilo */
+.user-info-card.clickable-profile:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.user-info-card.clickable-profile:active {
+  transform: translateY(0);
+}

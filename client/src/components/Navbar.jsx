@@ -1,15 +1,12 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import PropTypes from "prop-types"; // Importato per la validazione delle prop
+import PropTypes from "prop-types";
 import "../css/Navbar.css";
 
-// --- UTILITY E HELPER (ESTRATTE) ---
-
-// Funzione per ottenere le iniziali dell'utente in modo robusto
+// --- UTILITY E HELPER ---
 const getInitials = (firstName, lastName) => {
   const first = firstName?.charAt(0)?.toUpperCase() || '';
   const last = lastName?.charAt(0)?.toUpperCase() || '';
-  // Se entrambi sono vuoti, restituisce 'U' (User)
   return (first + last) || 'U'; 
 };
 getInitials.propTypes = {
@@ -18,25 +15,20 @@ getInitials.propTypes = {
 };
 
 // --- COMPONENTE PRINCIPALE ---
-
 export default function Navbar({ user, onLogout }) {
   const navigate = useNavigate();
   const [scrolled, setScrolled] = useState(false);
 
-  // 1. Logica dello scroll mantenuta
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 10);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // 2. Info Utente Derivate (uso useMemo per la stabilità)
   const userRole = user?.role_name;
   const isAdmin = userRole === 'Administrator';
-
   const isCitizen = useMemo(() => userRole === 'Citizen', [userRole]);
   
-  // Utilizza useMemo per calcolare il nome utente completo e il ruolo di visualizzazione una sola volta
   const displayUsername = useMemo(() => {
     if (user?.first_name && user?.last_name) {
       return `${user.first_name} ${user.last_name}`;
@@ -46,30 +38,27 @@ export default function Navbar({ user, onLogout }) {
 
   const displayRole = useMemo(() => userRole || 'User', [userRole]);
   
-  // Calcola le iniziali (richiede che first_name e last_name siano passati)
   const avatarInitials = useMemo(() => {
-      // Garantisce che getInitials sia chiamato solo se l'oggetto user è presente
       return getInitials(user?.first_name, user?.last_name);
   }, [user?.first_name, user?.last_name]);
 
-
-  // 3. Gestore del Brand (Migliorata A11y)
   const handleBrandClick = () => navigate("/");
+  
+  // NUOVO HANDLER PER IL PROFILO
+  const handleProfileClick = () => navigate("/my-profile");
 
   return (
     <nav className={`navbar-modern ${scrolled ? 'navbar-scrolled' : ''}`}>
       <div className="navbar-container">
         {/* Left Section */}
         <div className="navbar-left-section">
-          
-          {/* NAV BRAND: Usa una funzione singola per l'onClick e ha A11y già gestita */}
           <div 
             className="navbar-brand"
-            onClick={handleBrandClick} // Uso la funzione handler
+            onClick={handleBrandClick}
             role="button"
             tabIndex={0}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') { // Aggiunto spazio per accessibilità standard
+              if (e.key === 'Enter' || e.key === ' ') { 
                 e.preventDefault(); 
                 handleBrandClick();
               }
@@ -102,13 +91,26 @@ export default function Navbar({ user, onLogout }) {
               <span>Map</span>
             </button>
           )}
-
         </div>
 
         {/* Right Section */}
         {user && (
           <div className="navbar-right-section">
-            <div className="user-info-card">
+            
+            {/* MODIFICATO: User Info Card ora è cliccabile */}
+            <div 
+                className="user-info-card clickable-profile" 
+                onClick={handleProfileClick}
+                role="button"
+                tabIndex={0}
+                title="Go to My Profile"
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleProfileClick();
+                    }
+                }}
+            >
               <div className="user-avatar">
                 {avatarInitials}
               </div>
@@ -135,7 +137,6 @@ export default function Navbar({ user, onLogout }) {
   );
 }
 
-// Validazione delle props
 Navbar.propTypes = {
   user: PropTypes.shape({
     role_name: PropTypes.string,
