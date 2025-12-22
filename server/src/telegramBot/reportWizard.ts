@@ -36,7 +36,7 @@ export class ReportWizard {
   async handleText(ctx: Context, session: UserSession) {
     const message = ctx.message as any;
     const text = message?.text;
-    if (!text) return;
+    if (text === undefined) return;
 
     if (session.step === WizardStep.WAITING_LOCATION) {
       await this.handleLocationInput(ctx, session, text);
@@ -134,7 +134,7 @@ export class ReportWizard {
     });
   }
 
-  handleCallbackQuery(ctx: Context, session: UserSession) {
+  async handleCallbackQuery(ctx: Context, session: UserSession) {
     const callbackQuery = ctx.callbackQuery as any;
     const data = callbackQuery?.data;
 
@@ -169,7 +169,7 @@ export class ReportWizard {
     } else if (data?.startsWith('anon_') && session.step === WizardStep.WAITING_ANONYMOUS) {
       this.handleAnonymous(ctx, session);
     } else if (data?.startsWith('confirm_') && session.step === WizardStep.WAITING_CONFIRMATION) {
-      this.handleConfirmation(ctx, session);
+      await this.handleConfirmation(ctx, session);
     }
   }
 
@@ -189,13 +189,13 @@ export class ReportWizard {
     this.showConfirmation(ctx, session.data);
   }
 
-  private handleConfirmation(ctx: Context, session: UserSession) {
+  private async handleConfirmation(ctx: Context, session: UserSession) {
     const callbackQuery = ctx.callbackQuery as any;
     const data = callbackQuery?.data;
 
     if (data === 'confirm_yes') {
       const telegramUsername = ctx.from?.username!;
-      this.saveReport(session.data, ctx.chat!.id, telegramUsername);
+      await this.saveReport(session.data, ctx.chat!.id, telegramUsername);
     } else if (data === 'confirm_no') {
       ctx.reply('❌ Report cancelled\n\nYou can create a new report at any time using /newreport');
       this.removeSession(ctx.chat!.id);
@@ -318,8 +318,18 @@ Review the information above and confirm to submit your report.
 
     if (photos) {
       const photo = photos[photos.length - 1];
-      const buffer = await downloadPhoto(this.bot, photo.file_id);
       session.data.photos = session.data.photos || [];
+      
+      if (session.data.photos.length >= 3) {
+        return ctx.reply('📸 Maximum 3 photos allowed.\nPress "Done" when finished.', {
+          reply_markup: {
+            inline_keyboard: [[{ text: 'Done', callback_data: 'done' }]],
+          },
+          parse_mode: 'Markdown'
+        });
+      }
+      
+      const buffer = await downloadPhoto(this.bot, photo.file_id);
       session.data.photos.push(buffer);
 
       if (session.data.photos.length >= 3) {
