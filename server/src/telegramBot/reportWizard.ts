@@ -24,7 +24,7 @@ export class ReportWizard {
       session.data.location = { latitude: location.latitude, longitude: location.longitude };
       session.data.address = await reverseGeocode(session.data.location);
       session.step = WizardStep.WAITING_TITLE;
-      ctx.reply('✅ *Location confirmed*\n\nPlease provide a title for your report.');
+      ctx.reply('✅ Location confirmed\n\nPlease provide a title for your report.');
     } catch (error) {
       if (error instanceof BadRequestError) {
         return ctx.reply('❌ Invalid location\n\nThe selected location must be within the city boundaries of Turin.\n\nPlease send a valid location.');

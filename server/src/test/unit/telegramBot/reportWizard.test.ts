@@ -69,7 +69,7 @@ describe('ReportWizard', () => {
       expect(session.data.location).toEqual(location);
       expect(session.data.address).toBe('Test Address, Turin');
       expect(session.step).toBe(WizardStep.WAITING_TITLE);
-      expect(mockCtx.reply).toHaveBeenCalledWith('✅ *Location confirmed*\n\nPlease provide a title for your report.');
+      expect(mockCtx.reply).toHaveBeenCalledWith('✅ Location confirmed\n\nPlease provide a title for your report.');
     });
 
     it('should handle invalid location', async () => {
