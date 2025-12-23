@@ -570,13 +570,13 @@ afterAll(async () => {
       }
     });
 
-    it('should require authentication', async () => {
+      it('should allow unauthenticated access to map reports', async () => {
       const response = await request(app)
-        .get('/api/reports/map')
-        .expect(401);
+      .get('/api/reports/map')
+      .expect(200);
 
-      expect(response.body).toHaveProperty('name');
-      expect(response.body.name).toBe('UnauthorizedError');
+      expect(Array.isArray(response.body)).toBe(true);
+      expect(response.body.length).toBe(3); // Should return 3 approved reports
     });
   });
 
