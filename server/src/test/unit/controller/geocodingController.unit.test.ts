@@ -121,6 +121,59 @@ describe('GeocodingController Unit Tests', () => {
       expect(jsonMock).toHaveBeenCalledWith({ error: 'Latitude and Longitude are required' });
     });
 
+    it('should handle Axios error with response', async () => {
+      // Arrange
+      const lat = '45.4642';
+      const lng = '9.1900';
+      mockRequest = {
+        query: { lat, lng },
+      };
+
+      const axiosError = {
+        message: 'Request failed',
+        response: {
+          status: 404,
+          data: { error: 'Not found' }
+        }
+      };
+      (axios.isAxiosError as any).mockReturnValue(true);
+      (axios.get as jest.Mock).mockRejectedValueOnce(axiosError);
+
+      // Act
+      await getAddressFromProxy(mockRequest as Request, mockResponse as Response);
+
+      // Assert
+      expect(axios.isAxiosError).toHaveBeenCalledWith(axiosError);
+      expect(statusMock).toHaveBeenCalledWith(404);
+      expect(jsonMock).toHaveBeenCalledWith({ 
+        error: 'External map service error', 
+        details: { error: 'Not found' } 
+      });
+    });
+
+    it('should handle Axios error without response', async () => {
+      // Arrange
+      const lat = '45.4642';
+      const lng = '9.1900';
+      mockRequest = {
+        query: { lat, lng },
+      };
+
+      const axiosError = {
+        message: 'Network timeout'
+      };
+      (axios.isAxiosError as any).mockReturnValue(true);
+      (axios.get as jest.Mock).mockRejectedValueOnce(axiosError);
+
+      // Act
+      await getAddressFromProxy(mockRequest as Request, mockResponse as Response);
+
+      // Assert
+      expect(axios.isAxiosError).toHaveBeenCalledWith(axiosError);
+      expect(statusMock).toHaveBeenCalledWith(500);
+      expect(jsonMock).toHaveBeenCalledWith({ error: 'Internal server error during geocoding' });
+    });
+
     it('should handle errors', async () => {
       // Arrange
       const lat = '45.4642';
@@ -130,6 +183,7 @@ describe('GeocodingController Unit Tests', () => {
       };
 
       const error = new Error('Network error');
+      (axios.isAxiosError as any).mockReturnValue(false);
       (axios.get as jest.Mock).mockRejectedValueOnce(error);
 
       // Act

@@ -1,31 +1,31 @@
 
 import { notificationRepository, createNotification } from '../repositories/notificationRepository';
-import { ReportCategory } from '../models/dto/ReportCategory';
-import { MapReportResponse } from '../models/dto/output/MapReportResponse';
-import { ClusteredReportResponse } from '../models/dto/output/ClusteredReportResponse';
-import { reportRepository } from '../repositories/reportRepository';
+import { ReportCategory } from '@dto/ReportCategory';
+import { MapReportResponse } from '@dto/output/MapReportResponse';
+import { ClusteredReportResponse } from '@dto/output/ClusteredReportResponse';
+import { reportRepository } from '@repositories/reportRepository';
 import { ReportStatus } from '@models/dto/ReportStatus';
-import { Location } from '../models/dto/Location';
-import { BadRequestError } from '../models/errors/BadRequestError';
-import { UnauthorizedError } from '../models/errors/UnauthorizedError';
-import { InsufficientRightsError } from '../models/errors/InsufficientRightsError';
-import { NotFoundError } from '../models/errors/NotFoundError';
-import { isWithinTurinBoundaries, isValidCoordinate } from '../utils/geoValidationUtils';
-import { dataUriToBuffer, extractMimeType, validatePhotos } from '../utils/photoValidationUtils';
+import { Location } from '@dto/Location';
+import { BadRequestError } from '@errors/BadRequestError';
+import { UnauthorizedError } from '@errors/UnauthorizedError';
+import { InsufficientRightsError } from '@errors/InsufficientRightsError';
+import { NotFoundError } from '@errors/NotFoundError';
+import { isWithinTurinBoundaries, isValidCoordinate } from '@utils/geoValidationUtils';
+import { dataUriToBuffer, extractMimeType, validatePhotos } from '@utils/photoValidationUtils';
 import { storageService } from './storageService';
-import { photoRepository } from '../repositories/photoRepository';
-import { categoryRoleRepository } from '../repositories/categoryRoleRepository';
-import { userRepository } from '../repositories/userRepository';
-import { companyRepository } from '../repositories/companyRepository';
-import { CreateReportRequest } from '../models/dto/input/CreateReportRequest';
-import { ReportResponse } from '../models/dto/output/ReportResponse';
+import { photoRepository } from '@repositories/photoRepository';
+import { categoryRoleRepository } from '@repositories/categoryRoleRepository';
+import { userRepository } from '@repositories/userRepository';
+import { companyRepository } from '@repositories/companyRepository';
+import { CreateReportRequest } from '@dto/input/CreateReportRequest';
+import { ReportResponse } from '@dto/output/ReportResponse';
 import { SystemRoles, isTechnicalStaff, isCitizen } from '@models/dto/UserRole';
-import { ReportEntity } from '../models/entity/reportEntity';
+import { ReportEntity } from '@entity/reportEntity';
 import { Report } from '@models/dto/Report'; 
 import { mapReportEntityToResponse, mapReportEntityToDTO, mapReportEntityToReportResponse, mapMessageToResponse } from './mapperService';
-import { commentRepository } from '../repositories/commentRepository';
-import { CommentResponse } from '../models/dto/output/CommentResponse';
-import { CommentEntity } from '../models/entity/commentEntity';
+import { commentRepository } from '@repositories/commentRepository';
+import { CommentResponse } from '@dto/output/CommentResponse';
+import { CommentEntity } from '@entity/commentEntity';
 import { messageRepository } from '../repositories/messageRepository';
 
 /**
@@ -232,25 +232,29 @@ class ReportService {
    * Enforces authorization: pending reports only for public relations officers
    */
   async getAllReports(
-    userId: number, 
+    userId: number | undefined, 
     status?: ReportStatus,
     category?: ReportCategory
   ): Promise<ReportResponse[]> {
     
-    const userEntity = await userRepository.findUserById(userId);
+    let userRole: string | undefined;
     
-    if (!userEntity) {
-      throw new UnauthorizedError('User not found');
-    }
-    
-    const userRole = userEntity.departmentRole?.role?.name;
-    
-    if (!userRole) {
-      throw new UnauthorizedError('User role not found');
+    if (userId) {
+      const userEntity = await userRepository.findUserById(userId);
+      
+      if (!userEntity) {
+        throw new UnauthorizedError('User not found');
+      }
+      
+      userRole = userEntity.departmentRole?.role?.name;
+      
+      if (!userRole) {
+        throw new UnauthorizedError('User role not found');
+      }
     }
     
     if (status === ReportStatus.PENDING_APPROVAL) {
-      if (userRole !== 'Municipal Public Relations Officer') {
+      if (!userRole || userRole !== 'Municipal Public Relations Officer') {
         throw new InsufficientRightsError(
           'Only Municipal Public Relations Officers can view pending reports'
         );

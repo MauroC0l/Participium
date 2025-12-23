@@ -1,4 +1,4 @@
-# Participium - Database Structure (v4.3)
+# Participium - Database Structure (v4.4)
 
 This document describes the database schema (Version 4.3) designed for the **Participium** application.
 
@@ -14,7 +14,7 @@ Participium is a citizen reporting system that allows users to submit reports ab
 - **User Management** (citizens, staff, administrators)
 - **Report Lifecycle** (submission, approval, assignment, resolution)
 - **Media Attachments** (photos)
-- **Communication** (comments, messages, notifications)
+- **Communication** (comments, messages, notifications, Telegram integration)
 - **Geolocation** (using PostGIS for spatial data)
 - **Automatic Assignment Workflow**
 
@@ -89,6 +89,8 @@ Stores information for all system actors (citizens, operators, administrators).
 | `email` | `VARCHAR(255)` | NOT NULL, UNIQUE | Email address (used for notifications) |
 | `personal_photo_url` | `TEXT` | NULLABLE | URL to user's profile photo |
 | `telegram_username` | `VARCHAR(100)` | NULLABLE, UNIQUE | Telegram username for bot integration |
+| `telegram_link_code` | `VARCHAR(6)` | NULLABLE | 6-digit code for linking Telegram account |
+| `telegram_link_code_expires_at` | `TIMESTAMPTZ` | NULLABLE | Expiration timestamp for the Telegram link code |
 | `email_notifications_enabled` | `BOOLEAN` | NOT NULL, DEFAULT true | Flag to enable/disable email notifications |
 | `company_id` | `INT` | **FOREIGN KEY** → `companies(id)`, NULLABLE | Reference to external company (only for External Maintainer role) |
 | `is_verified` | `BOOLEAN` | NOT NULL, DEFAULT false | Indicates if the user's email has been verified |
@@ -101,6 +103,7 @@ Stores information for all system actors (citizens, operators, administrators).
 - Unique index on `username`
 - Unique index on `email`
 - Unique index on `telegram_username` (where not null)
+- Index on `telegram_link_code` (where not null)
 - Foreign key index on `department_role_id`
 
 **Notes:**
@@ -110,6 +113,7 @@ Stores information for all system actors (citizens, operators, administrators).
 - **V4.1**: External maintainers are now regular users with the 'External Maintainer' role in the 'External Service Providers' department
 - **V4.2**: Email verification system added. New users must verify their email within 30 minutes using a 6-digit code. Users cannot use the system until `is_verified` is true. Pre-existing users (admin, external maintainers) are automatically verified
 - **V4.3**: Added `company_id` foreign key to link external maintainers to their companies. The `companies` table now stores company data separately from user accounts
+- **V4.4**: Added Telegram integration fields. Users can link their Telegram account using a temporary 6-digit code that expires after 10 minutes. The `telegram_username` is used for bot notifications, while `telegram_link_code` facilitates the linking process.
 
 ---
 
@@ -407,9 +411,6 @@ The initialization script populates the following default data:
 8. **General Services Department**
 9. **External Service Providers** - For external maintainer companies
 
-
-
-
 **Pre-populated Position Combinations (22 total):**
 
 **Organization Department:**
@@ -543,5 +544,6 @@ The [`docker-compose.yml`](server/docker-compose.yml ) file automatically runs [
 | 4.1 | 2025-12-02 | **Integrated external maintainers as users (PT24, PT25, PT26):** Removed separate `external_maintainers` table. External maintainers are now regular users with 'External Maintainer' role. Added `company_name` field to `users` table. Removed `external_maintainer_id` and `single_assignment` constraint from `reports` table. External maintainers can now authenticate, update report status, and exchange internal comments with technical staff. |
 | 4.2 | 2025-12-02 | **Added email verification system (PT27) and dual assignment tracking:** Added `is_verified`, `verification_code`, and `verification_code_expires_at` fields to `users` table. New citizens must verify their email with a 6-digit code valid for 30 minutes before accessing the system. Pre-existing users are automatically marked as verified. Added `external_assignee_id` to `reports` table to maintain both internal staff assignee and external maintainer references, preserving the full chain of responsibility. |
 | 4.3 | 2025-12-05 | **Separated company entities from user accounts:** Created `companies` table to store external maintenance company information separately. Replaced `users.company_name` VARCHAR field with `users.company_id` foreign key. Each company specializes in one report category. Pre-populated 4 companies (Enel X, Acea, Hera, ATM). External maintainer users now reference companies via foreign key. Documented planned `company_categories` table for future many-to-many category mapping. |
+| 4.4 | 2025-12-22 | **Added Telegram integration:** Added `telegram_link_code` and `telegram_link_code_expires_at` fields to `users` table. Users can link their Telegram accounts using a temporary 6-digit code that expires after 10 minutes. Added corresponding indexes for efficient querying. |
 
 
