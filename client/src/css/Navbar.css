@@ -10,6 +10,8 @@
   --navbar-shadow: 0 0.5rem 2rem rgba(161, 43, 50, 0.15);
   --navbar-border: rgba(255, 255, 255, 0.1);
   --navbar-hover: rgba(255, 255, 255, 0.1);
+
+  --navbar-height: 80px;
 }
 
 /* --- Navbar Base --- */

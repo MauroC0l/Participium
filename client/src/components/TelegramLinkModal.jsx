@@ -35,7 +35,6 @@ const TelegramLinkModal = ({ onClose }) => {
           setExpiresAt(null);
         }
       }, 1000);
-
       return () => clearInterval(interval);
     }
   }, [expiresAt]);
@@ -43,16 +42,15 @@ const TelegramLinkModal = ({ onClose }) => {
   const loadTelegramStatus = async () => {
     try {
       setLoading(true);
-      const telegramStatus = await getTelegramStatus();
-      setStatus(telegramStatus);
-      
-      if (telegramStatus.activeCode) {
-        setCode(telegramStatus.activeCode.code);
-        setExpiresAt(telegramStatus.activeCode.expiresAt);
+      const res = await getTelegramStatus();
+      setStatus(res);
+      if (res.activeCode) {
+        setCode(res.activeCode.code);
+        setExpiresAt(res.activeCode.expiresAt);
       }
     } catch (err) {
-      setError('Error loading Telegram status');
-      console.error('Error loading Telegram status:', err);
+      console.error(err);
+      setError('Impossible caricare lo stato di Telegram.');
     } finally {
       setLoading(false);
     }
@@ -66,8 +64,7 @@ const TelegramLinkModal = ({ onClose }) => {
       setCode(result.code);
       setExpiresAt(result.expiresAt);
     } catch (err) {
-      setError('Error generating code');
-      console.error('Error generating code:', err);
+      setError('Errore nella generazione del codice.');
     } finally {
       setGenerating(false);
     }
@@ -80,7 +77,7 @@ const TelegramLinkModal = ({ onClose }) => {
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       } catch (err) {
-        console.error('Failed to copy:', err);
+        console.error(err);
       }
     }
   };
@@ -95,22 +92,19 @@ const TelegramLinkModal = ({ onClose }) => {
     try {
       setChecking(true);
       setError(null);
-      const telegramStatus = await getTelegramStatus();
-      
-      if (telegramStatus.isLinked) {
-        setSuccessMessage('Telegram account linked successfully!');
-        setStatus(telegramStatus);
+      const res = await getTelegramStatus();
+      if (res.isLinked) {
+        setSuccessMessage('Account collegato con successo!');
+        setStatus(res);
         setCode(null);
         setExpiresAt(null);
         setTimeout(() => setSuccessMessage(null), 3000);
       } else {
-        setError('Telegram account not yet linked. Please complete the linking process in Telegram.');
+        setError('Non ancora collegato. Hai inviato il codice al bot?');
         setTimeout(() => setError(null), 3000);
       }
     } catch (err) {
-      setError('Error checking link status');
-      console.error('Error checking link status:', err);
-      setTimeout(() => setError(null), 3000);
+      setError('Errore durante il controllo dello stato.');
     } finally {
       setChecking(false);
     }
@@ -119,33 +113,28 @@ const TelegramLinkModal = ({ onClose }) => {
   const handleUnlinkAccount = async () => {
     try {
       setUnlinking(true);
-      setError(null);
       await unlinkTelegramAccount();
-      setSuccessMessage('Telegram account unlinked successfully!');
+      setSuccessMessage('Account scollegato correttamente.');
       setShowUnlinkConfirm(false);
-      
-      // Reset code and expiry
       setCode(null);
       setExpiresAt(null);
-      
       await loadTelegramStatus();
       setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err) {
-      setError(err.message || 'Error unlinking Telegram account');
-      console.error('Error unlinking account:', err);
+      setError(err.message || 'Errore durante lo scollegamento.');
     } finally {
       setUnlinking(false);
     }
   };
 
+  // --- RENDERING ---
+
   if (loading) {
     return (
-      <div className="ch-modal-overlay" onClick={onClose}>
-        <div className="ch-modal-content" onClick={(e) => e.stopPropagation()}>
-          <div className="ch-modal-icon-box">
-            <FaTelegram />
-          </div>
-          <h3 className="ch-modal-title">Loading...</h3>
+      <div className="ch-modal-overlay">
+        <div className="ch-modal-content">
+           <div className="tl-icon-box"><FaTelegram /></div>
+           <h3 className="tl-title">Caricamento...</h3>
         </div>
       </div>
     );
@@ -153,172 +142,134 @@ const TelegramLinkModal = ({ onClose }) => {
 
   return (
     <div className="ch-modal-overlay" onClick={onClose}>
-      <div className="ch-modal-content telegram-modal" onClick={(e) => e.stopPropagation()}>
-        <button className="ch-modal-close-btn" onClick={onClose} aria-label="Close">
+      {/* Usiamo la classe standard 'ch-modal-content' per lo sfondo bianco e le ombre */}
+      <div className="ch-modal-content" onClick={(e) => e.stopPropagation()}>
+        <button className="ch-modal-close-btn" onClick={onClose}>
           <FaTimes />
         </button>
 
-        <div className="ch-modal-icon-box">
-          <FaTelegram />
-        </div>
-
-        <h3 className="ch-modal-title">Link Telegram Account</h3>
-
-        {status?.isLinked ? (
-          <div className="telegram-status">
-            {successMessage && (
-              <div className="success-message">
-                <FaCheck className="success-icon" />
-                {successMessage}
-              </div>
-            )}
-
-            {!showUnlinkConfirm && (
-              <>
-                <div className="linked-account-card">
-                  <div className="linked-header">
-                    <div className="linked-icon">
-                      <FaCheck />
-                    </div>
-                    <div className="linked-info">
-                      <span className="linked-label">Connected Account</span>
-                      <span className="linked-username">@{status.telegramUsername}</span>
-                    </div>
-                  </div>
-                  <p className="linked-desc">
-                    Your account is linked! You can now create reports and receive notifications via Telegram.
-                  </p>
-                </div>
-
-                <button
-                  className="telegram-action-btn danger full-width"
-                  onClick={() => setShowUnlinkConfirm(true)}
-                >
-                  <FaUnlink /> Unlink Account
-                </button>
-              </>
-            )}
-
-            {showUnlinkConfirm && (
-              <div className="unlink-confirm-section">
-                <div className="warning-box">
-                  <FaExclamationTriangle className="warning-icon" />
-                  <h4>Unlink Telegram Account</h4>
-                  <p>
-                    Are you sure you want to unlink your Telegram account?
-                  </p>
-                  <p className="warning-text">
-                    You will no longer be able to create reports via Telegram until you link again.
-                  </p>
-                </div>
-                {error && (
-                  <div className="error-message">
-                    {error}
-                  </div>
-                )}
-                <div className="action-buttons">
-                  <button
-                    className="telegram-action-btn secondary"
-                    onClick={() => {
-                      setShowUnlinkConfirm(false);
-                      setError(null);
-                    }}
-                    disabled={unlinking}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    className="telegram-action-btn danger"
-                    onClick={handleUnlinkAccount}
-                    disabled={unlinking}
-                  >
-                    {unlinking ? 'Unlinking...' : 'Yes, Unlink'}
-                  </button>
-                </div>
-              </div>
+        <div className="tl-container">
+          {/* Header Icona */}
+          <div className="tl-header">
+            <div className="tl-icon-box">
+              <FaTelegram />
+            </div>
+            <h3 className="tl-title">Collega Telegram</h3>
+            {!status?.isLinked && (
+               <p className="tl-description">
+                 Ricevi aggiornamenti in tempo reale e invia segnalazioni direttamente dalla chat.
+               </p>
             )}
           </div>
-        ) : (
-          <div className="telegram-setup">
-            <p className="telegram-desc">
-              Link your Telegram account to create reports directly from the bot.
-              This is secure and requires your confirmation.
-            </p>
 
-            {error && (
-              <div className="error-message">
-                {error}
-              </div>
-            )}
+          {/* Feedback Messaggi */}
+          {error && <div className="tl-msg error">{error}</div>}
+          {successMessage && <div className="tl-msg success"><FaCheck /> {successMessage}</div>}
 
-            {code ? (
-              <div className="code-display">
-                <div className="code-header">
-                  <h4>Verification Code</h4>
-                  <div className="time-left">
-                    <FaClock />
-                    <span>{formatTime(timeLeft)}</span>
+          {status?.isLinked ? (
+            /* --- SCENARIO 1: ACCOUNT COLLEGATO --- */
+            <>
+              {!showUnlinkConfirm ? (
+                <>
+                  <div className="tl-linked-card">
+                    <div className="tl-avatar"><FaTelegram /></div>
+                    <div className="tl-user-info">
+                      <span className="tl-user-label">Account Collegato</span>
+                      <span className="tl-username">@{status.telegramUsername}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="tl-actions">
+                     <button className="tl-btn tl-btn-danger" onClick={() => setShowUnlinkConfirm(true)}>
+                       <FaUnlink /> Scollega Account
+                     </button>
+                  </div>
+                </>
+              ) : (
+                /* --- SCENARIO 2: CONFERMA SCOLLEGAMENTO --- */
+                <div className="tl-unlink-confirm">
+                   <div style={{color: '#f59e0b', fontSize: '2.5rem', marginBottom: '1rem'}}>
+                     <FaExclamationTriangle />
+                   </div>
+                   <p className="tl-description">
+                     Sei sicuro? Non potrai più inviare segnalazioni via Telegram.
+                   </p>
+                   <div className="tl-actions">
+                     <button className="tl-btn tl-btn-secondary" onClick={() => setShowUnlinkConfirm(false)}>
+                       Annulla
+                     </button>
+                     <button className="tl-btn tl-btn-danger" onClick={handleUnlinkAccount} disabled={unlinking}>
+                       {unlinking ? 'Scollegamento...' : 'Conferma'}
+                     </button>
+                   </div>
+                </div>
+              )}
+            </>
+          ) : (
+            /* --- SCENARIO 3: GENERAZIONE CODICE --- */
+            <>
+              {code ? (
+                <div className="tl-code-wrapper">
+                  <div className="tl-code-header">
+                    <span>Codice di verifica</span>
+                    <div className="tl-timer">
+                      <FaClock /> {formatTime(timeLeft)}
+                    </div>
+                  </div>
+
+                  <div className="tl-code-display" onClick={copyToClipboard} title="Clicca per copiare">
+                    <span className="tl-code-text">{code}</span>
+                    <span className="tl-copy-icon">
+                       {copied ? <FaCheck /> : <FaCopy />}
+                    </span>
+                  </div>
+
+                  <div className="tl-steps">
+                    <div className="tl-step-row">
+                      <div className="tl-step-num">1</div>
+                      <span>Apri <strong>@ParticipiumBot</strong> su Telegram</span>
+                    </div>
+                    <div className="tl-step-row">
+                      <div className="tl-step-num">2</div>
+                      <span>Invia il comando: <code>/link {code}</code></span>
+                    </div>
+                  </div>
+
+                  <div className="tl-actions">
+                    <button 
+                      className="tl-btn tl-btn-secondary" 
+                      onClick={handleGenerateCode} 
+                      disabled={generating}
+                    >
+                      Nuovo Codice
+                    </button>
+                    <button 
+                      className="tl-btn tl-btn-primary" 
+                      onClick={handleCheckLinkStatus} 
+                      disabled={checking}
+                    >
+                      {checking ? 'Controllo...' : 'Ho inviato il codice'}
+                    </button>
                   </div>
                 </div>
-                <div className="code-box">
-                  <span className="code-text">{code}</span>
-                  <button
-                    className="copy-btn"
-                    onClick={copyToClipboard}
-                    title="Copy code"
+              ) : (
+                /* --- SCENARIO 4: STATO INIZIALE --- */
+                <div className="tl-initial">
+                  <button 
+                    className="tl-btn tl-btn-primary" 
+                    style={{width: '100%'}} 
+                    onClick={handleGenerateCode} 
+                    disabled={generating}
                   >
-                    {copied ? <FaCheck /> : <FaCopy />}
+                    {generating ? 'Generazione...' : 'Genera Codice di Collegamento'}
                   </button>
+                  <p style={{fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '1rem'}}>
+                    Il codice sarà valido per 10 minuti.
+                  </p>
                 </div>
-                <div className="code-instructions">
-                  <p><strong>Step 1:</strong> Open Telegram and go to the bot @ParticipiumBot</p>
-                  <p><strong>Step 2:</strong> Send the command: <code>/link {code}</code></p>
-                  <p><strong>Step 3:</strong> The link will be completed automatically</p>
-                </div>
-                <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
-                  <button
-                    className="telegram-action-btn"
-                    onClick={handleGenerateCode}
-                    disabled={generating || checking}
-                    style={{ flex: 1 }}
-                  >
-                    {generating ? 'Generating...' : 'Generate New Code'}
-                  </button>
-                  <button
-                    className="telegram-action-btn primary"
-                    onClick={handleCheckLinkStatus}
-                    disabled={checking || generating}
-                    style={{ flex: 1 }}
-                  >
-                    {checking ? 'Checking...' : 'Confirm Linking'}
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="generate-section">
-                <button
-                  className="telegram-action-btn primary"
-                  onClick={handleGenerateCode}
-                  disabled={generating}
-                >
-                  {generating ? 'Generating Code...' : 'Generate Verification Code'}
-                </button>
-                <p className="code-note">
-                  The code will be valid for 10 minutes
-                </p>
-              </div>
-            )}
-          </div>
-        )}
-
-        <div className="telegram-benefits">
-          <h4>Benefits of linking:</h4>
-          <ul>
-            <li>✅ Create reports directly from Telegram</li>
-            <li>✅ Receive notifications on your reports</li>
-            <li>✅ Simple and fast interface</li>
-            <li>✅ Always available on your phone</li>
-          </ul>
+              )}
+            </>
+          )}
         </div>
       </div>
     </div>
