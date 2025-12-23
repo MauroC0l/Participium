@@ -33,7 +33,11 @@ const router = express.Router();
  *               email: "m.rossi@comune.torino.it"
  *               first_name: "Mario"
  *               last_name: "Rossi"
- *               role: "Citizen"
+ *               roles:
+ *                 -  department_role_id: 1
+ *                    department_name: "Organization"
+ *                    role_name: "Citizen"
+ *               company_name: null
  *       400:
  *         description: Validation error
  *         content:

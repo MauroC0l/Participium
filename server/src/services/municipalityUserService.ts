@@ -210,7 +210,7 @@ class MunicipalityUserService {
    */
   private validateUpdateData(updateData: Partial<{ first_name: string; last_name: string; email: string; department_role_ids: number[]; company_name?: string }>): void {
     const { first_name, last_name, email, department_role_ids, company_name } = updateData;
-    if (!first_name && !last_name && !email && !department_role_ids && !company_name) {
+    if (!first_name && !last_name && !email && !department_role_ids && company_name === undefined) {
       throw new BadRequestError('At least one field must be provided for update');
     }
   }
@@ -321,6 +321,14 @@ class MunicipalityUserService {
           throw new NotFoundError(`Company "${updateData.company_name}" not found`);
         }
         companyId = company.id;
+      }
+    }
+
+    // Validate: If user is/becomes External Maintainer, they must have a company
+    if (hasExternalMaintainer) {
+      const willHaveCompany = (existingUser.companyId && !shouldRemoveCompany) || companyId !== undefined;
+      if (!willHaveCompany) {
+        throw new BadRequestError('External Maintainer role requires a company assignment');
       }
     }
 

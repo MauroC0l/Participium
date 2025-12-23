@@ -219,6 +219,62 @@ router.get('/', requireRole(SystemRoles.ADMINISTRATOR), municipalityUserControll
 
 /**
  * @swagger
+ * /api/municipality/users/department-roles:
+ *   get:
+ *     tags: [Municipality Users]
+ *     summary: Get all department roles
+ *     description: |
+ *       Returns a list of all available department-role combinations with their IDs.
+ *       This endpoint provides the `id` (department_role_id) needed for creating or updating municipality users.
+ *       (Admin only)
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: List of department roles
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: integer
+ *                     description: The department_role_id to use in requests
+ *                     example: 1
+ *                   department:
+ *                     type: string
+ *                     description: Department name
+ *                     example: "Public Works"
+ *                   role:
+ *                     type: string
+ *                     description: Role name
+ *                     example: "Municipal Officer"
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       403:
+ *         description: Forbidden
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.get('/department-roles', requireRole(SystemRoles.ADMINISTRATOR), municipalityUserController.getAllDepartmentRoles);
+
+
+/**
+ * @swagger
  * /api/municipality/users/{id}:
  *   get:
  *     tags: [Municipality Users]

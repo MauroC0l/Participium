@@ -21,23 +21,32 @@
  *         last_name:
  *           type: string
  *           description: Last name
- *         department_name:
+ *         roles:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               department_role_id:
+ *                 type: integer
+ *               department_name:
+ *                 type: string
+ *               role_name:
+ *                 type: string
+ *           description: List of roles assigned to the user
+ *         company_name:
  *           type: string
- *           description: Department name
- *         role_name:
- *           type: string
- *           description: Role name
+ *           description: Associated company name (for external maintainers)
  *         created_at:
  *           type: string
  *           format: date-time
  *           description: Account creation timestamp
  */
-export interface UserResponse{
-    id: number, 
-    username: string, 
-    email: string, 
-    first_name: string, 
-    last_name: string, 
+export interface UserResponse {
+    id: number,
+    username: string,
+    email: string,
+    first_name: string,
+    last_name: string,
     roles: Array<{
         department_role_id: number;
         department_name: string;
