@@ -12,6 +12,8 @@ import { AppDataSource } from '@database/connection';
 
 jest.mock('@repositories/userRepository');
 jest.mock('@repositories/departmentRoleRepository');
+jest.mock('@repositories/companyRepository');
+import { companyRepository } from '@repositories/companyRepository';
 jest.mock('@services/mapperService');
 jest.mock('@services/loggingService');
 jest.mock('@database/connection');
@@ -139,6 +141,31 @@ describe('UserService', () => {
         expect(mockQueryBuilder.values).toHaveBeenCalledWith([
           { userId: 10, departmentRoleId: 1 }
         ]);
+        expect(mockQueryBuilder.values).toHaveBeenCalledWith([
+          { userId: 10, departmentRoleId: 1 }
+        ]);
+      });
+
+      it('should send verification email upon registration', async () => {
+        // Arrange
+        const mockCreatedUser = createMockUserEntity({ id: 10 });
+        const mockUserWithRoles = createMockUserEntity({ id: 10 });
+        const mockResponse = createMockUserResponse({ id: 10 });
+
+        (userRepository.existsUserByUsername as jest.Mock).mockResolvedValue(false);
+        (userRepository.existsUserByEmail as jest.Mock).mockResolvedValue(false);
+        (userRepository.createUserWithPassword as jest.Mock).mockResolvedValue(mockCreatedUser);
+        (userRepository.findUserById as jest.Mock).mockResolvedValue(mockUserWithRoles);
+        (mapperService.mapUserEntityToUserResponse as jest.Mock).mockReturnValue(mockResponse);
+
+        // Mocking sendVerificationEmail directly if it's imported
+        const { sendVerificationEmail } = require('@utils/emailSender');
+
+        // Act
+        await userService.registerCitizen(validRegisterData);
+
+        // Assert
+        expect(sendVerificationEmail).toHaveBeenCalledWith('newuser@example.com', expect.any(String));
       });
 
       it('should handle multiple department_role_ids', async () => {
@@ -521,7 +548,40 @@ describe('UserService', () => {
 
         // Assert
         expect(result).toHaveLength(2);
+        expect(result).toHaveLength(2);
         expect(result).toEqual([mockResponses[0], mockResponses[2]]);
+      });
+
+      it('should fetch and map company names for external maintainers', async () => {
+        // Arrange
+        const category = 'Public Lighting';
+        const mockUsers = [
+          createMockUserEntity({ id: 1, companyId: 100 }),
+          createMockUserEntity({ id: 2, companyId: 101 })
+        ];
+        const mockCompany1 = { id: 100, name: 'Acme Lighting' };
+        const mockCompany2 = { id: 101, name: 'Bright City' };
+
+        (userRepository.findExternalMaintainersByCategory as jest.Mock).mockResolvedValue(mockUsers);
+        (companyRepository.findById as jest.Mock).mockImplementation((id) => {
+          if (id === 100) return Promise.resolve(mockCompany1);
+          if (id === 101) return Promise.resolve(mockCompany2);
+          return Promise.resolve(null);
+        });
+        (mapperService.mapUserEntityToUserResponse as jest.Mock).mockImplementation((user, companyName) => ({
+          id: user.id,
+          company_name: companyName
+        } as any));
+
+        // Act
+        const result = await userService.getExternalMaintainersByCategory(category);
+
+        // Assert
+        expect(companyRepository.findById).toHaveBeenCalledWith(100);
+        expect(companyRepository.findById).toHaveBeenCalledWith(101);
+        expect(result).toHaveLength(2);
+        expect(result[0].company_name).toBe('Acme Lighting');
+        expect(result[1].company_name).toBe('Bright City');
       });
     });
 

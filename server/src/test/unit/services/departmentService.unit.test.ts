@@ -9,7 +9,10 @@ import { createMockUserRole } from '@test/utils/mockEntities';
 
 // Mock dei repository
 jest.mock('@repositories/departmentRepository');
+jest.mock('@repositories/departmentRepository');
 jest.mock('@repositories/departmentRoleRepository');
+jest.mock('@repositories/roleRepository');
+import { roleRepository } from '@repositories/roleRepository';
 
 describe('DepartmentService Unit Tests', () => {
 
@@ -181,6 +184,89 @@ describe('DepartmentService Unit Tests', () => {
       expect(typeof findByDeptCall[0]).toBe('number');
       expect(findByIdCall[0]).toBe(departmentId);
       expect(findByDeptCall[0]).toBe(departmentId);
+    });
+  });
+
+
+  describe('getAllRoles', () => {
+    it('should return all roles', async () => {
+      const mockRoles: RoleEntity[] = [
+        { id: 1, name: 'Admin', description: 'Desc', departmentRoles: [] },
+        { id: 2, name: 'User', description: 'Desc', departmentRoles: [] }
+      ];
+      (roleRepository.findAll as jest.Mock).mockResolvedValue(mockRoles);
+
+      const result = await departmentService.getAllRoles();
+
+      expect(roleRepository.findAll).toHaveBeenCalled();
+      expect(result).toHaveLength(2);
+      expect(result[0]).toBe('Admin');
+    });
+  });
+
+  describe('getAllMunicipalityRoles', () => {
+    it('should return municipality roles', async () => {
+      const mockRoles: RoleEntity[] = [
+        { id: 1, name: 'Mayor', description: 'Desc', departmentRoles: [] }
+      ];
+      (roleRepository.findMunicipalityRoles as jest.Mock).mockResolvedValue(mockRoles);
+
+      const result = await departmentService.getAllMunicipalityRoles();
+
+      expect(roleRepository.findMunicipalityRoles).toHaveBeenCalled();
+      expect(result).toHaveLength(1);
+      expect(result[0]).toBe('Mayor');
+    });
+  });
+
+  describe('getAllMunicipalityDepartmentRoles', () => {
+    it('should return all municipality department roles', async () => {
+      const mockDeptRoles: DepartmentRoleEntity[] = [
+        {
+          id: 1,
+          departmentId: 1,
+          roleId: 1,
+          department: { id: 1, name: 'Dep1', departmentRoles: [] },
+          role: { id: 1, name: 'Role1', description: '', departmentRoles: [] },
+          userRoles: []
+        }
+      ];
+      (departmentRoleRepository.findMunicipalityDepartmentRoles as jest.Mock).mockResolvedValue(mockDeptRoles);
+
+      const result = await departmentService.getAllMunicipalityDepartmentRoles();
+
+      expect(departmentRoleRepository.findMunicipalityDepartmentRoles).toHaveBeenCalled();
+      expect(result).toHaveLength(1);
+      expect(result[0].role).toBe('Role1');
+      expect(result[0].department).toBe('Dep1');
+    });
+  });
+
+  describe('getDepartmentRoleId', () => {
+    it('should return ID if found', async () => {
+      (departmentRoleRepository.findByDepartmentAndRole as jest.Mock).mockResolvedValue({ id: 123 });
+      const result = await departmentService.getDepartmentRoleId('Organization', 'Citizen');
+      expect(result).toBe(123);
+    });
+
+    it('should return null if not found', async () => {
+      (departmentRoleRepository.findByDepartmentAndRole as jest.Mock).mockResolvedValue(null);
+      const result = await departmentService.getDepartmentRoleId('Organization', 'Citizen');
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('getDepartmentRoleIdsByRoleName', () => {
+    it('should return IDs for a role name', async () => {
+      const mockDeptRoles = [
+        { id: 1 }, { id: 2 }
+      ];
+      (departmentRoleRepository.findByRoleName as jest.Mock).mockResolvedValue(mockDeptRoles);
+
+      const result = await departmentService.getDepartmentRoleIdsByRoleName('Manager');
+
+      expect(departmentRoleRepository.findByRoleName).toHaveBeenCalledWith('Manager');
+      expect(result).toEqual([1, 2]);
     });
   });
 });

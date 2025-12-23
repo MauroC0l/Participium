@@ -162,6 +162,26 @@ describe('MunicipalityUserService', () => {
             );
             await expect(municipalityUserService.createMunicipalityUser(registerData)).rejects.toThrow(BadRequestError);
         });
+
+        it('should throw BadRequestError if External Maintainer has no company', async () => {
+            const data = { ...registerData, company_name: undefined };
+            mockUserRepository.existsUserByUsername.mockResolvedValue(false);
+            mockUserRepository.existsUserByEmail.mockResolvedValue(false);
+            mockDepartmentRoleRepository.findById.mockResolvedValue(
+                { id: 1, departmentId: 1, roleId: 1, department: { id: 1, name: 'External Service Providers', departmentRoles: [] }, role: { id: 1, name: 'External Maintainer', description: '', departmentRoles: [] }, userRoles: [] } as any
+            );
+            await expect(municipalityUserService.createMunicipalityUser(data)).rejects.toThrow('External Maintainer role requires a company assignment');
+        });
+
+        it('should throw BadRequestError if non-External Maintainer has company', async () => {
+            const data = { ...registerData, company_name: 'Acme Corp' };
+            mockUserRepository.existsUserByUsername.mockResolvedValue(false);
+            mockUserRepository.existsUserByEmail.mockResolvedValue(false);
+            mockDepartmentRoleRepository.findById.mockResolvedValue(
+                { id: 1, departmentId: 1, roleId: 1, department: { id: 1, name: 'Public Works', departmentRoles: [] }, role: { id: 1, name: 'Municipal Officer', description: '', departmentRoles: [] }, userRoles: [] } as any
+            );
+            await expect(municipalityUserService.createMunicipalityUser(data)).rejects.toThrow('Only External Maintainer role can be assigned to a company');
+        });
     });
 
     describe('getAllMunicipalityUsers', () => {
@@ -312,6 +332,30 @@ describe('MunicipalityUserService', () => {
 
             // findById is called with individual ID, not array
             expect(mockDepartmentRoleRepository.findById).toHaveBeenCalledWith(2);
+        });
+
+        it('should throw BadRequestError when updating to External Maintainer without company', async () => {
+            const existingUser = createMockUserWithRoles(
+                [{ roleName: 'Municipal Officer', departmentName: 'Public Works' }],
+                { id: 1 }
+            );
+            mockUserRepository.findUserById.mockResolvedValue(existingUser);
+            // New role is External Maintainer
+            mockDepartmentRoleRepository.findById.mockResolvedValue(
+                { id: 2, departmentId: 2, roleId: 2, department: { id: 2, name: 'External', departmentRoles: [] }, role: { id: 2, name: 'External Maintainer', description: '', departmentRoles: [] }, userRoles: [] } as any
+            );
+
+            await expect(municipalityUserService.updateMunicipalityUser(1, { department_role_ids: [2], company_name: undefined })).rejects.toThrow('External Maintainer role requires a company assignment');
+        });
+
+        it('should throw BadRequestError when External Maintainer tries to remove company', async () => {
+            const existingUser = createMockUserWithRoles(
+                [{ roleName: 'External Maintainer', departmentName: 'External' }],
+                { id: 1, companyId: 10 }
+            );
+            mockUserRepository.findUserById.mockResolvedValue(existingUser);
+
+            await expect(municipalityUserService.updateMunicipalityUser(1, { company_name: null as any })).rejects.toThrow('External Maintainer role requires a company');
         });
     });
 
