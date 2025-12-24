@@ -102,7 +102,8 @@ class UserRepository {
     // 'addSelect' is used to explicitly include fields that might be excluded by default
     return this.repository
       .createQueryBuilder("user")
-      .leftJoinAndSelect("user.departmentRole", "departmentRole")
+      .leftJoinAndSelect("user.userRoles", "userRoles")
+      .leftJoinAndSelect("userRoles.departmentRole", "departmentRole")
       .leftJoinAndSelect("departmentRole.department", "department")
       .leftJoinAndSelect("departmentRole.role", "role")
       .where("user.telegram_username = :telegramUsername", { telegramUsername })
@@ -235,9 +236,9 @@ class UserRepository {
   public async clearExpiredTelegramLinkCodes(): Promise<void> {
     await this.repository.createQueryBuilder()
       .update(UserEntity)
-      .set({ 
-        telegramLinkCode: null as any, 
-        telegramLinkCodeExpiresAt: null as any 
+      .set({
+        telegramLinkCode: null as any,
+        telegramLinkCodeExpiresAt: null as any
       })
       .where('telegramLinkCodeExpiresAt < NOW()')
       .andWhere('telegramLinkCode IS NOT NULL')
@@ -320,14 +321,15 @@ class UserRepository {
   async findAvailableStaffByRoleId(roleId: number): Promise<UserEntity | null> {
     return this.repository
       .createQueryBuilder("user")
-      .innerJoin("user.userRoles", "ur")
-      .innerJoin("ur.departmentRole", "dr")
-      .innerJoin("dr.role", "role")
+      .innerJoinAndSelect("user.userRoles", "userRoles")
+      .innerJoinAndSelect("userRoles.departmentRole", "dr")
+      .innerJoinAndSelect("dr.role", "role")
       .leftJoin("reports", "r", "r.assignee_id = user.id AND r.status IN (:...statuses)", {
         statuses: [ReportStatus.ASSIGNED, ReportStatus.IN_PROGRESS, ReportStatus.SUSPENDED]
       })
       .where("role.id = :roleId", { roleId })
       .groupBy("user.id")
+      .addGroupBy("userRoles.id")
       .addGroupBy("dr.id")
       .addGroupBy("role.id")
       .addSelect("COUNT(r.id)", "report_count")
@@ -481,14 +483,14 @@ class UserRepository {
 
     // Generate a 6-digit code
     const code = Math.floor(100000 + Math.random() * 900000).toString();
-    
+
     // Set expiration to 10 minutes from now
     const expiresAt = new Date();
     expiresAt.setMinutes(expiresAt.getMinutes() + 10);
 
     user.telegramLinkCode = code;
     user.telegramLinkCodeExpiresAt = expiresAt;
-    
+
     await this.repository.save(user);
     return code;
   }
@@ -526,9 +528,9 @@ class UserRepository {
     user.telegramUsername = telegramUsername;
     user.telegramLinkCode = undefined;
     user.telegramLinkCodeExpiresAt = undefined;
-    
+
     await this.repository.save(user);
-    
+
     return { success: true, message: `*Account linked successfully!*\n\nYour Telegram username is now associated with the account "${user.username}".` };
   }
 
@@ -550,9 +552,9 @@ class UserRepository {
     user.telegramUsername = null as any;
     user.telegramLinkCode = null as any;
     user.telegramLinkCodeExpiresAt = null as any;
-    
+
     await this.repository.save(user);
-    
+
     return { success: true, message: 'Telegram account unlinked successfully.' };
   }
 

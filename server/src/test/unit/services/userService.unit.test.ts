@@ -17,7 +17,13 @@ import { AppDataSource } from '@database/connection';
 jest.mock('@repositories/userRepository');
 jest.mock('@repositories/departmentRoleRepository');
 jest.mock('@repositories/companyRepository');
-jest.mock('@repositories/notificationRepository');
+jest.mock('@repositories/notificationRepository', () => ({
+  notificationRepository: {
+    find: jest.fn(),
+    findOneBy: jest.fn(),
+    save: jest.fn(),
+  }
+}));
 jest.mock('@services/mapperService');
 jest.mock('@services/loggingService');
 jest.mock('@database/connection');

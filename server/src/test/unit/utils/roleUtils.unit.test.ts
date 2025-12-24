@@ -1,110 +1,14 @@
 import { RoleUtils } from '@utils/roleUtils';
 import { roleRepository } from '@repositories/roleRepository';
-import { departmentRoleRepository } from '@repositories/departmentRoleRepository';
+import { UserEntity } from '@models/entity/userEntity';
 
 jest.mock('@repositories/roleRepository');
-jest.mock('@repositories/departmentRoleRepository');
 
 const mockedRoleRepository = roleRepository as jest.Mocked<typeof roleRepository>;
-const mockedDepartmentRoleRepository = departmentRoleRepository as jest.Mocked<typeof departmentRoleRepository>;
 
 describe('RoleUtils Unit Tests', () => {
   afterEach(() => {
     jest.clearAllMocks();
-  });
-
-  describe('getAllRoles', () => {
-    it('should return all role names', async () => {
-      mockedRoleRepository.findAll.mockResolvedValue([
-        { id: 1, name: 'Citizen' } as any,
-        { id: 2, name: 'Administrator' } as any,
-        { id: 3, name: 'Manager' } as any,
-      ]);
-
-      const roles = await RoleUtils.getAllRoles();
-
-      expect(roles).toEqual(['Citizen', 'Administrator', 'Manager']);
-      expect(mockedRoleRepository.findAll).toHaveBeenCalled();
-    });
-
-    it('should return empty array when no roles exist', async () => {
-      mockedRoleRepository.findAll.mockResolvedValue([]);
-
-      const roles = await RoleUtils.getAllRoles();
-
-      expect(roles).toEqual([]);
-    });
-  });
-
-  describe('getAllMunicipalityRoles', () => {
-    it('should return municipality role names', async () => {
-      mockedRoleRepository.findMunicipalityRoles.mockResolvedValue([
-        { id: 3, name: 'Manager' } as any,
-        { id: 4, name: 'Technician' } as any,
-      ]);
-
-      const roles = await RoleUtils.getAllMunicipalityRoles();
-
-      expect(roles).toEqual(['Manager', 'Technician']);
-      expect(mockedRoleRepository.findMunicipalityRoles).toHaveBeenCalled();
-    });
-
-    it('should return empty array when no municipality roles exist', async () => {
-      mockedRoleRepository.findMunicipalityRoles.mockResolvedValue([]);
-
-      const roles = await RoleUtils.getAllMunicipalityRoles();
-
-      expect(roles).toEqual([]);
-    });
-  });
-
-  describe('getAllMunicipalityDepartmentRoles', () => {
-    it('should return municipality department roles', async () => {
-      mockedDepartmentRoleRepository.findMunicipalityDepartmentRoles.mockResolvedValue([
-        {
-          id: 1,
-          department: { id: 1, name: 'Public Works' } as any,
-          role: { id: 3, name: 'Manager' } as any,
-        } as any,
-        {
-          id: 2,
-          department: { id: 2, name: 'IT' } as any,
-          role: { id: 4, name: 'Technician' } as any,
-        } as any,
-      ]);
-
-      const departmentRoles = await RoleUtils.getAllMunicipalityDepartmentRoles();
-
-      expect(departmentRoles).toEqual([
-        { id: 1, department: 'Public Works', role: 'Manager' },
-        { id: 2, department: 'IT', role: 'Technician' },
-      ]);
-      expect(mockedDepartmentRoleRepository.findMunicipalityDepartmentRoles).toHaveBeenCalled();
-    });
-
-    it('should handle missing department or role names', async () => {
-      mockedDepartmentRoleRepository.findMunicipalityDepartmentRoles.mockResolvedValue([
-        {
-          id: 1,
-          department: null,
-          role: null,
-        } as any,
-      ]);
-
-      const departmentRoles = await RoleUtils.getAllMunicipalityDepartmentRoles();
-
-      expect(departmentRoles).toEqual([
-        { id: 1, department: '', role: '' },
-      ]);
-    });
-
-    it('should return empty array when no department roles exist', async () => {
-      mockedDepartmentRoleRepository.findMunicipalityDepartmentRoles.mockResolvedValue([]);
-
-      const departmentRoles = await RoleUtils.getAllMunicipalityDepartmentRoles();
-
-      expect(departmentRoles).toEqual([]);
-    });
   });
 
   describe('isRoleValid', () => {
@@ -127,35 +31,174 @@ describe('RoleUtils Unit Tests', () => {
     });
   });
 
-  describe('getDepartmentRoleId', () => {
-    it('should return department role ID for valid department and role', async () => {
-      mockedDepartmentRoleRepository.findByDepartmentAndRole.mockResolvedValue({
-        id: 10,
-        department: { id: 1, name: 'Public Works' } as any,
-        role: { id: 3, name: 'Manager' } as any,
-      } as any);
+  describe('getUserRoleNames', () => {
+    it('should return all role names for a user', () => {
+      const user = {
+        userRoles: [
+          {
+            departmentRole: {
+              role: { name: 'Administrator' },
+              department: { name: 'Organization' }
+            }
+          },
+          {
+            departmentRole: {
+              role: { name: 'Water Network staff member' },
+              department: { name: 'Water and Sewer Services Department' }
+            }
+          }
+        ]
+      } as any as UserEntity;
 
-      const id = await RoleUtils.getDepartmentRoleId('Public Works', 'Manager');
+      const roles = RoleUtils.getUserRoleNames(user);
 
-      expect(id).toBe(10);
-      expect(mockedDepartmentRoleRepository.findByDepartmentAndRole).toHaveBeenCalledWith('Public Works', 'Manager');
+      expect(roles).toEqual(['Administrator', 'Water Network staff member']);
     });
 
-    it('should return null for non-existent department role', async () => {
-      mockedDepartmentRoleRepository.findByDepartmentAndRole.mockResolvedValue(null);
+    it('should return empty array when user has no roles', () => {
+      const user = { userRoles: [] } as any as UserEntity;
 
-      const id = await RoleUtils.getDepartmentRoleId('NonExistent', 'Role');
+      const roles = RoleUtils.getUserRoleNames(user);
 
-      expect(id).toBeNull();
-      expect(mockedDepartmentRoleRepository.findByDepartmentAndRole).toHaveBeenCalledWith('NonExistent', 'Role');
+      expect(roles).toEqual([]);
     });
 
-    it('should handle undefined department role', async () => {
-      mockedDepartmentRoleRepository.findByDepartmentAndRole.mockResolvedValue(undefined as any);
+    it('should filter out empty role names', () => {
+      const user = {
+        userRoles: [
+          {
+            departmentRole: {
+              role: null,
+              department: { name: 'Organization' }
+            }
+          }
+        ]
+      } as any as UserEntity;
 
-      const id = await RoleUtils.getDepartmentRoleId('Department', 'Role');
+      const roles = RoleUtils.getUserRoleNames(user);
 
-      expect(id).toBeNull();
+      expect(roles).toEqual([]);
+    });
+  });
+
+  describe('getUserDepartmentNames', () => {
+    it('should return all department names for a user', () => {
+      const user = {
+        userRoles: [
+          {
+            departmentRole: {
+              role: { name: 'Administrator' },
+              department: { name: 'Organization' }
+            }
+          },
+          {
+            departmentRole: {
+              role: { name: 'Water Network staff member' },
+              department: { name: 'Water and Sewer Services Department' }
+            }
+          }
+        ]
+      } as any as UserEntity;
+
+      const departments = RoleUtils.getUserDepartmentNames(user);
+
+      expect(departments).toEqual(['Organization', 'Water and Sewer Services Department']);
+    });
+
+    it('should return empty array when user has no roles', () => {
+      const user = { userRoles: [] } as any as UserEntity;
+
+      const departments = RoleUtils.getUserDepartmentNames(user);
+
+      expect(departments).toEqual([]);
+    });
+  });
+
+  describe('userHasRole', () => {
+    it('should return true when user has the specific role', () => {
+      const user = {
+        userRoles: [
+          {
+            departmentRole: {
+              role: { name: 'Administrator' },
+              department: { name: 'Organization' }
+            }
+          }
+        ]
+      } as any as UserEntity;
+
+      const hasRole = RoleUtils.userHasRole(user, 'Administrator');
+
+      expect(hasRole).toBe(true);
+    });
+
+    it('should return false when user does not have the specific role', () => {
+      const user = {
+        userRoles: [
+          {
+            departmentRole: {
+              role: { name: 'Citizen' },
+              department: { name: 'Organization' }
+            }
+          }
+        ]
+      } as any as UserEntity;
+
+      const hasRole = RoleUtils.userHasRole(user, 'Administrator');
+
+      expect(hasRole).toBe(false);
+    });
+
+    it('should return false when user has no roles', () => {
+      const user = { userRoles: [] } as any as UserEntity;
+
+      const hasRole = RoleUtils.userHasRole(user, 'Administrator');
+
+      expect(hasRole).toBe(false);
+    });
+  });
+
+  describe('userInDepartment', () => {
+    it('should return true when user works in the specific department', () => {
+      const user = {
+        userRoles: [
+          {
+            departmentRole: {
+              role: { name: 'Water Network staff member' },
+              department: { name: 'Water and Sewer Services Department' }
+            }
+          }
+        ]
+      } as any as UserEntity;
+
+      const inDepartment = RoleUtils.userInDepartment(user, 'Water and Sewer Services Department');
+
+      expect(inDepartment).toBe(true);
+    });
+
+    it('should return false when user does not work in the specific department', () => {
+      const user = {
+        userRoles: [
+          {
+            departmentRole: {
+              role: { name: 'Citizen' },
+              department: { name: 'Organization' }
+            }
+          }
+        ]
+      } as any as UserEntity;
+
+      const inDepartment = RoleUtils.userInDepartment(user, 'Water and Sewer Services Department');
+
+      expect(inDepartment).toBe(false);
+    });
+
+    it('should return false when user has no roles', () => {
+      const user = { userRoles: [] } as any as UserEntity;
+
+      const inDepartment = RoleUtils.userInDepartment(user, 'Water and Sewer Services Department');
+
+      expect(inDepartment).toBe(false);
     });
   });
 });

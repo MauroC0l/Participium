@@ -1297,10 +1297,11 @@ describe('UserRepository Unit Tests', () => {
 
       // Assert
       expect(mockRepository.createQueryBuilder).toHaveBeenCalledWith('user');
-      expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('user.departmentRole', 'departmentRole');
+      expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('user.userRoles', 'userRoles');
+      expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('userRoles.departmentRole', 'departmentRole');
       expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('departmentRole.department', 'department');
       expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('departmentRole.role', 'role');
-      expect(mockQueryBuilder.where).toHaveBeenCalledWith('user.departmentRoleId IN (:...ids)', { ids: departmentRoleIds });
+      expect(mockQueryBuilder.where).toHaveBeenCalledWith('userRoles.departmentRoleId IN (:...ids)', { ids: departmentRoleIds });
       expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith('user.createdAt', 'DESC');
       expect(mockQueryBuilder.getMany).toHaveBeenCalled();
       expect(result).toEqual(mockUsers);
@@ -1327,7 +1328,7 @@ describe('UserRepository Unit Tests', () => {
       const result = await userRepository.findUsersByDepartmentRoleIds(departmentRoleIds);
 
       // Assert
-      expect(mockQueryBuilder.where).toHaveBeenCalledWith('user.departmentRoleId IN (:...ids)', { ids: departmentRoleIds });
+      expect(mockQueryBuilder.where).toHaveBeenCalledWith('userRoles.departmentRoleId IN (:...ids)', { ids: departmentRoleIds });
       expect(result).toEqual([]);
     });
   });
@@ -1347,7 +1348,8 @@ describe('UserRepository Unit Tests', () => {
 
       // Assert
       expect(mockRepository.createQueryBuilder).toHaveBeenCalledWith('user');
-      expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('user.departmentRole', 'departmentRole');
+      expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('user.userRoles', 'userRoles');
+      expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('userRoles.departmentRole', 'departmentRole');
       expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('departmentRole.department', 'department');
       expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('departmentRole.role', 'role');
       expect(mockQueryBuilder.where).toHaveBeenCalledWith('role.name = :roleName', { roleName });
@@ -1387,7 +1389,8 @@ describe('UserRepository Unit Tests', () => {
 
       // Assert
       expect(mockRepository.createQueryBuilder).toHaveBeenCalledWith('user');
-      expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('user.departmentRole', 'departmentRole');
+      expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('user.userRoles', 'userRoles');
+      expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('userRoles.departmentRole', 'departmentRole');
       expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('departmentRole.department', 'department');
       expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('departmentRole.role', 'role');
       expect(mockQueryBuilder.where).toHaveBeenCalledWith('user.telegram_username = :telegramUsername', { telegramUsername });
@@ -1452,7 +1455,6 @@ describe('UserRepository Unit Tests', () => {
       const mockStaff = createMockCitizen({
         id: 1,
         username: 'staff1',
-        departmentRoleId: 1,
       });
       mockQueryBuilder.innerJoinAndSelect.mockReturnThis();
       mockQueryBuilder.leftJoin.mockReturnThis();
@@ -1469,7 +1471,8 @@ describe('UserRepository Unit Tests', () => {
 
       // Assert
       expect(mockRepository.createQueryBuilder).toHaveBeenCalledWith('user');
-      expect(mockQueryBuilder.innerJoinAndSelect).toHaveBeenCalledWith('user.departmentRole', 'dr');
+      expect(mockQueryBuilder.innerJoinAndSelect).toHaveBeenCalledWith('user.userRoles', 'userRoles');
+      expect(mockQueryBuilder.innerJoinAndSelect).toHaveBeenCalledWith('userRoles.departmentRole', 'dr');
       expect(mockQueryBuilder.innerJoinAndSelect).toHaveBeenCalledWith('dr.role', 'role');
       expect(mockQueryBuilder.leftJoin).toHaveBeenCalledWith(
         'reports',
@@ -1479,6 +1482,7 @@ describe('UserRepository Unit Tests', () => {
       );
       expect(mockQueryBuilder.where).toHaveBeenCalledWith('dr.role_id = :roleId', { roleId });
       expect(mockQueryBuilder.groupBy).toHaveBeenCalledWith('user.id');
+      expect(mockQueryBuilder.addGroupBy).toHaveBeenCalledWith('userRoles.id');
       expect(mockQueryBuilder.addGroupBy).toHaveBeenCalledWith('dr.id');
       expect(mockQueryBuilder.addGroupBy).toHaveBeenCalledWith('role.id');
       expect(mockQueryBuilder.addSelect).toHaveBeenCalledWith('COUNT(r.id)', 'report_count');
@@ -1524,7 +1528,8 @@ describe('UserRepository Unit Tests', () => {
 
       // Assert
       expect(mockRepository.createQueryBuilder).toHaveBeenCalledWith('user');
-      expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('user.departmentRole', 'departmentRole');
+      expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('user.userRoles', 'userRoles');
+      expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('userRoles.departmentRole', 'departmentRole');
       expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('departmentRole.department', 'department');
       expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('departmentRole.role', 'role');
       expect(mockQueryBuilder.where).toHaveBeenCalledWith('role.name NOT IN (:...excludedRoleNames)', { excludedRoleNames });
@@ -1713,7 +1718,7 @@ describe('UserRepository Unit Tests', () => {
       expect(mockRepository.createQueryBuilder).toHaveBeenCalledWith("user");
       expect(mockQueryBuilder.where).toHaveBeenCalledWith("user.telegram_link_code = :code", { code });
       expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
-        "user.telegram_link_code_expires_at > :now", 
+        "user.telegram_link_code_expires_at > :now",
         expect.objectContaining({ now: expect.any(Date) })
       );
       expect(result.success).toBe(true);
