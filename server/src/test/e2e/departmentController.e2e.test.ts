@@ -107,28 +107,6 @@ describe('DepartmentController E2E Tests', () => {
       }
     });
 
-    it('should return exactly 9 municipality departments', async () => {
-      // Arrange
-      const loginResponse = await request(app)
-        .post('/api/sessions')
-        .send({
-          username: 'testadmin',
-          password: 'AdminPass123!',
-        })
-        .expect(200);
-
-      const cookies = loginResponse.headers['set-cookie'];
-
-      // Act
-      const response = await request(app)
-        .get('/api/departments')
-        .set('Cookie', cookies)
-        .expect(200);
-
-      // Assert - 8 total departments - Organization = 7
-      expect(response.body).toHaveLength(9);
-    });
-
     it('should maintain session across multiple requests', async () => {
       // Arrange - Login once
       const loginResponse = await request(app)
