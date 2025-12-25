@@ -47,3 +47,16 @@ export const getAllDepartments = async () => {
 
   return handleResponse(response);
 };
+
+/**
+ * Get all Department-Role mappings
+ * @returns {Promise<Array>} List of { id, department, role }
+ */
+export const getAllDepartmentRolesMapping = async () => {
+  const response = await fetch(`/api/departments/roles/mapping`, {
+    method: "GET",
+    credentials: "include",
+  });
+
+  return handleResponse(response);
+};

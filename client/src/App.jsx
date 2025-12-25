@@ -131,7 +131,8 @@ function App() {
     }
 
     // 3. Se l'utente c'è MA non è Citizen, rimandiamo alla Home
-    if (user.role_name !== 'Citizen') {
+    const isCitizen = user.roles && user.roles.some(r => r.role_name === 'Citizen');
+    if (!isCitizen) {
       return <Navigate to="/home" replace />;
     }
 

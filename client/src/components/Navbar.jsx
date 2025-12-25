@@ -31,10 +31,10 @@ export default function Navbar({ user, onLogout }) {
   }, []);
 
   // 2. Info Utente Derivate (uso useMemo per la stabilità)
-  const userRole = user?.role_name;
-  const isAdmin = userRole === 'Administrator';
+  const userRoles = useMemo(() => user?.roles || [], [user]);
+  const isAdmin = useMemo(() => userRoles.some(r => r.role_name === 'Administrator'), [userRoles]);
 
-  const isCitizen = useMemo(() => userRole === 'Citizen', [userRole]);
+  const isCitizen = useMemo(() => userRoles.some(r => r.role_name === 'Citizen'), [userRoles]);
   
   // Utilizza useMemo per calcolare il nome utente completo e il ruolo di visualizzazione una sola volta
   const displayUsername = useMemo(() => {
@@ -44,7 +44,7 @@ export default function Navbar({ user, onLogout }) {
     return user?.username || 'User'; 
   }, [user?.first_name, user?.last_name, user?.username]);
 
-  const displayRole = useMemo(() => userRole || 'User', [userRole]);
+  const displayRole = useMemo(() => userRoles.map(r => r.role_name).join(', ') || 'User', [userRoles]);
   
   // Calcola le iniziali (richiede che first_name e last_name siano passati)
   const avatarInitials = useMemo(() => {
@@ -138,7 +138,9 @@ export default function Navbar({ user, onLogout }) {
 // Validazione delle props
 Navbar.propTypes = {
   user: PropTypes.shape({
-    role_name: PropTypes.string,
+    roles: PropTypes.arrayOf(PropTypes.shape({
+        role_name: PropTypes.string
+    })),
     username: PropTypes.string,
     first_name: PropTypes.string,
     last_name: PropTypes.string,

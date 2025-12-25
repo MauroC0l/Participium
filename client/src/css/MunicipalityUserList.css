@@ -608,3 +608,36 @@
     opacity: 1;
   }
 }
+
+/* --- Scrollable Table Wrapper (CompanyList) --- */
+.mul-table-wrapper-scrollable {
+  max-height: 500px; /* Altezza approssimativa per mostrare circa 7 righe */
+  overflow-y: auto;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.mul-table-wrapper-scrollable .mul-table th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Scrollbar Styling */
+.mul-table-wrapper-scrollable::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.mul-table-wrapper-scrollable::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+.mul-table-wrapper-scrollable::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 10px;
+}
+
+.mul-table-wrapper-scrollable::-webkit-scrollbar-thumb:hover {
+  background-color: #94a3b8;
+}
