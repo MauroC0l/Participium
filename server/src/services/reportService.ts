@@ -21,7 +21,8 @@ import { CreateReportRequest } from '@dto/input/CreateReportRequest';
 import { ReportResponse } from '@dto/output/ReportResponse';
 import { SystemRoles, isTechnicalStaff, isCitizen } from '@models/dto/UserRole';
 import { ReportEntity } from '@entity/reportEntity';
-import { Report } from '@models/dto/Report'; 
+import { Report } from '@models/dto/Report';
+import { RoleUtils } from '@utils/roleUtils';
 import { mapReportEntityToResponse, mapReportEntityToDTO, mapReportEntityToReportResponse, mapMessageToResponse } from './mapperService';
 import { commentRepository } from '@repositories/commentRepository';
 import { CommentResponse } from '@dto/output/CommentResponse';
@@ -159,7 +160,7 @@ class ReportService {
     for (const dataUri of photoDataUris) {
       const buffer = dataUriToBuffer(dataUri);
       const mimeType = extractMimeType(dataUri)!;
-      
+
       const storagePath = await storageService.uploadPhoto(buffer, mimeType, reportId);
       storagePaths.push(storagePath);
     }
@@ -232,29 +233,31 @@ class ReportService {
    * Enforces authorization: pending reports only for public relations officers
    */
   async getAllReports(
-    userId: number | undefined, 
+    userId: number | undefined,
     status?: ReportStatus,
     category?: ReportCategory
   ): Promise<ReportResponse[]> {
-    
-    let userRole: string | undefined;
-    
-    if (userId) {
-      const userEntity = await userRepository.findUserById(userId);
-      
-      if (!userEntity) {
-        throw new UnauthorizedError('User not found');
-      }
-      
-      userRole = userEntity.departmentRole?.role?.name;
-      
-      if (!userRole) {
-        throw new UnauthorizedError('User role not found');
-      }
+
+    // Fetch user entity
+    if (!userId) {
+      throw new UnauthorizedError('User ID is required');
     }
-    
+
+    const userEntity = await userRepository.findUserById(userId);
+    if (!userEntity) {
+      throw new UnauthorizedError('User not found');
+    }
+
+    const userRoles = RoleUtils.getUserRoleNames(userEntity);
+
+    if (!userRoles || userRoles.length === 0) {
+      throw new UnauthorizedError('User has no roles assigned');
+    }
+
+    const hasPublicRelationsRole = RoleUtils.userHasRole(userEntity, 'Municipal Public Relations Officer');
+
     if (status === ReportStatus.PENDING_APPROVAL) {
-      if (!userRole || userRole !== 'Municipal Public Relations Officer') {
+      if (!hasPublicRelationsRole) {
         throw new InsufficientRightsError(
           'Only Municipal Public Relations Officers can view pending reports'
         );
@@ -265,7 +268,7 @@ class ReportService {
 
     const filteredReports = reports.filter(report => {
       if (report.status === ReportStatus.PENDING_APPROVAL) {
-        return userRole === 'Municipal Public Relations Officer';
+        return hasPublicRelationsRole;
       }
       return true;
     });
@@ -286,10 +289,11 @@ class ReportService {
       throw new UnauthorizedError('User not found');
     }
 
-    const departmentName = user.departmentRole?.department?.name;
+    // Check if user works in External Service Providers department
+    const isExternalServiceProvider = RoleUtils.userInDepartment(user, 'External Service Providers');
 
     let reports;
-    if (departmentName === 'External Service Providers') {
+    if (isExternalServiceProvider) {
       reports = await reportRepository.findByExternalAssigneeId(userId, status, category);
     } else {
       reports = await reportRepository.findByAssigneeId(userId, status, category);
@@ -347,7 +351,7 @@ class ReportService {
     if (!user) {
       throw new UnauthorizedError('User not found');
     }
-    const userRole = user.departmentRole?.role?.name;
+    const userRoles = RoleUtils.getUserRoleNames(user);
 
     const currentStatus = report.status;
     // save previous status for notification message
@@ -358,7 +362,7 @@ class ReportService {
         if (currentStatus !== ReportStatus.PENDING_APPROVAL) {
           throw new BadRequestError(`Cannot approve report with status ${currentStatus}. Only reports with status Pending Approval can be approved.`);
         }
-        if (userRole !== SystemRoles.PUBLIC_RELATIONS_OFFICER) {
+        if (!RoleUtils.userHasRole(user, SystemRoles.PUBLIC_RELATIONS_OFFICER)) {
           throw new InsufficientRightsError('Only Public Relations Officers can approve reports.');
         }
         if (body.externalAssigneeId) {
@@ -366,7 +370,7 @@ class ReportService {
           if (!assignee) {
             throw new NotFoundError('External assignee not found');
           }
-          if (assignee.departmentRole?.role?.name !== SystemRoles.EXTERNAL_MAINTAINER) {
+          if (!RoleUtils.userHasRole(assignee, SystemRoles.EXTERNAL_MAINTAINER)) {
             throw new BadRequestError('User is not an external maintainer');
           }
           report.assignee = assignee;
@@ -388,13 +392,13 @@ class ReportService {
           }
         }
         break;
-      
+
       case ReportStatus.REJECTED:
         if (currentStatus !== ReportStatus.PENDING_APPROVAL) {
-            throw new BadRequestError(`Cannot reject report with status ${currentStatus}. Only reports with status Pending Approval can be rejected.`);
+          throw new BadRequestError(`Cannot reject report with status ${currentStatus}. Only reports with status Pending Approval can be rejected.`);
         }
-        if (userRole !== SystemRoles.PUBLIC_RELATIONS_OFFICER) {
-            throw new InsufficientRightsError('Only Public Relations Officers can reject reports.');
+        if (!RoleUtils.userHasRole(user, SystemRoles.PUBLIC_RELATIONS_OFFICER)) {
+          throw new InsufficientRightsError('Only Public Relations Officers can reject reports.');
         }
         if (!body.rejectionReason || body.rejectionReason.trim() === '') {
           throw new BadRequestError('Rejection reason is required when rejecting a report.');
@@ -406,11 +410,14 @@ class ReportService {
         if (![ReportStatus.ASSIGNED, ReportStatus.IN_PROGRESS, ReportStatus.SUSPENDED].includes(currentStatus as ReportStatus)) {
           throw new BadRequestError(`Cannot resolve a report with status ${currentStatus}.`);
         }
-        if (userRole === SystemRoles.EXTERNAL_MAINTAINER) {
+        const isExternalMaintainer = RoleUtils.userHasRole(user, SystemRoles.EXTERNAL_MAINTAINER);
+        const hasTechnicalRole = userRoles.some(role => isTechnicalStaff(role));
+
+        if (isExternalMaintainer) {
           if (report.assigneeId !== userId && report.externalAssigneeId !== userId) {
             throw new InsufficientRightsError('You can only resolve reports assigned to you.');
           }
-        } else if (!isTechnicalStaff(userRole)) {
+        } else if (!hasTechnicalRole) {
           throw new InsufficientRightsError('You are not authorized to resolve reports.');
         }
         if (body.resolutionNotes) {
@@ -419,13 +426,15 @@ class ReportService {
         break;
 
       case ReportStatus.IN_PROGRESS:
-        if (currentStatus !== ReportStatus.ASSIGNED && currentStatus !== ReportStatus.SUSPENDED || isCitizen(userRole)) {
+        const isCitizenInProgress = userRoles.some(role => isCitizen(role));
+        if (currentStatus !== ReportStatus.ASSIGNED && currentStatus !== ReportStatus.SUSPENDED || isCitizenInProgress) {
           throw new InsufficientRightsError('Only staff can mark reports as in progress.');
         }
         break;
 
       case ReportStatus.SUSPENDED:
-        if (currentStatus !== ReportStatus.IN_PROGRESS || isCitizen(userRole)) {
+        const isCitizenSuspended = userRoles.some(role => isCitizen(role));
+        if (currentStatus !== ReportStatus.IN_PROGRESS || isCitizenSuspended) {
           throw new InsufficientRightsError('Only staff can suspend reports.');
         }
         break;
@@ -478,10 +487,11 @@ class ReportService {
     if (!user) {
       throw new UnauthorizedError('User not found');
     }
-    const userRole = user.departmentRole?.role?.name;
+    const userRoles = RoleUtils.getUserRoleNames(user);
 
     // Only technical staff can assign to external maintainers
-    if (!isTechnicalStaff(userRole)) {
+    const hasTechnicalRole = userRoles.some(role => isTechnicalStaff(role));
+    if (!hasTechnicalRole) {
       throw new InsufficientRightsError('Only technical staff can assign reports to external maintainers');
     }
 
@@ -496,7 +506,7 @@ class ReportService {
       throw new NotFoundError('External maintainer not found');
     }
 
-    if (assignee.departmentRole?.role?.name !== SystemRoles.EXTERNAL_MAINTAINER) {
+    if (!RoleUtils.userHasRole(assignee, SystemRoles.EXTERNAL_MAINTAINER)) {
       throw new BadRequestError('Assignee is not an external maintainer');
     }
 
@@ -522,13 +532,13 @@ class ReportService {
     report.updatedAt = new Date();
 
     await reportRepository.save(report);
-    
+
     // Reload report with all relations
     const updatedReport = await reportRepository.findReportById(reportId);
     if (!updatedReport) {
       throw new NotFoundError('Report not found after update');
     }
-    
+
     return mapReportEntityToDTO(updatedReport);
   }
 
@@ -614,6 +624,10 @@ class ReportService {
    * @returns Comment response DTO
    */
   private mapCommentToResponse(comment: CommentEntity): CommentResponse {
+    // Get first role or 'Unknown' for display purposes
+    const userRoles = RoleUtils.getUserRoleNames(comment.author);
+    const primaryRole = userRoles.length > 0 ? userRoles[0] : 'Unknown';
+
     return {
       id: comment.id,
       reportId: comment.reportId,
@@ -622,7 +636,7 @@ class ReportService {
         username: comment.author.username,
         firstName: comment.author.firstName,
         lastName: comment.author.lastName,
-        role: comment.author.departmentRole?.role?.name || 'Unknown'
+        role: primaryRole
       },
       content: comment.content,
       createdAt: comment.createdAt
@@ -630,21 +644,21 @@ class ReportService {
   }
 
 
-    /**
-   * Retrieve reports located near a specific address
-   * @param address 
-   * @returns 
-   */
+  /**
+ * Retrieve reports located near a specific address
+ * @param address 
+ * @returns 
+ */
   async getReportByAddress(address: string): Promise<ReportResponse[]> {
     // Cerchiamo i report tramite il repository
     const reports = await reportRepository.findReportsByAddress(address);
-    
+
     // Mappiamo i risultati aggiungendo i nomi delle aziende se necessario
     return await this.mapReportsWithCompanyNames(reports);
   }
 
 
-  
+
   /**
    * Send a message from technical staff to the citizen reporter and notify the citizen
    * @param reportId - The ID of the report
@@ -688,11 +702,11 @@ class ReportService {
     return mapMessageToResponse(message);
   }
 
-    /**
-   * Get all public messages for a report
-   * @param reportId - The ID of the report
-   * @returns Array of messages (MessageResponse[])
-   */
+  /**
+ * Get all public messages for a report
+ * @param reportId - The ID of the report
+ * @returns Array of messages (MessageResponse[])
+ */
   async getMessages(reportId: number, userId: number) {
     const report = await reportRepository.findReportById(reportId);
     if (!report) {
@@ -704,7 +718,7 @@ class ReportService {
     const messages = await messageRepository.getMessagesByReportId(reportId);
     return messages.map(mapMessageToResponse);
   }
-  
+
 }
 
 export const reportService = new ReportService();

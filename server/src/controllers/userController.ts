@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { userService } from '@services/userService';
+import { departmentService } from '@services/departmentService';
+import { AppError } from '@models/errors/AppError';
 import { BadRequestError } from '@errors/BadRequestError';
 import { RegisterRequest } from '@dto/input/RegisterRequest';
 import { UnauthorizedError } from '@errors/UnauthorizedError';
@@ -12,6 +14,8 @@ class UserController {
   /**
    * Register a new citizen
    * Citizen registration logic
+   * Body: { username, email, password, first_name, last_name }
+   * Note: Automatically assigns Citizen role via department_role_ids
    */
   async register(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
@@ -21,13 +25,20 @@ class UserController {
         throw new BadRequestError('All fields are required: username, email, password, first_name, last_name');
       }
 
+      // Get all department role IDs for Citizen role
+      const citizenRoleIds = await departmentService.getDepartmentRoleIdsByRoleName('Citizen');
+      
+      if (citizenRoleIds.length === 0) {
+        throw new AppError('Citizen role configuration not found in database', 500);
+      }
+
       const registerData: RegisterRequest = {
         username,
         email,
         password,
         first_name,
         last_name,
-        role_name: 'Citizen' // Default role for citizens
+        department_role_ids: citizenRoleIds // Assign all Citizen department roles
       };
 
       const userResponse = await userService.registerCitizen(registerData);

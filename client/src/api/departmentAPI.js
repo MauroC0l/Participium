@@ -48,12 +48,12 @@ export const getAllDepartments = async () => {
   return handleResponse(response);
 };
 
-/** 
-* Get all Municipality Departments with their associated roles
-* @returns {Promise<Array>} List of departments with roles
-*/
-export const getAllDepartmentsRoles = async () => {
-  const response = await fetch(`/api/municipality/users/department-roles`, {
+/**
+ * Get all Department-Role mappings
+ * @returns {Promise<Array>} List of { id, department, role }
+ */
+export const getAllDepartmentRolesMapping = async () => {
+  const response = await fetch(`/api/departments/roles/mapping`, {
     method: "GET",
     credentials: "include",
   });

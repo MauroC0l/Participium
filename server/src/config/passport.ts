@@ -4,10 +4,11 @@ import { userRepository } from '@repositories/userRepository';
 import { UserEntity } from '@models/entity/userEntity';
 
 // Tipo per i dati dell'utente serializzati in sessione
+// Supporta ruoli multipli (PT10)
 interface SessionUser {
   id: number;
   username: string;
-  departmentRoleId?: number;
+  departmentRoleIds?: number[];  // Array of role IDs for multiple roles support
 }
 
 export const configurePassport = (): void => {
@@ -40,10 +41,12 @@ export const configurePassport = (): void => {
   passport.serializeUser((user: Express.User, done) => {
     // Esegui un cast al tuo tipo specifico userEntity
     const u = user as UserEntity;
+    // Supporta ruoli multipli - estrae tutti i departmentRoleIds
+    const departmentRoleIds = u.userRoles?.map(ur => ur.departmentRoleId) || [];
     const sessionUser: SessionUser = {
       id: u.id,
       username: u.username,
-      departmentRoleId: u.departmentRoleId,
+      departmentRoleIds: departmentRoleIds,
     };
     done(null, sessionUser);
   });
@@ -63,4 +66,4 @@ export const configurePassport = (): void => {
   });
 };
 
-export {default} from 'passport';
+export { default } from 'passport';

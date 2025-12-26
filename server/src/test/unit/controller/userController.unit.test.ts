@@ -5,9 +5,12 @@ import { userRepository } from '@repositories/userRepository';
 import { BadRequestError } from '@models/errors/BadRequestError';
 import { UnauthorizedError } from '@errors/UnauthorizedError';
 import { ConflictError } from '@models/errors/ConflictError';
+import { AppError } from '@models/errors/AppError';
+import { departmentService } from '@services/departmentService';
 
 // Mock delle dipendenze
 jest.mock('@services/userService');
+jest.mock('@services/departmentService');
 jest.mock('@repositories/userRepository');
 
 describe('UserController Unit Tests', () => {
@@ -17,14 +20,16 @@ describe('UserController Unit Tests', () => {
   let jsonMock: jest.Mock;
   let statusMock: jest.Mock;
 
+  // Mock citizen department_role_ids (V5.0 multi-role support)
+  const mockCitizenDepartmentRoleIds = [1];
+
   const mockUserResponse = {
     id: 1,
     username: 'newcitizen',
     email: 'citizen@example.com',
     first_name: 'John',
     last_name: 'Doe',
-    role_name: 'Citizen',
-    department_name: 'Organization',
+    roles: [{ role_name: 'Citizen', department_name: 'Organization' }],
   };
 
   beforeEach(() => {
@@ -48,6 +53,9 @@ describe('UserController Unit Tests', () => {
 
     // Setup mock del next
     mockNext = jest.fn();
+
+    // Setup default mock per departmentService.getDepartmentRoleIdsByRoleName
+    (departmentService.getDepartmentRoleIdsByRoleName as jest.Mock).mockResolvedValue(mockCitizenDepartmentRoleIds);
   });
 
   describe('register', () => {
@@ -72,13 +80,14 @@ describe('UserController Unit Tests', () => {
       );
 
       // Assert
+      expect(departmentService.getDepartmentRoleIdsByRoleName).toHaveBeenCalledWith('Citizen');
       expect(userService.registerCitizen).toHaveBeenCalledWith({
         username: validRegistrationData.username,
         email: validRegistrationData.email,
         password: validRegistrationData.password,
         first_name: validRegistrationData.first_name,
         last_name: validRegistrationData.last_name,
-        role_name: 'Citizen',
+        department_role_ids: mockCitizenDepartmentRoleIds,
       });
       expect(statusMock).toHaveBeenCalledWith(201);
       expect(jsonMock).toHaveBeenCalledWith(mockUserResponse);
@@ -306,7 +315,7 @@ describe('UserController Unit Tests', () => {
       expect(statusMock).not.toHaveBeenCalled();
     });
 
-    it('should set role as CITIZEN by default', async () => {
+    it('should assign Citizen department_role_ids by default', async () => {
       // Arrange
       mockRequest.body = validRegistrationData;
       (userService.registerCitizen as jest.Mock).mockResolvedValue(mockUserResponse);
@@ -319,11 +328,34 @@ describe('UserController Unit Tests', () => {
       );
 
       // Assert
+      expect(departmentService.getDepartmentRoleIdsByRoleName).toHaveBeenCalledWith('Citizen');
       expect(userService.registerCitizen).toHaveBeenCalledWith(
         expect.objectContaining({
-          role_name: 'Citizen',
+          department_role_ids: mockCitizenDepartmentRoleIds,
         })
       );
+    });
+
+    it('should return 500 if no Citizen role configuration found', async () => {
+      // Arrange
+      mockRequest.body = validRegistrationData;
+      (departmentService.getDepartmentRoleIdsByRoleName as jest.Mock).mockResolvedValue([]);
+
+      // Act
+      await userController.register(
+        mockRequest as Request,
+        mockResponse as Response,
+        mockNext
+      );
+
+      // Assert
+      expect(mockNext).toHaveBeenCalledWith(expect.any(AppError));
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: 'Citizen role configuration not found in database',
+        })
+      );
+      expect(userService.registerCitizen).not.toHaveBeenCalled();
     });
 
     it('should not expose sensitive data in response', async () => {
@@ -411,7 +443,7 @@ describe('UserController Unit Tests', () => {
         password: validRegistrationData.password,
         first_name: validRegistrationData.first_name,
         last_name: validRegistrationData.last_name,
-        role_name: 'Citizen',
+        department_role_ids: mockCitizenDepartmentRoleIds,
       });
     });
   });

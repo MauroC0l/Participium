@@ -65,7 +65,6 @@ describe('UserRepository Unit Tests', () => {
       password: 'SecurePass123!',
       firstName: 'Test',
       lastName: 'User',
-      departmentRoleId: 1,
       isVerified: true,
     };
 
@@ -95,7 +94,6 @@ describe('UserRepository Unit Tests', () => {
           email: validUserData.email,
           firstName: validUserData.firstName,
           lastName: validUserData.lastName,
-          departmentRoleId: validUserData.departmentRoleId,
           passwordHash: 'mocksalt:mockhash',
         })
       );
@@ -218,7 +216,7 @@ describe('UserRepository Unit Tests', () => {
       expect(result).toHaveProperty('passwordHash');
       expect(result).toHaveProperty('firstName');
       expect(result).toHaveProperty('lastName');
-      expect(result).toHaveProperty('departmentRoleId');
+      expect(result).toHaveProperty('userRoles');
       expect(result).toHaveProperty('createdAt');
     });
 
@@ -414,7 +412,7 @@ describe('UserRepository Unit Tests', () => {
       expect(result).toHaveProperty('passwordHash');
       expect(result).toHaveProperty('firstName');
       expect(result).toHaveProperty('lastName');
-      expect(result).toHaveProperty('departmentRole');
+      expect(result).toHaveProperty('userRoles');
     });
 
     it('should handle database errors', async () => {
@@ -467,7 +465,7 @@ describe('UserRepository Unit Tests', () => {
       // Assert
       expect(mockRepository.findOne).toHaveBeenCalledWith({
         where: { id: 1 },
-        relations: ['departmentRole', 'departmentRole.department', 'departmentRole.role']
+        relations: ['userRoles', 'userRoles.departmentRole', 'userRoles.departmentRole.department', 'userRoles.departmentRole.role']
       });
       expect(result).toEqual(mockUser);
       expect(result?.id).toBe(1);
@@ -483,7 +481,7 @@ describe('UserRepository Unit Tests', () => {
       // Assert
       expect(mockRepository.findOne).toHaveBeenCalledWith({
         where: { id: 999 },
-        relations: ['departmentRole', 'departmentRole.department', 'departmentRole.role']
+        relations: ['userRoles', 'userRoles.departmentRole', 'userRoles.departmentRole.department', 'userRoles.departmentRole.role']
       });
       expect(result).toBeNull();
     });
@@ -524,7 +522,7 @@ describe('UserRepository Unit Tests', () => {
       // Assert
       expect(mockRepository.findOne).toHaveBeenCalledWith({
         where: { email: 'test@example.com' },
-        relations: ['departmentRole', 'departmentRole.department', 'departmentRole.role']
+        relations: ['userRoles', 'userRoles.departmentRole', 'userRoles.departmentRole.department', 'userRoles.departmentRole.role']
       });
       expect(result).toEqual(mockUser);
       expect(result?.email).toBe('test@example.com');
@@ -540,7 +538,7 @@ describe('UserRepository Unit Tests', () => {
       // Assert
       expect(mockRepository.findOne).toHaveBeenCalledWith({
         where: { email: 'nonexistent@example.com' },
-        relations: ['departmentRole', 'departmentRole.department', 'departmentRole.role']
+        relations: ['userRoles', 'userRoles.departmentRole', 'userRoles.departmentRole.department', 'userRoles.departmentRole.role']
       });
       expect(result).toBeNull();
     });
@@ -590,7 +588,7 @@ describe('UserRepository Unit Tests', () => {
 
       // Assert
       expect(mockRepository.find).toHaveBeenCalledWith({
-        relations: ['departmentRole', 'departmentRole.department', 'departmentRole.role']
+        relations: ['userRoles', 'userRoles.departmentRole', 'userRoles.departmentRole.department', 'userRoles.departmentRole.role']
       });
       expect(result).toEqual(mockUsers);
       expect(result).toHaveLength(2);
@@ -609,7 +607,7 @@ describe('UserRepository Unit Tests', () => {
       // Assert
       expect(mockRepository.find).toHaveBeenCalledWith({
         ...options,
-        relations: ['departmentRole', 'departmentRole.department', 'departmentRole.role']
+        relations: ['userRoles', 'userRoles.departmentRole', 'userRoles.departmentRole.department', 'userRoles.departmentRole.role']
       });
       expect(result).toEqual(mockUsers);
     });
@@ -628,7 +626,7 @@ describe('UserRepository Unit Tests', () => {
       // Assert
       expect(mockRepository.find).toHaveBeenCalledWith({
         ...options,
-        relations: ['departmentRole', 'departmentRole.department', 'departmentRole.role']
+        relations: ['userRoles', 'userRoles.departmentRole', 'userRoles.departmentRole.department', 'userRoles.departmentRole.role']
       });
       expect(result).toEqual(mockUsers);
     });
@@ -692,7 +690,7 @@ describe('UserRepository Unit Tests', () => {
       expect(mockRepository.update).toHaveBeenCalledWith(1, updateData);
       expect(mockRepository.findOne).toHaveBeenCalledWith({
         where: { id: 1 },
-        relations: ['departmentRole', 'departmentRole.department', 'departmentRole.role']
+        relations: ['userRoles', 'userRoles.departmentRole', 'userRoles.departmentRole.department', 'userRoles.departmentRole.role']
       });
       expect(result).toEqual(updatedUser);
       expect(result.firstName).toBe('UpdatedName');
@@ -927,7 +925,7 @@ describe('UserRepository Unit Tests', () => {
       expect(result).toHaveProperty('passwordHash');
       expect(result).toHaveProperty('firstName');
       expect(result).toHaveProperty('lastName');
-      expect(result).toHaveProperty('departmentRole');
+      expect(result).toHaveProperty('userRoles');
     });
 
     it('should handle database errors', async () => {
@@ -990,37 +988,38 @@ describe('UserRepository Unit Tests', () => {
 
   describe('findExternalMaintainersByCategory', () => {
     it('should find and return external maintainers for a given category', async () => {
-        const category = 'Public Lighting';
-        const expectedUsers: UserEntity[] = [new UserEntity(), new UserEntity()];
+      const category = 'Public Lighting';
+      const expectedUsers: UserEntity[] = [new UserEntity(), new UserEntity()];
 
-        mockQueryBuilder.getMany.mockResolvedValue(expectedUsers);
+      mockQueryBuilder.getMany.mockResolvedValue(expectedUsers);
 
-        const result = await userRepository.findExternalMaintainersByCategory(category);
+      const result = await userRepository.findExternalMaintainersByCategory(category);
 
-        expect(result).toEqual(expectedUsers);
-        expect(mockRepository.createQueryBuilder).toHaveBeenCalledWith('user');
-        expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('user.departmentRole', 'departmentRole');
-        expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('departmentRole.department', 'department');
-        expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('departmentRole.role', 'role');
-        expect(mockQueryBuilder.innerJoin).toHaveBeenCalledWith(
-            'companies',
-            'c',
-            'c.id = user.company_id AND c.category = :category',
-            { category }
-        );
-        expect(mockQueryBuilder.where).toHaveBeenCalledWith('role.name = :roleName', { roleName: 'External Maintainer' });
-        expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('user.company_id IS NOT NULL');
-        expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith('user.last_name', 'ASC');
-        expect(mockQueryBuilder.getMany).toHaveBeenCalled();
+      expect(result).toEqual(expectedUsers);
+      expect(mockRepository.createQueryBuilder).toHaveBeenCalledWith('user');
+      expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('user.userRoles', 'userRoles');
+      expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('userRoles.departmentRole', 'departmentRole');
+      expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('departmentRole.department', 'department');
+      expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('departmentRole.role', 'role');
+      expect(mockQueryBuilder.innerJoin).toHaveBeenCalledWith(
+        'companies',
+        'c',
+        'c.id = user.company_id AND c.category = :category',
+        { category }
+      );
+      expect(mockQueryBuilder.where).toHaveBeenCalledWith('role.name = :roleName', { roleName: 'External Maintainer' });
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('user.company_id IS NOT NULL');
+      expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith('user.last_name', 'ASC');
+      expect(mockQueryBuilder.getMany).toHaveBeenCalled();
     });
 
     it('should return an empty array if no maintainers are found', async () => {
-        const category = 'Roads and Urban Furnishings';
-        mockQueryBuilder.getMany.mockResolvedValue([]);
+      const category = 'Roads and Urban Furnishings';
+      mockQueryBuilder.getMany.mockResolvedValue([]);
 
-        const result = await userRepository.findExternalMaintainersByCategory(category);
+      const result = await userRepository.findExternalMaintainersByCategory(category);
 
-        expect(result).toEqual([]);
+      expect(result).toEqual([]);
     });
   });
 
@@ -1298,10 +1297,11 @@ describe('UserRepository Unit Tests', () => {
 
       // Assert
       expect(mockRepository.createQueryBuilder).toHaveBeenCalledWith('user');
-      expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('user.departmentRole', 'departmentRole');
+      expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('user.userRoles', 'userRoles');
+      expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('userRoles.departmentRole', 'departmentRole');
       expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('departmentRole.department', 'department');
       expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('departmentRole.role', 'role');
-      expect(mockQueryBuilder.where).toHaveBeenCalledWith('user.departmentRoleId IN (:...ids)', { ids: departmentRoleIds });
+      expect(mockQueryBuilder.where).toHaveBeenCalledWith('userRoles.departmentRoleId IN (:...ids)', { ids: departmentRoleIds });
       expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith('user.createdAt', 'DESC');
       expect(mockQueryBuilder.getMany).toHaveBeenCalled();
       expect(result).toEqual(mockUsers);
@@ -1328,7 +1328,7 @@ describe('UserRepository Unit Tests', () => {
       const result = await userRepository.findUsersByDepartmentRoleIds(departmentRoleIds);
 
       // Assert
-      expect(mockQueryBuilder.where).toHaveBeenCalledWith('user.departmentRoleId IN (:...ids)', { ids: departmentRoleIds });
+      expect(mockQueryBuilder.where).toHaveBeenCalledWith('userRoles.departmentRoleId IN (:...ids)', { ids: departmentRoleIds });
       expect(result).toEqual([]);
     });
   });
@@ -1348,7 +1348,8 @@ describe('UserRepository Unit Tests', () => {
 
       // Assert
       expect(mockRepository.createQueryBuilder).toHaveBeenCalledWith('user');
-      expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('user.departmentRole', 'departmentRole');
+      expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('user.userRoles', 'userRoles');
+      expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('userRoles.departmentRole', 'departmentRole');
       expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('departmentRole.department', 'department');
       expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('departmentRole.role', 'role');
       expect(mockQueryBuilder.where).toHaveBeenCalledWith('role.name = :roleName', { roleName });
@@ -1388,7 +1389,8 @@ describe('UserRepository Unit Tests', () => {
 
       // Assert
       expect(mockRepository.createQueryBuilder).toHaveBeenCalledWith('user');
-      expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('user.departmentRole', 'departmentRole');
+      expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('user.userRoles', 'userRoles');
+      expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('userRoles.departmentRole', 'departmentRole');
       expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('departmentRole.department', 'department');
       expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('departmentRole.role', 'role');
       expect(mockQueryBuilder.where).toHaveBeenCalledWith('user.telegram_username = :telegramUsername', { telegramUsername });
@@ -1453,7 +1455,6 @@ describe('UserRepository Unit Tests', () => {
       const mockStaff = createMockCitizen({
         id: 1,
         username: 'staff1',
-        departmentRoleId: 1,
       });
       mockQueryBuilder.innerJoinAndSelect.mockReturnThis();
       mockQueryBuilder.leftJoin.mockReturnThis();
@@ -1470,7 +1471,8 @@ describe('UserRepository Unit Tests', () => {
 
       // Assert
       expect(mockRepository.createQueryBuilder).toHaveBeenCalledWith('user');
-      expect(mockQueryBuilder.innerJoinAndSelect).toHaveBeenCalledWith('user.departmentRole', 'dr');
+      expect(mockQueryBuilder.innerJoinAndSelect).toHaveBeenCalledWith('user.userRoles', 'userRoles');
+      expect(mockQueryBuilder.innerJoinAndSelect).toHaveBeenCalledWith('userRoles.departmentRole', 'dr');
       expect(mockQueryBuilder.innerJoinAndSelect).toHaveBeenCalledWith('dr.role', 'role');
       expect(mockQueryBuilder.leftJoin).toHaveBeenCalledWith(
         'reports',
@@ -1480,6 +1482,7 @@ describe('UserRepository Unit Tests', () => {
       );
       expect(mockQueryBuilder.where).toHaveBeenCalledWith('dr.role_id = :roleId', { roleId });
       expect(mockQueryBuilder.groupBy).toHaveBeenCalledWith('user.id');
+      expect(mockQueryBuilder.addGroupBy).toHaveBeenCalledWith('userRoles.id');
       expect(mockQueryBuilder.addGroupBy).toHaveBeenCalledWith('dr.id');
       expect(mockQueryBuilder.addGroupBy).toHaveBeenCalledWith('role.id');
       expect(mockQueryBuilder.addSelect).toHaveBeenCalledWith('COUNT(r.id)', 'report_count');
@@ -1525,7 +1528,8 @@ describe('UserRepository Unit Tests', () => {
 
       // Assert
       expect(mockRepository.createQueryBuilder).toHaveBeenCalledWith('user');
-      expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('user.departmentRole', 'departmentRole');
+      expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('user.userRoles', 'userRoles');
+      expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('userRoles.departmentRole', 'departmentRole');
       expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('departmentRole.department', 'department');
       expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('departmentRole.role', 'role');
       expect(mockQueryBuilder.where).toHaveBeenCalledWith('role.name NOT IN (:...excludedRoleNames)', { excludedRoleNames });
@@ -1714,7 +1718,7 @@ describe('UserRepository Unit Tests', () => {
       expect(mockRepository.createQueryBuilder).toHaveBeenCalledWith("user");
       expect(mockQueryBuilder.where).toHaveBeenCalledWith("user.telegram_link_code = :code", { code });
       expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
-        "user.telegram_link_code_expires_at > :now", 
+        "user.telegram_link_code_expires_at > :now",
         expect.objectContaining({ now: expect.any(Date) })
       );
       expect(result.success).toBe(true);

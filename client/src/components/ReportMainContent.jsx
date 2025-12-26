@@ -33,7 +33,9 @@ const ReportMainContent = ({
         ? report.photos.map((p) => (typeof p === "string" ? p : p.storageUrl))
         : report?.images || []; // Controllato
 
-    const canManage = user && (user.role_name === "Administrator" || user.role_name.toLowerCase() === "municipal public relations officer");
+    const canManage = user && user.roles && user.roles.some(r => 
+        r.role_name === "Administrator" || r.role_name.toLowerCase() === "municipal public relations officer"
+    );
 
     const isExternalAssignee = currentUserId && report?.externalAssigneeId && Number(currentUserId) === Number(report.externalAssigneeId);
     const isOfficer = currentUserId && report?.assigneeId && Number(currentUserId) === Number(report.assigneeId);

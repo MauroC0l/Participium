@@ -128,9 +128,23 @@ function App() {
   };
 
   const CitizenRoute = ({ children }) => {
-    if (isAuthLoading) return <LoadingScreen message="Checking permissions..." />;
-    if (!user) return <Navigate to="/login" replace />;
-    if (user.role_name !== 'Citizen') return <Navigate to="/home" replace />;
+    // 1. Se sta ancora caricando, aspettiamo
+    if (isAuthLoading) {
+      return <LoadingScreen message="Checking permissions..." />;
+    }
+
+    // 2. Se non c'è utente, login
+    if (!user) {
+      return <Navigate to="/login" replace />;
+    }
+
+    // 3. Se l'utente c'è MA non è Citizen, rimandiamo alla Home
+    const isCitizen = user.roles && user.roles.some(r => r.role_name === 'Citizen');
+    if (!isCitizen) {
+      return <Navigate to="/home" replace />;
+    }
+
+    // 4. Se è Citizen, mostra la pagina
     return children;
   };
 

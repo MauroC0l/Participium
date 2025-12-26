@@ -25,9 +25,11 @@ export default function Navbar({ user, onLogout }) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const userRole = user?.role_name;
-  const isAdmin = userRole === 'Administrator';
-  const isCitizen = useMemo(() => userRole === 'Citizen', [userRole]);
+  // 2. Info Utente Derivate (uso useMemo per la stabilità)
+  const userRoles = useMemo(() => user?.roles || [], [user]);
+  const isAdmin = useMemo(() => userRoles.some(r => r.role_name === 'Administrator'), [userRoles]);
+
+  const isCitizen = useMemo(() => userRoles.some(r => r.role_name === 'Citizen'), [userRoles]);
   
   const displayUsername = useMemo(() => {
     if (user?.first_name && user?.last_name) {
@@ -36,7 +38,7 @@ export default function Navbar({ user, onLogout }) {
     return user?.username || 'User'; 
   }, [user?.first_name, user?.last_name, user?.username]);
 
-  const displayRole = useMemo(() => userRole || 'User', [userRole]);
+  const displayRole = useMemo(() => userRoles.map(r => r.role_name).join(', ') || 'User', [userRoles]);
   
   const avatarInitials = useMemo(() => {
       return getInitials(user?.first_name, user?.last_name);
@@ -139,7 +141,9 @@ export default function Navbar({ user, onLogout }) {
 
 Navbar.propTypes = {
   user: PropTypes.shape({
-    role_name: PropTypes.string,
+    roles: PropTypes.arrayOf(PropTypes.shape({
+        role_name: PropTypes.string
+    })),
     username: PropTypes.string,
     first_name: PropTypes.string,
     last_name: PropTypes.string,

@@ -33,7 +33,11 @@ const router = express.Router();
  *               email: "m.rossi@comune.torino.it"
  *               first_name: "Mario"
  *               last_name: "Rossi"
- *               role: "Citizen"
+ *               roles:
+ *                 -  department_role_id: 1
+ *                    department_name: "Organization"
+ *                    role_name: "Citizen"
+ *               company_name: null
  *       400:
  *         description: Validation error
  *         content:
@@ -308,9 +312,14 @@ router.get(
   (req, res, next) => {
 
     const user = req.user as any;
-    const roleName = user?.departmentRole?.role?.name;
-    
-    if (!roleName || (!isTechnicalStaff(roleName) && !isAdmin(roleName))) {
+    // V5.0 multi-role support: check all user roles
+    const userRoleNames = user?.userRoles?.map((ur: any) => ur.departmentRole?.role?.name) || [];
+
+    const hasAccess = userRoleNames.some((roleName: string) =>
+      isTechnicalStaff(roleName) || isAdmin(roleName)
+    );
+
+    if (!hasAccess) {
       return res.status(403).json({
         code: 403,
         name: 'ForbiddenError',

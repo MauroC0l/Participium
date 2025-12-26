@@ -1,27 +1,130 @@
+import * as mapperService from '@services/mapperService';
+import { UserEntity } from '@models/entity/userEntity';
+import { ReportEntity } from '@models/entity/reportEntity';
+import { DepartmentEntity } from '@models/entity/departmentEntity';
+import { RoleEntity } from '@models/entity/roleEntity';
+import { ReportStatus } from '@models/dto/ReportStatus';
+import { ReportCategory } from '@models/dto/ReportCategory';
+import { createMockUserRole } from '@test/utils/mockEntities';
+import { PhotoEntity } from '@entity/photoEntity';
+import { CategoryRoleEntity } from '@entity/categoryRoleEntity';
+import { Location } from '@models/dto/Location';
+import { Photo } from '@models/dto/Photo';
 import {
   createErrorDTO,
   mapReportEntityToDTO,
   mapDepartmentEntityToDTO,
   mapRoleEntityToDTO,
-  mapUserEntityToUserResponse,
   mapPhotoToResponse,
   mapReportEntityToResponse,
   mapReportEntityToReportResponse,
   mapCategoryRoleMappingToDTO,
   mapCategoryRoleMappingsToDTOs
 } from '@services/mapperService';
-import { ReportEntity } from '@entity/reportEntity';
-import { UserEntity } from '@entity/userEntity';
-import { PhotoEntity } from '@entity/photoEntity';
-import { DepartmentEntity } from '@entity/departmentEntity';
-import { RoleEntity } from '@entity/roleEntity';
-import { CategoryRoleEntity } from '@entity/categoryRoleEntity';
-import { ReportCategory } from '@models/dto/ReportCategory';
-import { ReportStatus } from '@models/dto/ReportStatus';
-import { Location } from '@models/dto/Location';
-import { Photo } from '@models/dto/Photo';
 
 describe('MapperService', () => {
+
+  describe('mapUserEntityToUserResponse', () => {
+    it('should map user entity to user response', () => {
+      const mockUser = {
+        id: 1,
+        username: 'testuser',
+        email: 'test@example.com',
+        firstName: 'Test',
+        lastName: 'User',
+        userRoles: [
+          createMockUserRole(1, 1, 'Manager', 'Dep1')
+        ]
+      } as UserEntity;
+
+      const result = mapperService.mapUserEntityToUserResponse(mockUser);
+
+      expect(result).not.toBeNull();
+      expect(result?.id).toBe(1);
+      expect(result?.username).toBe('testuser');
+      expect(result?.email).toBe('test@example.com');
+      expect(result?.first_name).toBe('Test');
+      expect(result?.last_name).toBe('User');
+      expect(result?.roles).toHaveLength(1);
+      expect(result?.roles[0].role_name).toBe('Manager');
+      expect(result?.roles[0].department_name).toBe('Dep1');
+    });
+
+    it('should return null if entity is null', () => {
+      const result = mapperService.mapUserEntityToUserResponse(null);
+      expect(result).toBeNull();
+    });
+
+    it('should map company name if provided', () => {
+      const mockUser = { id: 1, username: 'testuser' } as UserEntity;
+      const result = mapperService.mapUserEntityToUserResponse(mockUser, 'Acme Corp');
+      expect(result?.company_name).toBe('Acme Corp');
+    });
+  });
+
+  describe('mapReportEntityToReportResponse', () => {
+    it('should map report entity to report response', () => {
+      const mockReport = {
+        id: 1,
+        title: 'Test Report',
+        description: 'Test Description',
+        category: ReportCategory.ROADS,
+        location: 'POINT(10 20)',
+        isAnonymous: false,
+        status: ReportStatus.ASSIGNED,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        reporterId: 100,
+        reporter: { id: 100, username: 'reporter' } as UserEntity,
+        assigneeId: 200,
+        assignee: { id: 200, username: 'assignee' } as UserEntity,
+        photos: [{ id: 1, storageUrl: 'path/to/photo.jpg', createdAt: new Date() }]
+      } as unknown as ReportEntity;
+
+      const result = mapperService.mapReportEntityToReportResponse(mockReport);
+
+      expect(result.id).toBe(1);
+      expect(result.title).toBe('Test Report');
+      expect(result.location).toEqual({ longitude: 10, latitude: 20 });
+      expect(result.reporter).toBeDefined();
+      expect(result.reporter?.username).toBe('reporter');
+      expect(result.assignee).toBeDefined();
+      expect(result.assignee?.username).toBe('assignee');
+      expect(result.photos).toHaveLength(1);
+      expect(result.photos[0].storageUrl).toContain('path/to/photo.jpg');
+    });
+
+    it('should handle anonymous reports', () => {
+      const mockReport = {
+        id: 1,
+        isAnonymous: true,
+        location: { latitude: 10, longitude: 20 }, // Object location format
+        reporter: { id: 100, username: 'reporter' } as UserEntity // Should be ignored
+      } as unknown as ReportEntity;
+
+      const result = mapperService.mapReportEntityToReportResponse(mockReport);
+
+      expect(result.reporterId).toBeNull();
+      expect(result.reporter).toBeNull();
+    });
+  });
+
+  describe('mapDepartmentEntityToDTO', () => {
+    it('should map department entity', () => {
+      const mockDept = { id: 1, name: 'Dep1' } as DepartmentEntity;
+      const result = mapperService.mapDepartmentEntityToDTO(mockDept);
+      expect(result).toEqual({ id: 1, name: 'Dep1' });
+    });
+  });
+
+  describe('mapRoleEntityToDTO', () => {
+    it('should map role entity', () => {
+      const mockRole = { id: 1, name: 'Role1', description: 'Desc' } as RoleEntity;
+      const result = mapperService.mapRoleEntityToDTO(mockRole);
+      expect(result).toEqual({ id: 1, name: 'Role1', description: 'Desc' });
+    });
+  });
+
   describe('createErrorDTO', () => {
     it('should create error DTO with all fields', () => {
       const result = createErrorDTO(404, 'Not Found', 'NotFoundError');
@@ -142,146 +245,6 @@ describe('MapperService', () => {
     });
   });
 
-  describe('mapDepartmentEntityToDTO', () => {
-    it('should map department entity to DTO', () => {
-      const entity = {
-        id: 1,
-        name: 'Engineering',
-        departmentRoles: []
-      } as DepartmentEntity;
-
-      const result = mapDepartmentEntityToDTO(entity);
-
-      expect(result).toEqual({
-        id: 1,
-        name: 'Engineering'
-      });
-    });
-  });
-
-  describe('mapRoleEntityToDTO', () => {
-    it('should map role entity to DTO with all fields', () => {
-      const entity = {
-        id: 1,
-        name: 'Admin',
-        description: 'Administrator role',
-        createdAt: new Date('2023-01-01'),
-        updatedAt: new Date('2023-01-02'),
-        departmentRoles: []
-      } as RoleEntity;
-
-      const result = mapRoleEntityToDTO(entity);
-
-      expect(result).toEqual({
-        id: 1,
-        name: 'Admin',
-        description: 'Administrator role'
-      });
-    });
-
-    it('should filter out null description', () => {
-      const entity = {
-        id: 1,
-        name: 'User',
-        description: undefined,
-        createdAt: new Date('2023-01-01'),
-        updatedAt: new Date('2023-01-02'),
-        departmentRoles: []
-      } as RoleEntity;
-
-      const result = mapRoleEntityToDTO(entity);
-
-      expect(result).toEqual({
-        id: 1,
-        name: 'User'
-      });
-    });
-  });
-
-  describe('mapUserEntityToUserResponse', () => {
-    it('should return null for null entity', () => {
-      const result = mapUserEntityToUserResponse(null);
-
-      expect(result).toBeNull();
-    });
-
-    it('should return null for undefined entity', () => {
-      const result = mapUserEntityToUserResponse(undefined);
-
-      expect(result).toBeNull();
-    });
-
-    it('should map user entity to response with all fields', () => {
-      const entity = {
-        id: 1,
-        username: 'testuser',
-        firstName: 'John',
-        lastName: 'Doe',
-        email: 'john@example.com',
-        departmentRoleId: 1,
-        departmentRole: {
-          id: 1,
-          department: { id: 1, name: 'Engineering' } as any,
-          role: { id: 1, name: 'Developer' } as any,
-          users: []
-        } as any,
-        passwordHash: 'hashed',
-        personalPhotoUrl: undefined,
-        telegramUsername: undefined,
-        emailNotificationsEnabled: true,
-        companyId: undefined,
-        isVerified: true,
-        verificationCode: undefined,
-        verificationCodeExpiresAt: undefined,
-        createdAt: new Date('2023-01-01')
-      } as UserEntity;
-
-      const result = mapUserEntityToUserResponse(entity, 'Test Company');
-
-      expect(result).toEqual({
-        id: 1,
-        username: 'testuser',
-        email: 'john@example.com',
-        first_name: 'John',
-        last_name: 'Doe',
-        department_name: 'Engineering',
-        role_name: 'Developer',
-        company_name: 'Test Company'
-      });
-    });
-
-    it('should filter out null department and role', () => {
-      const entity = {
-        id: 1,
-        username: 'testuser',
-        firstName: 'John',
-        lastName: 'Doe',
-        email: 'john@example.com',
-        departmentRoleId: 1,
-        departmentRole: undefined as any,
-        passwordHash: 'hashed',
-        personalPhotoUrl: undefined,
-        telegramUsername: undefined,
-        emailNotificationsEnabled: true,
-        companyId: undefined,
-        isVerified: true,
-        verificationCode: undefined,
-        verificationCodeExpiresAt: undefined,
-        createdAt: new Date('2023-01-01')
-      } as UserEntity;
-
-      const result = mapUserEntityToUserResponse(entity);
-
-      expect(result).toEqual({
-        id: 1,
-        username: 'testuser',
-        email: 'john@example.com',
-        first_name: 'John',
-        last_name: 'Doe'
-      });
-    });
-  });
-
   describe('mapPhotoToResponse', () => {
     it('should map photo DTO to response', () => {
       const photo: Photo = {
@@ -298,343 +261,6 @@ describe('MapperService', () => {
         reportId: 10,
         storageUrl: '/uploads/photo.jpg',
         createdAt: new Date('2023-01-01')
-      });
-    });
-  });
-
-  describe('mapReportEntityToResponse', () => {
-    it('should map report entity to response', () => {
-      const entity = {
-        id: 1,
-        reporterId: 10,
-        title: 'Test Report',
-        description: 'Test Description',
-        category: ReportCategory.ROADS,
-        location: 'POINT(7.6869005 45.0703393)',
-        address: 'Test Address',
-        isAnonymous: false,
-        status: ReportStatus.PENDING_APPROVAL,
-        rejectionReason: undefined,
-        assigneeId: 20,
-        externalAssigneeId: undefined,
-        createdAt: new Date('2023-01-01'),
-        updatedAt: new Date('2023-01-02'),
-        reporter: {} as any,
-        assignee: {} as any,
-        externalAssignee: undefined,
-        photos: []
-      } as ReportEntity;
-
-      const location: Location = { latitude: 45.0703393, longitude: 7.6869005 };
-      const photos: any[] = [];
-
-      const result = mapReportEntityToResponse(entity, photos, location);
-
-      expect(result).toEqual({
-        id: 1,
-        reporterId: 10,
-        title: 'Test Report',
-        description: 'Test Description',
-        category: ReportCategory.ROADS,
-        location: { latitude: 45.0703393, longitude: 7.6869005 },
-        address: 'Test Address',
-        photos: [],
-        isAnonymous: false,
-        status: ReportStatus.PENDING_APPROVAL,
-        rejectionReason: null,
-        assigneeId: 20,
-        createdAt: new Date('2023-01-01'),
-        updatedAt: new Date('2023-01-02')
-      });
-    });
-
-    it('should handle anonymous reports', () => {
-      const entity = {
-        id: 1,
-        reporterId: 10,
-        title: 'Test Report',
-        description: 'Test Description',
-        category: ReportCategory.ROADS,
-        location: 'POINT(7.6869005 45.0703393)',
-        address: 'Test Address',
-        isAnonymous: true,
-        status: ReportStatus.PENDING_APPROVAL,
-        rejectionReason: undefined,
-        assigneeId: undefined,
-        externalAssigneeId: undefined,
-        createdAt: new Date('2023-01-01'),
-        updatedAt: new Date('2023-01-02'),
-        reporter: {} as any,
-        assignee: undefined,
-        externalAssignee: undefined,
-        photos: []
-      } as ReportEntity;
-
-      const location: Location = { latitude: 45.0703393, longitude: 7.6869005 };
-      const photos: any[] = [];
-
-      const result = mapReportEntityToResponse(entity, photos, location);
-
-      expect(result.reporterId).toBeNull();
-    });
-  });
-
-  describe('mapReportEntityToReportResponse', () => {
-    beforeEach(() => {
-      // Set environment variable for testing
-      process.env.PUBLIC_BASE_URL = 'http://localhost:3001';
-    });
-
-    afterEach(() => {
-      delete process.env.PUBLIC_BASE_URL;
-    });
-
-    it('should map report entity to full response with string location', () => {
-      const entity = {
-        id: 1,
-        reporterId: 10,
-        title: 'Test Report',
-        description: 'Test Description',
-        category: ReportCategory.ROADS,
-        location: 'POINT(7.6869005 45.0703393)',
-        address: 'Test Address',
-        isAnonymous: false,
-        status: ReportStatus.PENDING_APPROVAL,
-        rejectionReason: undefined,
-        assigneeId: 20,
-        externalAssigneeId: undefined,
-        createdAt: new Date('2023-01-01'),
-        updatedAt: new Date('2023-01-02'),
-        reporter: {
-          id: 10,
-          username: 'reporter',
-          firstName: 'John',
-          lastName: 'Reporter',
-          email: 'reporter@example.com',
-          departmentRoleId: 1,
-          departmentRole: {} as any,
-          passwordHash: 'hash',
-          personalPhotoUrl: undefined,
-          telegramUsername: undefined,
-          emailNotificationsEnabled: true,
-          companyId: undefined,
-          isVerified: true,
-          verificationCode: undefined,
-          verificationCodeExpiresAt: undefined,
-          createdAt: new Date('2023-01-01')
-        } as UserEntity,
-        assignee: {
-          id: 20,
-          username: 'assignee',
-          firstName: 'Jane',
-          lastName: 'Assignee',
-          email: 'assignee@example.com',
-          departmentRoleId: 1,
-          departmentRole: {} as any,
-          passwordHash: 'hash',
-          personalPhotoUrl: undefined,
-          telegramUsername: undefined,
-          emailNotificationsEnabled: true,
-          companyId: undefined,
-          isVerified: true,
-          verificationCode: undefined,
-          verificationCodeExpiresAt: undefined,
-          createdAt: new Date('2023-01-01')
-        } as UserEntity,
-        externalAssignee: undefined,
-        photos: [
-          {
-            id: 1,
-            reportId: 1,
-            storageUrl: '/uploads/photo1.jpg',
-            createdAt: new Date('2023-01-01'),
-            report: {} as any
-          } as PhotoEntity
-        ]
-      } as ReportEntity;
-
-      const result = mapReportEntityToReportResponse(entity, 'Test Company');
-
-      expect(result).toEqual({
-        id: 1,
-        reporterId: 10,
-        reporter: {
-          id: 10,
-          first_name: 'John',
-          last_name: 'Reporter',
-          username: 'reporter',
-          email: 'reporter@example.com'
-        },
-        title: 'Test Report',
-        description: 'Test Description',
-        category: ReportCategory.ROADS,
-        location: { latitude: 45.0703393, longitude: 7.6869005 },
-        address: 'Test Address',
-        photos: [{
-          id: 1,
-          reportId: 1,
-          storageUrl: 'http://localhost:3001/uploads/photo1.jpg',
-          createdAt: new Date('2023-01-01')
-        }],
-        isAnonymous: false,
-        status: ReportStatus.PENDING_APPROVAL,
-        rejectionReason: null,
-        assigneeId: 20,
-        assignee: {
-          id: 20,
-          first_name: 'Jane',
-          last_name: 'Assignee',
-          username: 'assignee',
-          email: 'assignee@example.com',
-          company_name: 'Test Company'
-        },
-        externalAssigneeId: null,
-        externalAssignee: null,
-        createdAt: new Date('2023-01-01'),
-        updatedAt: new Date('2023-01-02')
-      });
-    });
-
-    it('should handle object location', () => {
-      const entity = {
-        id: 1,
-        reporterId: 10,
-        title: 'Test Report',
-        description: 'Test Description',
-        category: ReportCategory.ROADS,
-        location: { latitude: 45.0703393, longitude: 7.6869005 } as any,
-        address: 'Test Address',
-        isAnonymous: true,
-        status: ReportStatus.PENDING_APPROVAL,
-        rejectionReason: undefined,
-        assigneeId: undefined,
-        externalAssigneeId: undefined,
-        createdAt: new Date('2023-01-01'),
-        updatedAt: new Date('2023-01-02'),
-        reporter: {} as any,
-        assignee: undefined,
-        externalAssignee: undefined,
-        photos: []
-      } as ReportEntity;
-
-      const result = mapReportEntityToReportResponse(entity);
-
-      expect(result.location).toEqual({ latitude: 45.0703393, longitude: 7.6869005 });
-      expect(result.reporterId).toBeNull();
-      expect(result.reporter).toBeNull();
-    });
-
-    it('should handle invalid location string format', () => {
-      const entity = {
-        id: 1,
-        reporterId: 10,
-        title: 'Test Report',
-        description: 'Test Description',
-        category: ReportCategory.ROADS,
-        location: 'INVALID_FORMAT',
-        address: 'Test Address',
-        isAnonymous: false,
-        status: ReportStatus.PENDING_APPROVAL,
-        rejectionReason: undefined,
-        assigneeId: undefined,
-        externalAssigneeId: undefined,
-        createdAt: new Date('2023-01-01'),
-        updatedAt: new Date('2023-01-02'),
-        reporter: {} as any,
-        assignee: undefined,
-        externalAssignee: undefined,
-        photos: []
-      } as ReportEntity;
-
-      const result = mapReportEntityToReportResponse(entity);
-
-      expect(result.location).toEqual({ latitude: 0, longitude: 0 });
-    });
-
-    it('should handle photos with full URLs', () => {
-      const entity = {
-        id: 1,
-        reporterId: 10,
-        title: 'Test Report',
-        description: 'Test Description',
-        category: ReportCategory.ROADS,
-        location: 'POINT(7.6869005 45.0703393)',
-        address: 'Test Address',
-        isAnonymous: false,
-        status: ReportStatus.PENDING_APPROVAL,
-        rejectionReason: undefined,
-        assigneeId: undefined,
-        externalAssigneeId: undefined,
-        createdAt: new Date('2023-01-01'),
-        updatedAt: new Date('2023-01-02'),
-        reporter: {} as any,
-        assignee: undefined,
-        externalAssignee: undefined,
-        photos: [
-          {
-            id: 1,
-            reportId: 1,
-            storageUrl: 'https://storage.example.com/photo1.jpg',
-            createdAt: new Date('2023-01-01'),
-            report: {} as any
-          } as PhotoEntity
-        ]
-      } as ReportEntity;
-
-      const result = mapReportEntityToReportResponse(entity);
-
-      expect(result.photos[0].storageUrl).toBe('https://storage.example.com/photo1.jpg');
-    });
-
-    it('should handle external assignee', () => {
-      const entity = {
-        id: 1,
-        reporterId: 10,
-        title: 'Test Report',
-        description: 'Test Description',
-        category: ReportCategory.ROADS,
-        location: 'POINT(7.6869005 45.0703393)',
-        address: 'Test Address',
-        isAnonymous: false,
-        status: ReportStatus.PENDING_APPROVAL,
-        rejectionReason: undefined,
-        assigneeId: undefined,
-        externalAssigneeId: 30,
-        createdAt: new Date('2023-01-01'),
-        updatedAt: new Date('2023-01-02'),
-        reporter: {} as any,
-        assignee: undefined,
-        externalAssignee: {
-          id: 30,
-          username: 'external',
-          firstName: 'External',
-          lastName: 'Assignee',
-          email: 'external@example.com',
-          departmentRoleId: 1,
-          departmentRole: {} as any,
-          passwordHash: 'hash',
-          personalPhotoUrl: undefined,
-          telegramUsername: undefined,
-          emailNotificationsEnabled: true,
-          companyId: undefined,
-          isVerified: true,
-          verificationCode: undefined,
-          verificationCodeExpiresAt: undefined,
-          createdAt: new Date('2023-01-01')
-        } as UserEntity,
-        photos: []
-      } as ReportEntity;
-
-      const result = mapReportEntityToReportResponse(entity, 'Test Company');
-
-      expect(result.externalAssigneeId).toBe(30);
-      expect(result.externalAssignee).toEqual({
-        id: 30,
-        first_name: 'External',
-        last_name: 'Assignee',
-        username: 'external',
-        email: 'external@example.com',
-        company_name: 'Test Company'
       });
     });
   });

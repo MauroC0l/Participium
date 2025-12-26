@@ -1,6 +1,6 @@
 /*
  * ====================================
- * DATA POPULATION
+ * DATA POPULATION - V5.0
  * ====================================
  * 
  * ENUM TYPE REFERENCE (defined in init.sql):
@@ -43,12 +43,10 @@
  *   - 'External Maintainer'
  */
 
--- 1. Populate the new Departments and Roles tables
--- This data is required to create the default admin user.
-
+-- 1. Populate the Departments table
 INSERT INTO departments (name)
 VALUES
-    ('Organization'),                                           -- Per ruoli Admin/Citizen
+    ('Organization'),
     ('Water and Sewer Services Department'),
     ('Public Infrastructure and Accessibility Department'),
     ('Public Lighting Department'),
@@ -56,9 +54,10 @@ VALUES
     ('Mobility and Traffic Management Department'),
     ('Parks, Green Areas and Recreation Department'),
     ('General Services Department'),
-    ('External Service Providers')                              -- For external maintainers
+    ('External Service Providers')
 ON CONFLICT (name) DO NOTHING;
 
+-- 2. Populate the Roles table
 INSERT INTO roles (name, description)
 VALUES
     ('Citizen', 'Standard citizen user'),
@@ -79,10 +78,10 @@ VALUES
     ('External Maintainer', 'External company contractor specialized in specific report categories')
 ON CONFLICT (name) DO NOTHING;
 
--- 2. Link Departments and Roles to create "Positions"
+-- 3. Link Departments and Roles to create "Positions"
 INSERT INTO department_roles (department_id, role_id)
 VALUES
-    -- System roles
+    -- System roles (Organization)
     ((SELECT id FROM departments WHERE name = 'Organization'), (SELECT id FROM roles WHERE name = 'Citizen')),
     ((SELECT id FROM departments WHERE name = 'Organization'), (SELECT id FROM roles WHERE name = 'Administrator')),
     ((SELECT id FROM departments WHERE name = 'Organization'), (SELECT id FROM roles WHERE name = 'Municipal Public Relations Officer')),
@@ -123,29 +122,7 @@ VALUES
     ((SELECT id FROM departments WHERE name = 'External Service Providers'), (SELECT id FROM roles WHERE name = 'External Maintainer'))
 ON CONFLICT (department_id, role_id) DO NOTHING;
 
-
-/*
- * 3. Popola la tabella di mapping categoria-dipartimento
- * Associa ogni categoria di report al dipartimento tecnico responsabile
- 
-INSERT INTO category_department_mapping (category, department_id)
-VALUES
-    ('Water Supply - Drinking Water', (SELECT id FROM departments WHERE name = 'Water and Sewer Services Department')),
-    ('Sewer System', (SELECT id FROM departments WHERE name = 'Water and Sewer Services Department')),
-    ('Architectural Barriers', (SELECT id FROM departments WHERE name = 'Public Infrastructure and Accessibility Department')),
-    ('Roads and Urban Furnishings', (SELECT id FROM departments WHERE name = 'Public Infrastructure and Accessibility Department')),
-    ('Public Lighting', (SELECT id FROM departments WHERE name = 'Public Lighting Department')),
-    ('Waste', (SELECT id FROM departments WHERE name = 'Waste Management Department')),
-    ('Road Signs and Traffic Lights', (SELECT id FROM departments WHERE name = 'Mobility and Traffic Management Department')),
-    ('Public Green Areas and Playgrounds', (SELECT id FROM departments WHERE name = 'Parks, Green Areas and Recreation Department')),
-    ('Other', (SELECT id FROM departments WHERE name = 'General Services Department'))
-ON CONFLICT (category) DO NOTHING;*/
-
-/*
- * Populate the category-role mapping table
- * Associates each report category with the specific responsible technical role
- */
- 
+-- 4. Populate the category-role mapping table
 INSERT INTO category_role_mapping (category, role_id)
 VALUES
     ('Water Supply - Drinking Water', (SELECT id FROM roles WHERE name = 'Water Network staff member')),
@@ -159,29 +136,32 @@ VALUES
     ('Other', (SELECT id FROM roles WHERE name = 'Support Officer'))
 ON CONFLICT (category) DO NOTHING;
 
+-- 5. Populate companies table
+INSERT INTO companies (name, category)
+VALUES
+    ('Enel X', 'Public Lighting'),
+    ('Acea', 'Water Supply - Drinking Water'),
+    ('Hera', 'Waste'),
+    ('ATM', 'Road Signs and Traffic Lights')
+ON CONFLICT (name) DO NOTHING;
+
 /*
- * 4. Create the default administrator user
- * MODIFIED: Uses the correct 'department_role_id'
- * Username: admin
- * Password: admin (hashed with bcrypt)
- * Note: Change this password in production!
+ * ====================================
+ * 6. CREATE USERS (without department_role_id)
+ * ====================================
+ * Note: Roles are assigned via user_roles table (see section 7)
  */
-INSERT INTO users (username, first_name, last_name, password_hash, department_role_id, email, email_notifications_enabled, is_verified)
+
+-- Administrator
+INSERT INTO users (username, first_name, last_name, password_hash, email, email_notifications_enabled, is_verified)
 VALUES (
     'admin',
     'Andrea',
     'Bianchi',
     '455eb328698d8cb5c8956fa51027dd4b:a93a35cebfb7f7b59c8ebe7720eac36c4ef76ec6d7d19d5e4e179555e57d2695fbbfc34ad8931d6c985fdcf2492f6fe3fc87dc4e7ddc20b9f4c66caa50c36e4d',
-    
-    -- This subquery finds the ID for the 'Organization' / 'Administrator' position
-    (SELECT dr.id FROM department_roles dr
-     JOIN departments d ON dr.department_id = d.id
-     JOIN roles r ON dr.role_id = r.id
-     WHERE d.name = 'Organization' AND r.name = 'Administrator'),
-     
     'admin@participium.local',
     true,
-    true  -- Admin is already verified
+    true
 )
 ON CONFLICT (username) DO NOTHING;
 
@@ -237,17 +217,13 @@ ON CONFLICT (name) DO NOTHING;
  * Bcrypt hash: $2b$10$
  * company_id is assigned directly during user creation
  */
-INSERT INTO users (username, first_name, last_name, password_hash, department_role_id, email, company_id, email_notifications_enabled, is_verified)
+INSERT INTO users (username, first_name, last_name, password_hash, email, company_id, email_notifications_enabled, is_verified)
 VALUES
     -- PUBLIC LIGHTING maintainers
     ('enelx',
      'Mario',
      'Rossi',
      '7020171912e5505c6f0f738d4ebef2ed:d9287860544ca95295a2941079f6531267fe2c3d85c6555d033c04a262ad44ffdcc4ef551f92f7000fc40a28a779839108b6b4e2b7b332ee2165c6b7d17b216a',
-     (SELECT dr.id FROM department_roles dr
-      JOIN departments d ON dr.department_id = d.id
-      JOIN roles r ON dr.role_id = r.id
-      WHERE d.name = 'External Service Providers' AND r.name = 'External Maintainer'),
      'interventions@enelx.com',
      (SELECT id FROM companies WHERE name = 'Enel X'),
      true,
@@ -257,10 +233,6 @@ VALUES
      'Giulia',
      'Lamberti',
      '7020171912e5505c6f0f738d4ebef2ed:d9287860544ca95295a2941079f6531267fe2c3d85c6555d033c04a262ad44ffdcc4ef551f92f7000fc40a28a779839108b6b4e2b7b332ee2165c6b7d17b216a',
-     (SELECT dr.id FROM department_roles dr
-      JOIN departments d ON dr.department_id = d.id
-      JOIN roles r ON dr.role_id = r.id
-      WHERE d.name = 'External Service Providers' AND r.name = 'External Maintainer'),
      'service@luceservice.com',
      (SELECT id FROM companies WHERE name = 'Luce Service'),
      true,
@@ -271,10 +243,6 @@ VALUES
      'Luca',
      'Gialli',
      '7020171912e5505c6f0f738d4ebef2ed:d9287860544ca95295a2941079f6531267fe2c3d85c6555d033c04a262ad44ffdcc4ef551f92f7000fc40a28a779839108b6b4e2b7b332ee2165c6b7d17b216a',
-     (SELECT dr.id FROM department_roles dr
-      JOIN departments d ON dr.department_id = d.id
-      JOIN roles r ON dr.role_id = r.id
-      WHERE d.name = 'External Service Providers' AND r.name = 'External Maintainer'),
      'water@acea.it',
      (SELECT id FROM companies WHERE name = 'Acea'),
      true,
@@ -284,10 +252,6 @@ VALUES
      'Alessandro',
      'Fontana',
      '7020171912e5505c6f0f738d4ebef2ed:d9287860544ca95295a2941079f6531267fe2c3d85c6555d033c04a262ad44ffdcc4ef551f92f7000fc40a28a779839108b6b4e2b7b332ee2165c6b7d17b216a',
-     (SELECT dr.id FROM department_roles dr
-      JOIN departments d ON dr.department_id = d.id
-      JOIN roles r ON dr.role_id = r.id
-      WHERE d.name = 'External Service Providers' AND r.name = 'External Maintainer'),
      'info@acquatecnica.it',
      (SELECT id FROM companies WHERE name = 'Acqua Tecnica'),
      true,
@@ -298,10 +262,6 @@ VALUES
      'Christian',
      'Bassi',
      '7020171912e5505c6f0f738d4ebef2ed:d9287860544ca95295a2941079f6531267fe2c3d85c6555d033c04a262ad44ffdcc4ef551f92f7000fc40a28a779839108b6b4e2b7b332ee2165c6b7d17b216a',
-     (SELECT dr.id FROM department_roles dr
-      JOIN departments d ON dr.department_id = d.id
-      JOIN roles r ON dr.role_id = r.id
-      WHERE d.name = 'External Service Providers' AND r.name = 'External Maintainer'),
      'waste@hera.it',
      (SELECT id FROM companies WHERE name = 'Hera'),
      true,
@@ -311,10 +271,6 @@ VALUES
      'Francesca',
      'Eco',
      '7020171912e5505c6f0f738d4ebef2ed:d9287860544ca95295a2941079f6531267fe2c3d85c6555d033c04a262ad44ffdcc4ef551f92f7000fc40a28a779839108b6b4e2b7b332ee2165c6b7d17b216a',
-     (SELECT dr.id FROM department_roles dr
-      JOIN departments d ON dr.department_id = d.id
-      JOIN roles r ON dr.role_id = r.id
-      WHERE d.name = 'External Service Providers' AND r.name = 'External Maintainer'),
      'raccolta@ecoservice.it',
      (SELECT id FROM companies WHERE name = 'Eco Service'),
      true,
@@ -325,10 +281,6 @@ VALUES
      'Gianni',
      'Maggi',
      '7020171912e5505c6f0f738d4ebef2ed:d9287860544ca95295a2941079f6531267fe2c3d85c6555d033c04a262ad44ffdcc4ef551f92f7000fc40a28a779839108b6b4e2b7b332ee2165c6b7d17b216a',
-     (SELECT dr.id FROM department_roles dr
-      JOIN departments d ON dr.department_id = d.id
-      JOIN roles r ON dr.role_id = r.id
-      WHERE d.name = 'External Service Providers' AND r.name = 'External Maintainer'),
      'traffic@atm.it',
      (SELECT id FROM companies WHERE name = 'ATM'),
      true,
@@ -338,10 +290,6 @@ VALUES
      'Roberto',
      'Segnali',
      '7020171912e5505c6f0f738d4ebef2ed:d9287860544ca95295a2941079f6531267fe2c3d85c6555d033c04a262ad44ffdcc4ef551f92f7000fc40a28a779839108b6b4e2b7b332ee2165c6b7d17b216a',
-     (SELECT dr.id FROM department_roles dr
-      JOIN departments d ON dr.department_id = d.id
-      JOIN roles r ON dr.role_id = r.id
-      WHERE d.name = 'External Service Providers' AND r.name = 'External Maintainer'),
      'segni@segnaleticamoderna.it',
      (SELECT id FROM companies WHERE name = 'Segnaletica Moderna'),
      true,
@@ -352,10 +300,6 @@ VALUES
      'Matteo',
      'Condotti',
      '7020171912e5505c6f0f738d4ebef2ed:d9287860544ca95295a2941079f6531267fe2c3d85c6555d033c04a262ad44ffdcc4ef551f92f7000fc40a28a779839108b6b4e2b7b332ee2165c6b7d17b216a',
-     (SELECT dr.id FROM department_roles dr
-      JOIN departments d ON dr.department_id = d.id
-      JOIN roles r ON dr.role_id = r.id
-      WHERE d.name = 'External Service Providers' AND r.name = 'External Maintainer'),
      'interventi@fognaturepro.it',
      (SELECT id FROM companies WHERE name = 'Fognature Pro'),
      true,
@@ -365,10 +309,6 @@ VALUES
      'Simone',
      'Tubi',
      '7020171912e5505c6f0f738d4ebef2ed:d9287860544ca95295a2941079f6531267fe2c3d85c6555d033c04a262ad44ffdcc4ef551f92f7000fc40a28a779839108b6b4e2b7b332ee2165c6b7d17b216a',
-     (SELECT dr.id FROM department_roles dr
-      JOIN departments d ON dr.department_id = d.id
-      JOIN roles r ON dr.role_id = r.id
-      WHERE d.name = 'External Service Providers' AND r.name = 'External Maintainer'),
      'servizio@idraulicaexpress.it',
      (SELECT id FROM companies WHERE name = 'Idraulica Express'),
      true,
@@ -379,10 +319,6 @@ VALUES
      'Laura',
      'Rampe',
      '7020171912e5505c6f0f738d4ebef2ed:d9287860544ca95295a2941079f6531267fe2c3d85c6555d033c04a262ad44ffdcc4ef551f92f7000fc40a28a779839108b6b4e2b7b332ee2165c6b7d17b216a',
-     (SELECT dr.id FROM department_roles dr
-      JOIN departments d ON dr.department_id = d.id
-      JOIN roles r ON dr.role_id = r.id
-      WHERE d.name = 'External Service Providers' AND r.name = 'External Maintainer'),
      'progetti@accessibilitatotale.it',
      (SELECT id FROM companies WHERE name = 'Accessibilità Totale'),
      true,
@@ -392,10 +328,6 @@ VALUES
      'Paolo',
      'Inclusivo',
      '7020171912e5505c6f0f738d4ebef2ed:d9287860544ca95295a2941079f6531267fe2c3d85c6555d033c04a262ad44ffdcc4ef551f92f7000fc40a28a779839108b6b4e2b7b332ee2165c6b7d17b216a',
-     (SELECT dr.id FROM department_roles dr
-      JOIN departments d ON dr.department_id = d.id
-      JOIN roles r ON dr.role_id = r.id
-      WHERE d.name = 'External Service Providers' AND r.name = 'External Maintainer'),
      'contatti@barrierezero.it',
      (SELECT id FROM companies WHERE name = 'Barriere Zero'),
      true,
@@ -406,10 +338,6 @@ VALUES
      'Andrea',
      'Asfalti',
      '7020171912e5505c6f0f738d4ebef2ed:d9287860544ca95295a2941079f6531267fe2c3d85c6555d033c04a262ad44ffdcc4ef551f92f7000fc40a28a779839108b6b4e2b7b332ee2165c6b7d17b216a',
-     (SELECT dr.id FROM department_roles dr
-      JOIN departments d ON dr.department_id = d.id
-      JOIN roles r ON dr.role_id = r.id
-      WHERE d.name = 'External Service Providers' AND r.name = 'External Maintainer'),
      'lavori@stradesicure.it',
      (SELECT id FROM companies WHERE name = 'Strade Sicure'),
      true,
@@ -419,10 +347,6 @@ VALUES
      'Giovanni',
      'Buche',
      '7020171912e5505c6f0f738d4ebef2ed:d9287860544ca95295a2941079f6531267fe2c3d85c6555d033c04a262ad44ffdcc4ef551f92f7000fc40a28a779839108b6b4e2b7b332ee2165c6b7d17b216a',
-     (SELECT dr.id FROM department_roles dr
-      JOIN departments d ON dr.department_id = d.id
-      JOIN roles r ON dr.role_id = r.id
-      WHERE d.name = 'External Service Providers' AND r.name = 'External Maintainer'),
      'manutenzione@asfaltinord.it',
      (SELECT id FROM companies WHERE name = 'Asfalti Nord'),
      true,
@@ -433,10 +357,6 @@ VALUES
      'Elena',
      'Prati',
      '7020171912e5505c6f0f738d4ebef2ed:d9287860544ca95295a2941079f6531267fe2c3d85c6555d033c04a262ad44ffdcc4ef551f92f7000fc40a28a779839108b6b4e2b7b332ee2165c6b7d17b216a',
-     (SELECT dr.id FROM department_roles dr
-      JOIN departments d ON dr.department_id = d.id
-      JOIN roles r ON dr.role_id = r.id
-      WHERE d.name = 'External Service Providers' AND r.name = 'External Maintainer'),
      'verde@giardinriverdi.it',
      (SELECT id FROM companies WHERE name = 'Giardini Verdi'),
      true,
@@ -446,10 +366,6 @@ VALUES
      'Marco',
      'Aiuole',
      '7020171912e5505c6f0f738d4ebef2ed:d9287860544ca95295a2941079f6531267fe2c3d85c6555d033c04a262ad44ffdcc4ef551f92f7000fc40a28a779839108b6b4e2b7b332ee2165c6b7d17b216a',
-     (SELECT dr.id FROM department_roles dr
-      JOIN departments d ON dr.department_id = d.id
-      JOIN roles r ON dr.role_id = r.id
-      WHERE d.name = 'External Service Providers' AND r.name = 'External Maintainer'),
      'parchi@parchibelli.it',
      (SELECT id FROM companies WHERE name = 'Parchi Belli'),
      true,
@@ -460,10 +376,6 @@ VALUES
      'Stefano',
      'Multitask',
      '7020171912e5505c6f0f738d4ebef2ed:d9287860544ca95295a2941079f6531267fe2c3d85c6555d033c04a262ad44ffdcc4ef551f92f7000fc40a28a779839108b6b4e2b7b332ee2165c6b7d17b216a',
-     (SELECT dr.id FROM department_roles dr
-      JOIN departments d ON dr.department_id = d.id
-      JOIN roles r ON dr.role_id = r.id
-      WHERE d.name = 'External Service Providers' AND r.name = 'External Maintainer'),
      'info@servizigenerali.it',
      (SELECT id FROM companies WHERE name = 'Servizi Generali'),
      true,
@@ -473,59 +385,21 @@ VALUES
      'Daniela',
      'Universale',
      '7020171912e5505c6f0f738d4ebef2ed:d9287860544ca95295a2941079f6531267fe2c3d85c6555d033c04a262ad44ffdcc4ef551f92f7000fc40a28a779839108b6b4e2b7b332ee2165c6b7d17b216a',
-     (SELECT dr.id FROM department_roles dr
-      JOIN departments d ON dr.department_id = d.id
-      JOIN roles r ON dr.role_id = r.id
-      WHERE d.name = 'External Service Providers' AND r.name = 'External Maintainer'),
      'assistenza@manutenzioneuniversale.it',
      (SELECT id FROM companies WHERE name = 'Manutenzione Universale'),
      true,
      true)
 ON CONFLICT (username) DO NOTHING;
 
-/*
- * 7. Create test citizen user
- * Username: user
- * Password: password
- * Status: Verified
- */
-INSERT INTO users (username, first_name, last_name, password_hash, department_role_id, email, email_notifications_enabled, is_verified)
-VALUES (
-    'user',
-    'Giulio',
-    'Coppi',
-    -- Password hash for 'password'
-    '7020171912e5505c6f0f738d4ebef2ed:d9287860544ca95295a2941079f6531267fe2c3d85c6555d033c04a262ad44ffdcc4ef551f92f7000fc40a28a779839108b6b4e2b7b332ee2165c6b7d17b216a',
-    
-    -- Find the Citizen position in Organization department
-    (SELECT dr.id FROM department_roles dr
-     JOIN departments d ON dr.department_id = d.id
-     JOIN roles r ON dr.role_id = r.id
-     WHERE d.name = 'Organization' AND r.name = 'Citizen'),
-     
-    'user@test.com',
-    true,
-    true  -- Test citizen already verified
-)
-ON CONFLICT (username) DO NOTHING;
-
-INSERT INTO users (username, first_name, last_name, password_hash, department_role_id, email, email_notifications_enabled, is_verified)
-VALUES (
-    'user2',
-    'Alessia',
-    'Marroni',
-    -- Password hash for 'password'
-    '7020171912e5505c6f0f738d4ebef2ed:d9287860544ca95295a2941079f6531267fe2c3d85c6555d033c04a262ad44ffdcc4ef551f92f7000fc40a28a779839108b6b4e2b7b332ee2165c6b7d17b216a',
-    
-    (SELECT dr.id FROM department_roles dr
-     JOIN departments d ON dr.department_id = d.id
-     JOIN roles r ON dr.role_id = r.id
-     WHERE d.name = 'Organization' AND r.name = 'Citizen'),
-     
-    'user2@test.com',
-    true,
-    true
-)
+-- Test Citizens
+INSERT INTO users (username, first_name, last_name, password_hash, email, email_notifications_enabled, is_verified)
+VALUES
+    ('user', 'Giulio', 'Coppi',
+     '7020171912e5505c6f0f738d4ebef2ed:d9287860544ca95295a2941079f6531267fe2c3d85c6555d033c04a262ad44ffdcc4ef551f92f7000fc40a28a779839108b6b4e2b7b332ee2165c6b7d17b216a',
+     'user@test.com', true, true),
+    ('user2', 'Alessia', 'Marroni',
+     '7020171912e5505c6f0f738d4ebef2ed:d9287860544ca95295a2941079f6531267fe2c3d85c6555d033c04a262ad44ffdcc4ef551f92f7000fc40a28a779839108b6b4e2b7b332ee2165c6b7d17b216a',
+     'user2@test.com', true, true)
 ON CONFLICT (username) DO NOTHING;
 
 /*
@@ -534,58 +408,29 @@ ON CONFLICT (username) DO NOTHING;
  * Password: officer (for all)
  * Status: Verified
  */
-INSERT INTO users (username, first_name, last_name, password_hash, department_role_id, email, email_notifications_enabled, is_verified)
-VALUES (
-    'officer',
-    'Giada',
-    'Grassi',
-    -- Password hash for 'officer'
-    '848572160c1563d131bc2aeeaf0517a7:abfae26e6a0caa22c33c4361e9f2ef71fbe0731e53edd6f508016745ac6d1ecbc8c36f2889c23ba10054fb37f65eb209648feb827bb38cf397aca2f49ce12be0',
-    
-    -- Find the Municipal Public Relations Officer position in Organization department
-    (SELECT dr.id FROM department_roles dr
-     JOIN departments d ON dr.department_id = d.id
-     JOIN roles r ON dr.role_id = r.id
-     WHERE d.name = 'Organization' AND r.name = 'Municipal Public Relations Officer'),
-     
-    'officer@participium.local',
-    true,
-    true  -- Officer already verified
-)
-ON CONFLICT (username) DO NOTHING;
-
-INSERT INTO users (username, first_name, last_name, password_hash, department_role_id, email, email_notifications_enabled, is_verified)
-VALUES (
-    'officer2',
-    'Marco',
-    'Ferretti',
-    -- Password hash for 'officer'
-    '848572160c1563d131bc2aeeaf0517a7:abfae26e6a0caa22c33c4361e9f2ef71fbe0731e53edd6f508016745ac6d1ecbc8c36f2889c23ba10054fb37f65eb209648feb827bb38cf397aca2f49ce12be0',
-    (SELECT dr.id FROM department_roles dr
-     JOIN departments d ON dr.department_id = d.id
-     JOIN roles r ON dr.role_id = r.id
-     WHERE d.name = 'Organization' AND r.name = 'Municipal Public Relations Officer'),
-    'officer2@participium.local',
-    true,
-    true
-)
-ON CONFLICT (username) DO NOTHING;
-
-INSERT INTO users (username, first_name, last_name, password_hash, department_role_id, email, email_notifications_enabled, is_verified)
-VALUES (
-    'officer3',
-    'Sofia',
-    'Moretti',
-    -- Password hash for 'officer'
-    '848572160c1563d131bc2aeeaf0517a7:abfae26e6a0caa22c33c4361e9f2ef71fbe0731e53edd6f508016745ac6d1ecbc8c36f2889c23ba10054fb37f65eb209648feb827bb38cf397aca2f49ce12be0',
-    (SELECT dr.id FROM department_roles dr
-     JOIN departments d ON dr.department_id = d.id
-     JOIN roles r ON dr.role_id = r.id
-     WHERE d.name = 'Organization' AND r.name = 'Municipal Public Relations Officer'),
-    'officer3@participium.local',
-    true,
-    true
-)
+INSERT INTO users (username, first_name, last_name, password_hash, email, email_notifications_enabled, is_verified)
+VALUES 
+    ('officer',
+     'Giada',
+     'Grassi',
+     '848572160c1563d131bc2aeeaf0517a7:abfae26e6a0caa22c33c4361e9f2ef71fbe0731e53edd6f508016745ac6d1ecbc8c36f2889c23ba10054fb37f65eb209648feb827bb38cf397aca2f49ce12be0',
+     'officer@participium.local',
+     true,
+     true),
+    ('officer2',
+     'Marco',
+     'Ferretti',
+     '848572160c1563d131bc2aeeaf0517a7:abfae26e6a0caa22c33c4361e9f2ef71fbe0731e53edd6f508016745ac6d1ecbc8c36f2889c23ba10054fb37f65eb209648feb827bb38cf397aca2f49ce12be0',
+     'officer2@participium.local',
+     true,
+     true),
+    ('officer3',
+     'Sofia',
+     'Moretti',
+     '848572160c1563d131bc2aeeaf0517a7:abfae26e6a0caa22c33c4361e9f2ef71fbe0731e53edd6f508016745ac6d1ecbc8c36f2889c23ba10054fb37f65eb209648feb827bb38cf397aca2f49ce12be0',
+     'officer3@participium.local',
+     true,
+     true)
 ON CONFLICT (username) DO NOTHING;
 
 /*
@@ -594,297 +439,174 @@ ON CONFLICT (username) DO NOTHING;
  * Password: director (for all)
  * Status: Verified
  */
-
--- Director for Water and Sewer Services Department
-INSERT INTO users (username, first_name, last_name, password_hash, department_role_id, email, email_notifications_enabled, is_verified)
-VALUES (
-    'director_water',
-    'Lucia',
-    'Bianchi',
-    -- Password hash for 'director'
-    'f1e1121ec7ae66434c068e02a5c0a133:3226ff94b978b740dc230ce7ec7ea2ca61b0b43b156395175e225e1d9b8eb23404f5afc781213b43cd7608982dbc3082212891b67eec202dce55a0c2332a58c7',
-    (SELECT dr.id FROM department_roles dr
-     JOIN departments d ON dr.department_id = d.id
-     JOIN roles r ON dr.role_id = r.id
-     WHERE d.name = 'Water and Sewer Services Department' AND r.name = 'Department Director'),
-    'director.water@participium.local',
-    true,
-    true
-)
+INSERT INTO users (username, first_name, last_name, password_hash, email, email_notifications_enabled, is_verified)
+VALUES
+    ('director_water', 'Lucia', 'Bianchi',
+     'f1e1121ec7ae66434c068e02a5c0a133:3226ff94b978b740dc230ce7ec7ea2ca61b0b43b156395175e225e1d9b8eb23404f5afc781213b43cd7608982dbc3082212891b67eec202dce55a0c2332a58c7',
+     'director.water@participium.local', true, true),
+    ('director_infra', 'Chiara', 'Rossi',
+     'f1e1121ec7ae66434c068e02a5c0a133:3226ff94b978b740dc230ce7ec7ea2ca61b0b43b156395175e225e1d9b8eb23404f5afc781213b43cd7608982dbc3082212891b67eec202dce55a0c2332a58c7',
+     'director.infra@participium.local', true, true),
+    ('director_lighting', 'Mario', 'Grandi',
+     'f1e1121ec7ae66434c068e02a5c0a133:3226ff94b978b740dc230ce7ec7ea2ca61b0b43b156395175e225e1d9b8eb23404f5afc781213b43cd7608982dbc3082212891b67eec202dce55a0c2332a58c7',
+     'director.lighting@participium.local', true, true),
+    ('director_waste', 'Luca', 'Bossi',
+     'f1e1121ec7ae66434c068e02a5c0a133:3226ff94b978b740dc230ce7ec7ea2ca61b0b43b156395175e225e1d9b8eb23404f5afc781213b43cd7608982dbc3082212891b67eec202dce55a0c2332a58c7',
+     'director.waste@participium.local', true, true),
+    ('director_traffic', 'Andrea', 'Maini',
+     'f1e1121ec7ae66434c068e02a5c0a133:3226ff94b978b740dc230ce7ec7ea2ca61b0b43b156395175e225e1d9b8eb23404f5afc781213b43cd7608982dbc3082212891b67eec202dce55a0c2332a58c7',
+     'director.traffic@participium.local', true, true),
+    ('director_parks', 'Carola', 'Verdi',
+     'f1e1121ec7ae66434c068e02a5c0a133:3226ff94b978b740dc230ce7ec7ea2ca61b0b43b156395175e225e1d9b8eb23404f5afc781213b43cd7608982dbc3082212891b67eec202dce55a0c2332a58c7',
+     'director.parks@participium.local', true, true),
+    ('director_services', 'Pietro', 'Gialli',
+     'f1e1121ec7ae66434c068e02a5c0a133:3226ff94b978b740dc230ce7ec7ea2ca61b0b43b156395175e225e1d9b8eb23404f5afc781213b43cd7608982dbc3082212891b67eec202dce55a0c2332a58c7',
+     'director.services@participium.local', true, true)
 ON CONFLICT (username) DO NOTHING;
 
--- Director for Public Infrastructure and Accessibility Department
-INSERT INTO users (username, first_name, last_name, password_hash, department_role_id, email, email_notifications_enabled, is_verified)
-VALUES (
-    'director_infra',
-    'Chiara',
-    'Rossi',
-    -- Password hash for 'director'
-    'f1e1121ec7ae66434c068e02a5c0a133:3226ff94b978b740dc230ce7ec7ea2ca61b0b43b156395175e225e1d9b8eb23404f5afc781213b43cd7608982dbc3082212891b67eec202dce55a0c2332a58c7',
-    (SELECT dr.id FROM department_roles dr
-     JOIN departments d ON dr.department_id = d.id
-     JOIN roles r ON dr.role_id = r.id
-     WHERE d.name = 'Public Infrastructure and Accessibility Department' AND r.name = 'Department Director'),
-    'director.infra@participium.local',
-    true,
-    true
-)
-ON CONFLICT (username) DO NOTHING;
-
--- Director for Public Lighting Department
-INSERT INTO users (username, first_name, last_name, password_hash, department_role_id, email, email_notifications_enabled, is_verified)
-VALUES (
-    'director_lighting',
-    'Mario',
-    'Grandi',
-    -- Password hash for 'director'
-    'f1e1121ec7ae66434c068e02a5c0a133:3226ff94b978b740dc230ce7ec7ea2ca61b0b43b156395175e225e1d9b8eb23404f5afc781213b43cd7608982dbc3082212891b67eec202dce55a0c2332a58c7',
-    (SELECT dr.id FROM department_roles dr
-     JOIN departments d ON dr.department_id = d.id
-     JOIN roles r ON dr.role_id = r.id
-     WHERE d.name = 'Public Lighting Department' AND r.name = 'Department Director'),
-    'director.lighting@participium.local',
-    true,
-    true
-)
-ON CONFLICT (username) DO NOTHING;
-
--- Director for Waste Management Department
-INSERT INTO users (username, first_name, last_name, password_hash, department_role_id, email, email_notifications_enabled, is_verified)
-VALUES (
-    'director_waste',
-    'Luca',
-    'Bossi',
-    -- Password hash for 'director'
-    'f1e1121ec7ae66434c068e02a5c0a133:3226ff94b978b740dc230ce7ec7ea2ca61b0b43b156395175e225e1d9b8eb23404f5afc781213b43cd7608982dbc3082212891b67eec202dce55a0c2332a58c7',
-    (SELECT dr.id FROM department_roles dr
-     JOIN departments d ON dr.department_id = d.id
-     JOIN roles r ON dr.role_id = r.id
-     WHERE d.name = 'Waste Management Department' AND r.name = 'Department Director'),
-    'director.waste@participium.local',
-    true,
-    true
-)
-ON CONFLICT (username) DO NOTHING;
-
--- Director for Mobility and Traffic Management Department
-INSERT INTO users (username, first_name, last_name, password_hash, department_role_id, email, email_notifications_enabled, is_verified)
-VALUES (
-    'director_traffic',
-    'Andrea',
-    'Maini',
-    -- Password hash for 'director'
-    'f1e1121ec7ae66434c068e02a5c0a133:3226ff94b978b740dc230ce7ec7ea2ca61b0b43b156395175e225e1d9b8eb23404f5afc781213b43cd7608982dbc3082212891b67eec202dce55a0c2332a58c7',
-    (SELECT dr.id FROM department_roles dr
-     JOIN departments d ON dr.department_id = d.id
-     JOIN roles r ON dr.role_id = r.id
-     WHERE d.name = 'Mobility and Traffic Management Department' AND r.name = 'Department Director'),
-    'director.traffic@participium.local',
-    true,
-    true
-)
-ON CONFLICT (username) DO NOTHING;
-
--- Director for Parks, Green Areas and Recreation Department
-INSERT INTO users (username, first_name, last_name, password_hash, department_role_id, email, email_notifications_enabled, is_verified)
-VALUES (
-    'director_parks',
-    'Carola',
-    'Verdi',
-    -- Password hash for 'director'
-    'f1e1121ec7ae66434c068e02a5c0a133:3226ff94b978b740dc230ce7ec7ea2ca61b0b43b156395175e225e1d9b8eb23404f5afc781213b43cd7608982dbc3082212891b67eec202dce55a0c2332a58c7',
-    (SELECT dr.id FROM department_roles dr
-     JOIN departments d ON dr.department_id = d.id
-     JOIN roles r ON dr.role_id = r.id
-     WHERE d.name = 'Parks, Green Areas and Recreation Department' AND r.name = 'Department Director'),
-    'director.parks@participium.local',
-    true,
-    true
-)
-ON CONFLICT (username) DO NOTHING;
-
--- Director for General Services Department
-INSERT INTO users (username, first_name, last_name, password_hash, department_role_id, email, email_notifications_enabled, is_verified)
-VALUES (
-    'director_services',
-    'Pietro',
-    'Gialli',
-    -- Password hash for 'director'
-    'f1e1121ec7ae66434c068e02a5c0a133:3226ff94b978b740dc230ce7ec7ea2ca61b0b43b156395175e225e1d9b8eb23404f5afc781213b43cd7608982dbc3082212891b67eec202dce55a0c2332a58c7',
-    (SELECT dr.id FROM department_roles dr
-     JOIN departments d ON dr.department_id = d.id
-     JOIN roles r ON dr.role_id = r.id
-     WHERE d.name = 'General Services Department' AND r.name = 'Department Director'),
-    'director.services@participium.local',
-    true,
-    true
-)
+-- Technical Staff Members
+INSERT INTO users (username, first_name, last_name, password_hash, email, email_notifications_enabled, is_verified)
+VALUES
+    ('staff_water', 'Pietro', 'Verdi',
+     '2334999626450f0e93bc7f37fb68fd21:8d094d332b9aac31eb603cce7adac984dd49a366f5e51ddeb4cb273549c6fa199b021091378438829fb1732a72a69f39dca1d90436185e07233e21214c2f2e41',
+     'staff.water@participium.local', true, true),
+    ('staff_sewer', 'Angelo', 'Corradi',
+     '2334999626450f0e93bc7f37fb68fd21:8d094d332b9aac31eb603cce7adac984dd49a366f5e51ddeb4cb273549c6fa199b021091378438829fb1732a72a69f39dca1d90436185e07233e21214c2f2e41',
+     'staff.sewer@participium.local', true, true),
+    ('staff_access', 'Angelo', 'Rossi',
+     '2334999626450f0e93bc7f37fb68fd21:8d094d332b9aac31eb603cce7adac984dd49a366f5e51ddeb4cb273549c6fa199b021091378438829fb1732a72a69f39dca1d90436185e07233e21214c2f2e41',
+     'staff.access@participium.local', true, true),
+    ('staff_road', 'Filippo', 'Toscano',
+     '2334999626450f0e93bc7f37fb68fd21:8d094d332b9aac31eb603cce7adac984dd49a366f5e51ddeb4cb273549c6fa199b021091378438829fb1732a72a69f39dca1d90436185e07233e21214c2f2e41',
+     'staff.road@participium.local', true, true),
+    ('staff_lighting', 'Andrea', 'Pugliese',
+     '2334999626450f0e93bc7f37fb68fd21:8d094d332b9aac31eb603cce7adac984dd49a366f5e51ddeb4cb273549c6fa199b021091378438829fb1732a72a69f39dca1d90436185e07233e21214c2f2e41',
+     'staff.lighting@participium.local', true, true),
+    ('staff_waste', 'Carolina', 'Lombardi',
+     '2334999626450f0e93bc7f37fb68fd21:8d094d332b9aac31eb603cce7adac984dd49a366f5e51ddeb4cb273549c6fa199b021091378438829fb1732a72a69f39dca1d90436185e07233e21214c2f2e41',
+     'staff.waste@participium.local', true, true),
+    ('staff_traffic', 'Luca', 'Angeleri',
+     '2334999626450f0e93bc7f37fb68fd21:8d094d332b9aac31eb603cce7adac984dd49a366f5e51ddeb4cb273549c6fa199b021091378438829fb1732a72a69f39dca1d90436185e07233e21214c2f2e41',
+     'staff.traffic@participium.local', true, true),
+    ('staff_parks', 'Matteo', 'Re',
+     '2334999626450f0e93bc7f37fb68fd21:8d094d332b9aac31eb603cce7adac984dd49a366f5e51ddeb4cb273549c6fa199b021091378438829fb1732a72a69f39dca1d90436185e07233e21214c2f2e41',
+     'staff.parks@participium.local', true, true),
+    ('staff_support', 'Marco', 'Lolla',
+     '2334999626450f0e93bc7f37fb68fd21:8d094d332b9aac31eb603cce7adac984dd49a366f5e51ddeb4cb273549c6fa199b021091378438829fb1732a72a69f39dca1d90436185e07233e21214c2f2e41',
+     'staff.support@participium.local', true, true)
 ON CONFLICT (username) DO NOTHING;
 
 /*
- * 10. Create test Technical Staff Members
- * Username: staff_[category]
- * Password: staff (for all)
- * Status: Verified
+ * ====================================
+ * 7. ASSIGN ROLES VIA user_roles TABLE (PT10)
+ * ====================================
+ * This section assigns roles to users using the new many-to-many structure
  */
 
--- Water Network staff member
-INSERT INTO users (username, first_name, last_name, password_hash, department_role_id, email, email_notifications_enabled, is_verified)
-VALUES (
-    'staff_water',
-    'Pietro',
-    'Verdi',
-    -- Password hash for 'staff'
-    '2334999626450f0e93bc7f37fb68fd21:8d094d332b9aac31eb603cce7adac984dd49a366f5e51ddeb4cb273549c6fa199b021091378438829fb1732a72a69f39dca1d90436185e07233e21214c2f2e41',
-    (SELECT dr.id FROM department_roles dr
-     JOIN departments d ON dr.department_id = d.id
-     JOIN roles r ON dr.role_id = r.id
-     WHERE d.name = 'Water and Sewer Services Department' AND r.name = 'Water Network staff member'),
-    'staff.water@participium.local',
-    true,
-    true
-)
-ON CONFLICT (username) DO NOTHING;
+-- Helper function to get department_role_id
+CREATE OR REPLACE FUNCTION get_department_role_id(dept_name VARCHAR, role_name_param VARCHAR)
+RETURNS INT AS $$
+    SELECT dr.id FROM department_roles dr
+    JOIN departments d ON dr.department_id = d.id
+    JOIN roles r ON dr.role_id = r.id
+    WHERE d.name = dept_name AND r.name = role_name_param;
+$$ LANGUAGE SQL;
 
--- Sewer System staff member
-INSERT INTO users (username, first_name, last_name, password_hash, department_role_id, email, email_notifications_enabled, is_verified)
-VALUES (
-    'staff_sewer',
-    'Angelo',
-    'Corradi',
-    -- Password hash for 'staff'
-    '2334999626450f0e93bc7f37fb68fd21:8d094d332b9aac31eb603cce7adac984dd49a366f5e51ddeb4cb273549c6fa199b021091378438829fb1732a72a69f39dca1d90436185e07233e21214c2f2e41',
-    (SELECT dr.id FROM department_roles dr
-     JOIN departments d ON dr.department_id = d.id
-     JOIN roles r ON dr.role_id = r.id
-     WHERE d.name = 'Water and Sewer Services Department' AND r.name = 'Sewer System staff member'),
-    'staff.sewer@participium.local',
-    true,
-    true
-)
-ON CONFLICT (username) DO NOTHING;
+-- Administrator role
+INSERT INTO user_roles (user_id, department_role_id)
+SELECT 
+    (SELECT id FROM users WHERE username = 'admin'),
+    get_department_role_id('Organization', 'Administrator')
+ON CONFLICT (user_id, department_role_id) DO NOTHING;
 
--- Accessibility staff member
-INSERT INTO users (username, first_name, last_name, password_hash, department_role_id, email, email_notifications_enabled, is_verified)
-VALUES (
-    'staff_access',
-    'Angelo',
-    'Rossi',
-    -- Password hash for 'staff'
-    '2334999626450f0e93bc7f37fb68fd21:8d094d332b9aac31eb603cce7adac984dd49a366f5e51ddeb4cb273549c6fa199b021091378438829fb1732a72a69f39dca1d90436185e07233e21214c2f2e41',
-    (SELECT dr.id FROM department_roles dr
-     JOIN departments d ON dr.department_id = d.id
-     JOIN roles r ON dr.role_id = r.id
-     WHERE d.name = 'Public Infrastructure and Accessibility Department' AND r.name = 'Accessibility staff member'),
-    'staff.access@participium.local',
-    true,
-    true
-)
-ON CONFLICT (username) DO NOTHING;
+-- External Maintainers roles (ALL external maintainers)
+INSERT INTO user_roles (user_id, department_role_id)
+VALUES
+    ((SELECT id FROM users WHERE username = 'enelx'), get_department_role_id('External Service Providers', 'External Maintainer')),
+    ((SELECT id FROM users WHERE username = 'luceservice'), get_department_role_id('External Service Providers', 'External Maintainer')),
+    ((SELECT id FROM users WHERE username = 'acea'), get_department_role_id('External Service Providers', 'External Maintainer')),
+    ((SELECT id FROM users WHERE username = 'acquatecnica'), get_department_role_id('External Service Providers', 'External Maintainer')),
+    ((SELECT id FROM users WHERE username = 'hera'), get_department_role_id('External Service Providers', 'External Maintainer')),
+    ((SELECT id FROM users WHERE username = 'ecoservice'), get_department_role_id('External Service Providers', 'External Maintainer')),
+    ((SELECT id FROM users WHERE username = 'atm'), get_department_role_id('External Service Providers', 'External Maintainer')),
+    ((SELECT id FROM users WHERE username = 'segnaletica'), get_department_role_id('External Service Providers', 'External Maintainer')),
+    ((SELECT id FROM users WHERE username = 'fognaturepro'), get_department_role_id('External Service Providers', 'External Maintainer')),
+    ((SELECT id FROM users WHERE username = 'idraulicaexpress'), get_department_role_id('External Service Providers', 'External Maintainer')),
+    ((SELECT id FROM users WHERE username = 'accessibilita'), get_department_role_id('External Service Providers', 'External Maintainer')),
+    ((SELECT id FROM users WHERE username = 'barrierezero'), get_department_role_id('External Service Providers', 'External Maintainer')),
+    ((SELECT id FROM users WHERE username = 'stradesicure'), get_department_role_id('External Service Providers', 'External Maintainer')),
+    ((SELECT id FROM users WHERE username = 'asfaltinord'), get_department_role_id('External Service Providers', 'External Maintainer')),
+    ((SELECT id FROM users WHERE username = 'giardinriverdi'), get_department_role_id('External Service Providers', 'External Maintainer')),
+    ((SELECT id FROM users WHERE username = 'parchibelli'), get_department_role_id('External Service Providers', 'External Maintainer')),
+    ((SELECT id FROM users WHERE username = 'servizigenerali'), get_department_role_id('External Service Providers', 'External Maintainer')),
+    ((SELECT id FROM users WHERE username = 'manutenzioneuniv'), get_department_role_id('External Service Providers', 'External Maintainer'))
+ON CONFLICT (user_id, department_role_id) DO NOTHING;
 
--- Road Maintenance staff member
-INSERT INTO users (username, first_name, last_name, password_hash, department_role_id, email, email_notifications_enabled, is_verified)
-VALUES (
-    'staff_road',
-    'Filippo',
-    'Toscano',
-    -- Password hash for 'staff'
-    '2334999626450f0e93bc7f37fb68fd21:8d094d332b9aac31eb603cce7adac984dd49a366f5e51ddeb4cb273549c6fa199b021091378438829fb1732a72a69f39dca1d90436185e07233e21214c2f2e41',
-    (SELECT dr.id FROM department_roles dr
-     JOIN departments d ON dr.department_id = d.id
-     JOIN roles r ON dr.role_id = r.id
-     WHERE d.name = 'Public Infrastructure and Accessibility Department' AND r.name = 'Road Maintenance staff member'),
-    'staff.road@participium.local',
-    true,
-    true
-)
-ON CONFLICT (username) DO NOTHING;
+-- Citizens roles
+INSERT INTO user_roles (user_id, department_role_id)
+VALUES
+    ((SELECT id FROM users WHERE username = 'user'), get_department_role_id('Organization', 'Citizen')),
+    ((SELECT id FROM users WHERE username = 'user2'), get_department_role_id('Organization', 'Citizen'))
+ON CONFLICT (user_id, department_role_id) DO NOTHING;
 
--- Electrical staff member (Public Lighting)
-INSERT INTO users (username, first_name, last_name, password_hash, department_role_id, email, email_notifications_enabled, is_verified)
-VALUES (
-    'staff_lighting',
-    'Andrea',
-    'Pugliese',
-    -- Password hash for 'staff'
-    '2334999626450f0e93bc7f37fb68fd21:8d094d332b9aac31eb603cce7adac984dd49a366f5e51ddeb4cb273549c6fa199b021091378438829fb1732a72a69f39dca1d90436185e07233e21214c2f2e41',
-    (SELECT dr.id FROM department_roles dr
-     JOIN departments d ON dr.department_id = d.id
-     JOIN roles r ON dr.role_id = r.id
-     WHERE d.name = 'Public Lighting Department' AND r.name = 'Electrical staff member'),
-    'staff.lighting@participium.local',
-    true,
-    true
-)
-ON CONFLICT (username) DO NOTHING;
+-- Municipal Public Relations Officer roles (ALL PROs)
+INSERT INTO user_roles (user_id, department_role_id)
+VALUES
+    ((SELECT id FROM users WHERE username = 'officer'), get_department_role_id('Organization', 'Municipal Public Relations Officer')),
+    ((SELECT id FROM users WHERE username = 'officer2'), get_department_role_id('Organization', 'Municipal Public Relations Officer')),
+    ((SELECT id FROM users WHERE username = 'officer3'), get_department_role_id('Organization', 'Municipal Public Relations Officer'))
+ON CONFLICT (user_id, department_role_id) DO NOTHING;
 
--- Recycling Program staff member (Waste)
-INSERT INTO users (username, first_name, last_name, password_hash, department_role_id, email, email_notifications_enabled, is_verified)
-VALUES (
-    'staff_waste',
-    'Carolina',
-    'Lombardi',
-    -- Password hash for 'staff'
-    '2334999626450f0e93bc7f37fb68fd21:8d094d332b9aac31eb603cce7adac984dd49a366f5e51ddeb4cb273549c6fa199b021091378438829fb1732a72a69f39dca1d90436185e07233e21214c2f2e41',
-    (SELECT dr.id FROM department_roles dr
-     JOIN departments d ON dr.department_id = d.id
-     JOIN roles r ON dr.role_id = r.id
-     WHERE d.name = 'Waste Management Department' AND r.name = 'Recycling Program staff member'),
-    'staff.waste@participium.local',
-    true,
-    true
-)
-ON CONFLICT (username) DO NOTHING;
+-- Department Directors roles
+INSERT INTO user_roles (user_id, department_role_id)
+VALUES
+    ((SELECT id FROM users WHERE username = 'director_water'), get_department_role_id('Water and Sewer Services Department', 'Department Director')),
+    ((SELECT id FROM users WHERE username = 'director_infra'), get_department_role_id('Public Infrastructure and Accessibility Department', 'Department Director')),
+    ((SELECT id FROM users WHERE username = 'director_lighting'), get_department_role_id('Public Lighting Department', 'Department Director')),
+    ((SELECT id FROM users WHERE username = 'director_waste'), get_department_role_id('Waste Management Department', 'Department Director')),
+    ((SELECT id FROM users WHERE username = 'director_traffic'), get_department_role_id('Mobility and Traffic Management Department', 'Department Director')),
+    ((SELECT id FROM users WHERE username = 'director_parks'), get_department_role_id('Parks, Green Areas and Recreation Department', 'Department Director')),
+    ((SELECT id FROM users WHERE username = 'director_services'), get_department_role_id('General Services Department', 'Department Director'))
+ON CONFLICT (user_id, department_role_id) DO NOTHING;
 
--- Traffic management staff member
-INSERT INTO users (username, first_name, last_name, password_hash, department_role_id, email, email_notifications_enabled, is_verified)
-VALUES (
-    'staff_traffic',
-    'Luca',
-    'Angeleri',
-    -- Password hash for 'staff'
-    '2334999626450f0e93bc7f37fb68fd21:8d094d332b9aac31eb603cce7adac984dd49a366f5e51ddeb4cb273549c6fa199b021091378438829fb1732a72a69f39dca1d90436185e07233e21214c2f2e41',
-    (SELECT dr.id FROM department_roles dr
-     JOIN departments d ON dr.department_id = d.id
-     JOIN roles r ON dr.role_id = r.id
-     WHERE d.name = 'Mobility and Traffic Management Department' AND r.name = 'Traffic management staff member'),
-    'staff.traffic@participium.local',
-    true,
-    true
-)
-ON CONFLICT (username) DO NOTHING;
+-- Technical Staff roles (ALL staff including staff2_*)
+INSERT INTO user_roles (user_id, department_role_id)
+VALUES
+    ((SELECT id FROM users WHERE username = 'staff_water'), get_department_role_id('Water and Sewer Services Department', 'Water Network staff member')),
+    ((SELECT id FROM users WHERE username = 'staff_sewer'), get_department_role_id('Water and Sewer Services Department', 'Sewer System staff member')),
+    ((SELECT id FROM users WHERE username = 'staff_access'), get_department_role_id('Public Infrastructure and Accessibility Department', 'Accessibility staff member')),
+    ((SELECT id FROM users WHERE username = 'staff_road'), get_department_role_id('Public Infrastructure and Accessibility Department', 'Road Maintenance staff member')),
+    ((SELECT id FROM users WHERE username = 'staff_lighting'), get_department_role_id('Public Lighting Department', 'Electrical staff member')),
+    ((SELECT id FROM users WHERE username = 'staff_waste'), get_department_role_id('Waste Management Department', 'Recycling Program staff member')),
+    ((SELECT id FROM users WHERE username = 'staff_traffic'), get_department_role_id('Mobility and Traffic Management Department', 'Traffic management staff member')),
+    ((SELECT id FROM users WHERE username = 'staff_parks'), get_department_role_id('Parks, Green Areas and Recreation Department', 'Parks Maintenance staff member')),
+    ((SELECT id FROM users WHERE username = 'staff_support'), get_department_role_id('General Services Department', 'Support Officer')),
+    -- Secondary technical staff members
+    ((SELECT id FROM users WHERE username = 'staff2_water'), get_department_role_id('Water and Sewer Services Department', 'Water Network staff member')),
+    ((SELECT id FROM users WHERE username = 'staff2_sewer'), get_department_role_id('Water and Sewer Services Department', 'Sewer System staff member')),
+    ((SELECT id FROM users WHERE username = 'staff2_access'), get_department_role_id('Public Infrastructure and Accessibility Department', 'Accessibility staff member')),
+    ((SELECT id FROM users WHERE username = 'staff2_road'), get_department_role_id('Public Infrastructure and Accessibility Department', 'Road Maintenance staff member')),
+    ((SELECT id FROM users WHERE username = 'staff2_lighting'), get_department_role_id('Public Lighting Department', 'Electrical staff member')),
+    ((SELECT id FROM users WHERE username = 'staff2_waste'), get_department_role_id('Waste Management Department', 'Recycling Program staff member')),
+    ((SELECT id FROM users WHERE username = 'staff2_traffic'), get_department_role_id('Mobility and Traffic Management Department', 'Traffic management staff member')),
+    ((SELECT id FROM users WHERE username = 'staff2_parks'), get_department_role_id('Parks, Green Areas and Recreation Department', 'Parks Maintenance staff member')),
+    ((SELECT id FROM users WHERE username = 'staff2_support'), get_department_role_id('General Services Department', 'Support Officer'))
+ON CONFLICT (user_id, department_role_id) DO NOTHING;
 
--- Parks Maintenance staff member
-INSERT INTO users (username, first_name, last_name, password_hash, department_role_id, email, email_notifications_enabled, is_verified)
-VALUES (
-    'staff_parks',
-    'Matteo',
-    'Re',
-    -- Password hash for 'staff'
-    '2334999626450f0e93bc7f37fb68fd21:8d094d332b9aac31eb603cce7adac984dd49a366f5e51ddeb4cb273549c6fa199b021091378438829fb1732a72a69f39dca1d90436185e07233e21214c2f2e41',
-    (SELECT dr.id FROM department_roles dr
-     JOIN departments d ON dr.department_id = d.id
-     JOIN roles r ON dr.role_id = r.id
-     WHERE d.name = 'Parks, Green Areas and Recreation Department' AND r.name = 'Parks Maintenance staff member'),
-    'staff.parks@participium.local',
-    true,
-    true
-)
-ON CONFLICT (username) DO NOTHING;
+/*
+ * ====================================
+ * 8. EXAMPLE: USER WITH MULTIPLE ROLES
+ * ====================================
+ */
 
--- Support Officer (Other category)
-INSERT INTO users (username, first_name, last_name, password_hash, department_role_id, email, email_notifications_enabled, is_verified)
+-- Create a multi-role user for testing
+INSERT INTO users (username, first_name, last_name, password_hash, email, email_notifications_enabled, is_verified)
 VALUES (
-    'staff_support',
-    'Marco',
-    'Lolla',
-    -- Password hash for 'staff'
-    '2334999626450f0e93bc7f37fb68fd21:8d094d332b9aac31eb603cce7adac984dd49a366f5e51ddeb4cb273549c6fa199b021091378438829fb1732a72a69f39dca1d90436185e07233e21214c2f2e41',
-    (SELECT dr.id FROM department_roles dr
-     JOIN departments d ON dr.department_id = d.id
-     JOIN roles r ON dr.role_id = r.id
-     WHERE d.name = 'General Services Department' AND r.name = 'Support Officer'),
-    'staff.support@participium.local',
+    'multirole',
+    'Giovanni',
+    'Multiruolo',
+    '7020171912e5505c6f0f738d4ebef2ed:d9287860544ca95295a2941079f6531267fe2c3d85c6555d033c04a262ad44ffdcc4ef551f92f7000fc40a28a779839108b6b4e2b7b332ee2165c6b7d17b216a',
+    'multirole@participium.local',
     true,
     true
 )
@@ -898,17 +620,12 @@ ON CONFLICT (username) DO NOTHING;
  */
 
 -- Second Water Network staff member
-INSERT INTO users (username, first_name, last_name, password_hash, department_role_id, email, email_notifications_enabled, is_verified)
+INSERT INTO users (username, first_name, last_name, password_hash, email, email_notifications_enabled, is_verified)
 VALUES (
     'staff2_water',
     'Giuseppe',
     'Acqua',
-    -- Password hash for 'staff'
     '2334999626450f0e93bc7f37fb68fd21:8d094d332b9aac31eb603cce7adac984dd49a366f5e51ddeb4cb273549c6fa199b021091378438829fb1732a72a69f39dca1d90436185e07233e21214c2f2e41',
-    (SELECT dr.id FROM department_roles dr
-     JOIN departments d ON dr.department_id = d.id
-     JOIN roles r ON dr.role_id = r.id
-     WHERE d.name = 'Water and Sewer Services Department' AND r.name = 'Water Network staff member'),
     'staff2.water@participium.local',
     true,
     true
@@ -916,17 +633,12 @@ VALUES (
 ON CONFLICT (username) DO NOTHING;
 
 -- Second Sewer System staff member
-INSERT INTO users (username, first_name, last_name, password_hash, department_role_id, email, email_notifications_enabled, is_verified)
+INSERT INTO users (username, first_name, last_name, password_hash, email, email_notifications_enabled, is_verified)
 VALUES (
     'staff2_sewer',
     'Federica',
     'Fogne',
-    -- Password hash for 'staff'
     '2334999626450f0e93bc7f37fb68fd21:8d094d332b9aac31eb603cce7adac984dd49a366f5e51ddeb4cb273549c6fa199b021091378438829fb1732a72a69f39dca1d90436185e07233e21214c2f2e41',
-    (SELECT dr.id FROM department_roles dr
-     JOIN departments d ON dr.department_id = d.id
-     JOIN roles r ON dr.role_id = r.id
-     WHERE d.name = 'Water and Sewer Services Department' AND r.name = 'Sewer System staff member'),
     'staff2.sewer@participium.local',
     true,
     true
@@ -934,17 +646,12 @@ VALUES (
 ON CONFLICT (username) DO NOTHING;
 
 -- Second Accessibility staff member
-INSERT INTO users (username, first_name, last_name, password_hash, department_role_id, email, email_notifications_enabled, is_verified)
+INSERT INTO users (username, first_name, last_name, password_hash, email, email_notifications_enabled, is_verified)
 VALUES (
     'staff2_access',
     'Valentina',
     'Barriere',
-    -- Password hash for 'staff'
     '2334999626450f0e93bc7f37fb68fd21:8d094d332b9aac31eb603cce7adac984dd49a366f5e51ddeb4cb273549c6fa199b021091378438829fb1732a72a69f39dca1d90436185e07233e21214c2f2e41',
-    (SELECT dr.id FROM department_roles dr
-     JOIN departments d ON dr.department_id = d.id
-     JOIN roles r ON dr.role_id = r.id
-     WHERE d.name = 'Public Infrastructure and Accessibility Department' AND r.name = 'Accessibility staff member'),
     'staff2.access@participium.local',
     true,
     true
@@ -952,17 +659,12 @@ VALUES (
 ON CONFLICT (username) DO NOTHING;
 
 -- Second Road Maintenance staff member
-INSERT INTO users (username, first_name, last_name, password_hash, department_role_id, email, email_notifications_enabled, is_verified)
+INSERT INTO users (username, first_name, last_name, password_hash, email, email_notifications_enabled, is_verified)
 VALUES (
     'staff2_road',
     'Riccardo',
     'Strade',
-    -- Password hash for 'staff'
     '2334999626450f0e93bc7f37fb68fd21:8d094d332b9aac31eb603cce7adac984dd49a366f5e51ddeb4cb273549c6fa199b021091378438829fb1732a72a69f39dca1d90436185e07233e21214c2f2e41',
-    (SELECT dr.id FROM department_roles dr
-     JOIN departments d ON dr.department_id = d.id
-     JOIN roles r ON dr.role_id = r.id
-     WHERE d.name = 'Public Infrastructure and Accessibility Department' AND r.name = 'Road Maintenance staff member'),
     'staff2.road@participium.local',
     true,
     true
@@ -970,17 +672,12 @@ VALUES (
 ON CONFLICT (username) DO NOTHING;
 
 -- Second Electrical staff member (Public Lighting)
-INSERT INTO users (username, first_name, last_name, password_hash, department_role_id, email, email_notifications_enabled, is_verified)
+INSERT INTO users (username, first_name, last_name, password_hash, email, email_notifications_enabled, is_verified)
 VALUES (
     'staff2_lighting',
     'Cristina',
     'Lampioni',
-    -- Password hash for 'staff'
     '2334999626450f0e93bc7f37fb68fd21:8d094d332b9aac31eb603cce7adac984dd49a366f5e51ddeb4cb273549c6fa199b021091378438829fb1732a72a69f39dca1d90436185e07233e21214c2f2e41',
-    (SELECT dr.id FROM department_roles dr
-     JOIN departments d ON dr.department_id = d.id
-     JOIN roles r ON dr.role_id = r.id
-     WHERE d.name = 'Public Lighting Department' AND r.name = 'Electrical staff member'),
     'staff2.lighting@participium.local',
     true,
     true
@@ -988,17 +685,12 @@ VALUES (
 ON CONFLICT (username) DO NOTHING;
 
 -- Second Recycling Program staff member (Waste)
-INSERT INTO users (username, first_name, last_name, password_hash, department_role_id, email, email_notifications_enabled, is_verified)
+INSERT INTO users (username, first_name, last_name, password_hash, email, email_notifications_enabled, is_verified)
 VALUES (
     'staff2_waste',
     'Davide',
     'Rifiuti',
-    -- Password hash for 'staff'
     '2334999626450f0e93bc7f37fb68fd21:8d094d332b9aac31eb603cce7adac984dd49a366f5e51ddeb4cb273549c6fa199b021091378438829fb1732a72a69f39dca1d90436185e07233e21214c2f2e41',
-    (SELECT dr.id FROM department_roles dr
-     JOIN departments d ON dr.department_id = d.id
-     JOIN roles r ON dr.role_id = r.id
-     WHERE d.name = 'Waste Management Department' AND r.name = 'Recycling Program staff member'),
     'staff2.waste@participium.local',
     true,
     true
@@ -1006,17 +698,12 @@ VALUES (
 ON CONFLICT (username) DO NOTHING;
 
 -- Second Traffic management staff member
-INSERT INTO users (username, first_name, last_name, password_hash, department_role_id, email, email_notifications_enabled, is_verified)
+INSERT INTO users (username, first_name, last_name, password_hash, email, email_notifications_enabled, is_verified)
 VALUES (
     'staff2_traffic',
     'Isabella',
     'Traffico',
-    -- Password hash for 'staff'
     '2334999626450f0e93bc7f37fb68fd21:8d094d332b9aac31eb603cce7adac984dd49a366f5e51ddeb4cb273549c6fa199b021091378438829fb1732a72a69f39dca1d90436185e07233e21214c2f2e41',
-    (SELECT dr.id FROM department_roles dr
-     JOIN departments d ON dr.department_id = d.id
-     JOIN roles r ON dr.role_id = r.id
-     WHERE d.name = 'Mobility and Traffic Management Department' AND r.name = 'Traffic management staff member'),
     'staff2.traffic@participium.local',
     true,
     true
@@ -1024,17 +711,12 @@ VALUES (
 ON CONFLICT (username) DO NOTHING;
 
 -- Second Parks Maintenance staff member
-INSERT INTO users (username, first_name, last_name, password_hash, department_role_id, email, email_notifications_enabled, is_verified)
+INSERT INTO users (username, first_name, last_name, password_hash, email, email_notifications_enabled, is_verified)
 VALUES (
     'staff2_parks',
     'Tommaso',
     'Giardini',
-    -- Password hash for 'staff'
     '2334999626450f0e93bc7f37fb68fd21:8d094d332b9aac31eb603cce7adac984dd49a366f5e51ddeb4cb273549c6fa199b021091378438829fb1732a72a69f39dca1d90436185e07233e21214c2f2e41',
-    (SELECT dr.id FROM department_roles dr
-     JOIN departments d ON dr.department_id = d.id
-     JOIN roles r ON dr.role_id = r.id
-     WHERE d.name = 'Parks, Green Areas and Recreation Department' AND r.name = 'Parks Maintenance staff member'),
     'staff2.parks@participium.local',
     true,
     true
@@ -1042,31 +724,39 @@ VALUES (
 ON CONFLICT (username) DO NOTHING;
 
 -- Second Support Officer (Other category)
-INSERT INTO users (username, first_name, last_name, password_hash, department_role_id, email, email_notifications_enabled, is_verified)
+INSERT INTO users (username, first_name, last_name, password_hash, email, email_notifications_enabled, is_verified)
 VALUES (
     'staff2_support',
     'Alessandra',
     'Servizi',
-    -- Password hash for 'staff'
     '2334999626450f0e93bc7f37fb68fd21:8d094d332b9aac31eb603cce7adac984dd49a366f5e51ddeb4cb273549c6fa199b021091378438829fb1732a72a69f39dca1d90436185e07233e21214c2f2e41',
-    (SELECT dr.id FROM department_roles dr
-     JOIN departments d ON dr.department_id = d.id
-     JOIN roles r ON dr.role_id = r.id
-     WHERE d.name = 'General Services Department' AND r.name = 'Support Officer'),
     'staff2.support@participium.local',
     true,
     true
 )
 ON CONFLICT (username) DO NOTHING;
 
+-- Assign multiple roles to the multi-role user
+INSERT INTO user_roles (user_id, department_role_id)
+VALUES
+    ((SELECT id FROM users WHERE username = 'multirole'), get_department_role_id('Water and Sewer Services Department', 'Water Network staff member')),
+    ((SELECT id FROM users WHERE username = 'multirole'), get_department_role_id('Public Lighting Department', 'Electrical staff member'))
+ON CONFLICT (user_id, department_role_id) DO NOTHING;
+
+-- Drop the helper function
+DROP FUNCTION IF EXISTS get_department_role_id(VARCHAR, VARCHAR);
+
 /*
- * 11. Create test reports
+ * ====================================
+ * 9. CREATE TEST REPORTS
+ * ====================================
  */
+
 INSERT INTO reports (reporter_id, title, description, category, location, address, is_anonymous, status, assignee_id, external_assignee_id, created_at, updated_at)
 VALUES (
     (SELECT id FROM users WHERE username = 'user'),
     'Dangerous Road Sign',
-    'I am reporting a road sign pole in dangerous conditions on Via Legnano. The pole appears tilted and unstable, representing a potential danger for pedestrians and vehicles. I request urgent intervention to secure the area.',
+    'I am reporting a road sign pole in dangerous conditions on Via Legnano. The pole appears tilted and unstable, representing a potential danger for pedestrians and vehicles.',
     'Road Signs and Traffic Lights',
     ST_SetSRID(ST_MakePoint(7.6729845, 45.0597859), 4326)::geography,
     'Via Legnano, 1, Borgo Vittoria, Torino, Città Metropolitana di Torino, Piemonte, 10148, Italia',
@@ -1129,55 +819,6 @@ VALUES (
 )
 ON CONFLICT DO NOTHING;
 
-/*
- * 12. Create photos attached to reports
- */
-INSERT INTO photos (report_id, storage_url, created_at)
-VALUES (
-    (SELECT id FROM reports WHERE title = 'Dangerous Road Sign' LIMIT 1),
-    '/seed-data/photos/1/1.jpg',
-    CURRENT_TIMESTAMP
-)
-ON CONFLICT DO NOTHING;
-
-INSERT INTO photos (report_id, storage_url, created_at)
-VALUES (
-    (SELECT id FROM reports WHERE title = 'Damaged Traffic Light' LIMIT 1),
-    '/seed-data/photos/2/2.jpg',
-    CURRENT_TIMESTAMP
-)
-ON CONFLICT DO NOTHING;
-
-INSERT INTO photos (report_id, storage_url, created_at)
-VALUES (
-    (SELECT id FROM reports WHERE title = 'Damaged Traffic Light' LIMIT 1),
-    '/seed-data/photos/3/2_2.jpg',
-    CURRENT_TIMESTAMP
-)
-ON CONFLICT DO NOTHING;
-
-INSERT INTO photos (report_id, storage_url, created_at)
-VALUES (
-    (SELECT id FROM reports WHERE title = 'Scattered Waste on Street' LIMIT 1),
-    '/seed-data/photos/5/5.jpg',
-    CURRENT_TIMESTAMP
-)
-ON CONFLICT DO NOTHING;
-
--- Photo from folder 4
-INSERT INTO photos (report_id, storage_url, created_at)
-VALUES (
-    (SELECT id FROM reports WHERE title = 'Tilting Street Lamp' LIMIT 1),
-    '/seed-data/photos/4/4.jpg',
-    CURRENT_TIMESTAMP
-)
-ON CONFLICT DO NOTHING;
-
-/*
- * 13. Additional 30 Reports
- */
-
--- Report 1
 INSERT INTO reports (reporter_id, title, description, category, location, address, is_anonymous, status, assignee_id, created_at, updated_at)
 VALUES (
     (SELECT id FROM users WHERE username = 'user'),
@@ -1194,15 +835,6 @@ VALUES (
 )
 ON CONFLICT DO NOTHING;
 
-INSERT INTO photos (report_id, storage_url, created_at)
-VALUES (
-    (SELECT id FROM reports WHERE title = 'Pothole on Via Pietro Giuria' LIMIT 1),
-    '/seed-data/photos/6/6.jpg',
-    CURRENT_TIMESTAMP
-)
-ON CONFLICT DO NOTHING;
-
--- Report 2
 INSERT INTO reports (reporter_id, title, description, category, location, address, is_anonymous, status, assignee_id, external_assignee_id, created_at, updated_at)
 VALUES (
     (SELECT id FROM users WHERE username = 'user2'),
@@ -1220,15 +852,6 @@ VALUES (
 )
 ON CONFLICT DO NOTHING;
 
-INSERT INTO photos (report_id, storage_url, created_at)
-VALUES (
-    (SELECT id FROM reports WHERE title = 'Broken Bench in Park' LIMIT 1),
-    '/seed-data/photos/7/7.jpg',
-    CURRENT_TIMESTAMP
-)
-ON CONFLICT DO NOTHING;
-
--- Report 3
 INSERT INTO reports (reporter_id, title, description, category, location, address, is_anonymous, status, assignee_id, created_at, updated_at)
 VALUES (
     (SELECT id FROM users WHERE username = 'user'),
@@ -1254,7 +877,7 @@ VALUES (
 ON CONFLICT DO NOTHING;
 
 -- Report 4
-INSERT INTO reports (reporter_id, title, description, category, location, address, is_anonymous, status, assignee_id, external_assignee_id, created_at, updated_at)
+INSERT INTO reports (reporter_id, title, description, category, location, address, is_anonymous, status, assignee_id, created_at, updated_at)
 VALUES (
     (SELECT id FROM users WHERE username = 'user2'),
     'Water Leak on Street',
@@ -1264,8 +887,7 @@ VALUES (
     'Corso Vittorio Emanuele II, 1, Centro, Torino, Città Metropolitana di Torino, Piemonte, 10123, Italia',
     false,
     'In Progress',
-    NULL,
-    (SELECT id FROM users WHERE username = 'acea'),
+    (SELECT id FROM users WHERE username = 'staff_water'),
     CURRENT_TIMESTAMP,
     CURRENT_TIMESTAMP
 )
@@ -1906,43 +1528,9 @@ VALUES (
 )
 ON CONFLICT DO NOTHING;
 
-INSERT INTO photos (report_id, storage_url, created_at)
-VALUES (
-    (SELECT id FROM reports WHERE title = 'Damaged Bus Stop' LIMIT 1),
-    '/seed-data/photos/34/34.jpg',
-    CURRENT_TIMESTAMP
-)
-ON CONFLICT DO NOTHING;
-
--- Report 30
-INSERT INTO reports (reporter_id, title, description, category, location, address, is_anonymous, status, assignee_id, created_at, updated_at)
-VALUES (
-    (SELECT id FROM users WHERE username = 'user2'),
-    'Broken Playground Swing',
-    'One of the swings in the playground is broken and unsafe for children.',
-    'Public Green Areas and Playgrounds',
-    ST_SetSRID(ST_MakePoint(7.6843971, 45.0627891), 4326)::geography,
-    'Via Mazzini, Torino, TO, Italy',
-    false,
-    'Assigned',
-    (SELECT id FROM users WHERE username = 'staff_parks'),
-    CURRENT_TIMESTAMP,
-    CURRENT_TIMESTAMP
-)
-ON CONFLICT DO NOTHING;
-
-INSERT INTO photos (report_id, storage_url, created_at)
-VALUES (
-    (SELECT id FROM reports WHERE title = 'Broken Playground Swing' LIMIT 1),
-    '/seed-data/photos/35/35.jpg',
-    CURRENT_TIMESTAMP
-)
-ON CONFLICT DO NOTHING;
-
--- Report 31
 INSERT INTO reports (reporter_id, title, description, category, location, address, is_anonymous, status, created_at, updated_at)
 VALUES (
-    (SELECT id FROM users WHERE username = 'user'),
+    (SELECT id FROM users WHERE username = 'user2'),
     'Graffiti on Monument',
     'Defacement of the monument base with spray paint.',
     'Other',
@@ -1955,29 +1543,20 @@ VALUES (
 )
 ON CONFLICT DO NOTHING;
 
+/*
+ * ====================================
+ * 10. CREATE PHOTOS FOR REPORTS
+ * ====================================
+ */
+
 INSERT INTO photos (report_id, storage_url, created_at)
-VALUES (
-    (SELECT id FROM reports WHERE title = 'Graffiti on Monument' LIMIT 1),
-    '/seed-data/photos/36/36.jpg',
-    CURRENT_TIMESTAMP
-)
+SELECT id, '/seed-data/photos/1/1.jpg', CURRENT_TIMESTAMP
+FROM reports WHERE title = 'Dangerous Road Sign' LIMIT 1
 ON CONFLICT DO NOTHING;
 
--- Report 32
-INSERT INTO reports (reporter_id, title, description, category, location, address, is_anonymous, status, assignee_id, created_at, updated_at)
-VALUES (
-    (SELECT id FROM users WHERE username = 'user2'),
-    'Broken Street Lamp',
-    'Street lamp glass is shattered on the sidewalk.',
-    'Public Lighting',
-    ST_SetSRID(ST_MakePoint(7.694858343003946, 45.08715754613007), 4326)::geography,
-    'Via Aosta, 76, Torino, TO, Italy',
-    false,
-    'Assigned',
-    (SELECT id FROM users WHERE username = 'staff_lighting'),
-    CURRENT_TIMESTAMP,
-    CURRENT_TIMESTAMP
-)
+INSERT INTO photos (report_id, storage_url, created_at)
+SELECT id, '/seed-data/photos/2/2.jpg', CURRENT_TIMESTAMP
+FROM reports WHERE title = 'Damaged Traffic Light' LIMIT 1
 ON CONFLICT DO NOTHING;
 
 INSERT INTO photos (report_id, storage_url, created_at)
@@ -2007,77 +1586,18 @@ VALUES (
 ON CONFLICT DO NOTHING;
 
 INSERT INTO photos (report_id, storage_url, created_at)
-VALUES (
-    (SELECT id FROM reports WHERE title = 'Pothole near Station Porta Susa' LIMIT 1),
-    '/seed-data/photos/38/38.jpg',
-    CURRENT_TIMESTAMP
-)
-ON CONFLICT DO NOTHING;
-
--- Report 34
-INSERT INTO reports (reporter_id, title, description, category, location, address, is_anonymous, status, assignee_id, created_at, updated_at)
-VALUES (
-    (SELECT id FROM users WHERE username = 'user2'),
-    'Overflowing Trash Bin',
-    'Trash bin overflowing, garbage scattered around.',
-    'Waste',
-    ST_SetSRID(ST_MakePoint(7.696513895651545, 45.09401064570153), 4326)::geography,
-    'Via Gaspare Spontini, 20, Torino, TO, Italy',
-    false,
-    'Resolved',
-    (SELECT id FROM users WHERE username = 'staff_waste'),
-    CURRENT_TIMESTAMP,
-    CURRENT_TIMESTAMP
-)
+SELECT id, '/seed-data/photos/4/4.jpg', CURRENT_TIMESTAMP
+FROM reports WHERE title = 'Tilting Street Lamp' LIMIT 1
 ON CONFLICT DO NOTHING;
 
 INSERT INTO photos (report_id, storage_url, created_at)
-VALUES (
-    (SELECT id FROM reports WHERE title = 'Overflowing Trash Bin' LIMIT 1),
-    '/seed-data/photos/39/39.jpg',
-    CURRENT_TIMESTAMP
-)
-ON CONFLICT DO NOTHING;
-
--- Report 35
-INSERT INTO reports (reporter_id, title, description, category, location, address, is_anonymous, status, assignee_id, created_at, updated_at)
-VALUES (
-    (SELECT id FROM users WHERE username = 'user'),
-    'Damaged Bench',
-    'Bench slats broken, unsafe to sit.',
-    'Public Green Areas and Playgrounds',
-    ST_SetSRID(ST_MakePoint(7.689485057197251, 45.07239827010684), 4326)::geography,
-    'Giardini Reali, Torino, TO, Italy',
-    false,
-    'Assigned',
-    (SELECT id FROM users WHERE username = 'staff_parks'),
-    CURRENT_TIMESTAMP,
-    CURRENT_TIMESTAMP
-)
+SELECT id, '/seed-data/photos/6/6.jpg', CURRENT_TIMESTAMP
+FROM reports WHERE title = 'Pothole on Via Pietro Giuria' LIMIT 1
 ON CONFLICT DO NOTHING;
 
 INSERT INTO photos (report_id, storage_url, created_at)
-VALUES (
-    (SELECT id FROM reports WHERE title = 'Damaged Bench' LIMIT 1),
-    '/seed-data/photos/40/40.jpg',
-    CURRENT_TIMESTAMP
-)
-ON CONFLICT DO NOTHING;
-
--- Report 36
-INSERT INTO reports (reporter_id, title, description, category, location, address, is_anonymous, status, created_at, updated_at)
-VALUES (
-    (SELECT id FROM users WHERE username = 'user2'),
-    'Blocked Sidewalk',
-    'Construction debris blocking the sidewalk.',
-    'Architectural Barriers',
-    ST_SetSRID(ST_MakePoint(7.631283532599513, 45.10242156550158), 4326)::geography,
-    'Via dei Glicini, Torino, TO, Italy',
-    false,
-    'Pending Approval',
-    CURRENT_TIMESTAMP,
-    CURRENT_TIMESTAMP
-)
+SELECT id, '/seed-data/photos/7/7.jpg', CURRENT_TIMESTAMP
+FROM reports WHERE title = 'Broken Bench in Park' LIMIT 1
 ON CONFLICT DO NOTHING;
 
 INSERT INTO photos (report_id, storage_url, created_at)
@@ -2107,9 +1627,21 @@ VALUES (
 ON CONFLICT DO NOTHING;
 
 INSERT INTO photos (report_id, storage_url, created_at)
-VALUES (
-    (SELECT id FROM reports WHERE title = 'Water Leak' LIMIT 1),
-    '/seed-data/photos/42/42.jpg',
-    CURRENT_TIMESTAMP
-)
+SELECT id, '/seed-data/photos/9/9.jpg', CURRENT_TIMESTAMP
+FROM reports WHERE title = 'Water Leak on Street' LIMIT 1
 ON CONFLICT DO NOTHING;
+
+/*
+ * ====================================
+ * END OF SEED DATA
+ * ====================================
+ * 
+ * Default Credentials:
+ * - admin/admin (Administrator)
+ * - officer/officer (Municipal Public Relations Officer)
+ * - director_*/director (Department Directors)
+ * - staff_*/staff (Technical Staff)
+ * - user/password, user2/password (Citizens)
+ * - enelx/password, acea/password, hera/password, atm/password (External Maintainers)
+ * - multirole/password (Multi-role user demo - PT10)
+ */

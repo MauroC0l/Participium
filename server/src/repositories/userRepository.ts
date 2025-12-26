@@ -32,7 +32,7 @@ class UserRepository {
    * @returns The created user entity.
    */
   public async createUserWithPassword(
-    userData: Omit<UserEntity, 'id' | 'createdAt' | 'passwordHash' | 'emailNotificationsEnabled' | 'departmentRole'> & { password: string; emailNotificationsEnabled?: boolean }
+    userData: Omit<UserEntity, 'id' | 'createdAt' | 'passwordHash' | 'emailNotificationsEnabled'> & { password: string; emailNotificationsEnabled?: boolean }
   ): Promise<UserEntity> {
     const { password, ...userFields } = userData;
     const { salt, hash } = await generatePasswordData(password);
@@ -47,7 +47,8 @@ class UserRepository {
     // Reload the user with relations and passwordHash
     const userWithRelations = await this.repository
       .createQueryBuilder("user")
-      .leftJoinAndSelect("user.departmentRole", "departmentRole")
+      .leftJoinAndSelect("user.userRoles", "userRoles")
+      .leftJoinAndSelect("userRoles.departmentRole", "departmentRole")
       .leftJoinAndSelect("departmentRole.department", "department")
       .leftJoinAndSelect("departmentRole.role", "role")
       .where("user.id = :id", { id: savedUser.id })
@@ -69,7 +70,7 @@ class UserRepository {
   public async findUserById(id: number): Promise<UserEntity | null> {
     return this.repository.findOne({
       where: { id },
-      relations: ['departmentRole', 'departmentRole.department', 'departmentRole.role']
+      relations: ['userRoles', 'userRoles.departmentRole', 'userRoles.departmentRole.department', 'userRoles.departmentRole.role']
     });
   }
 
@@ -83,7 +84,8 @@ class UserRepository {
     // 'addSelect' is used to explicitly include fields that might be excluded by default
     return this.repository
       .createQueryBuilder("user")
-      .leftJoinAndSelect("user.departmentRole", "departmentRole")
+      .leftJoinAndSelect("user.userRoles", "userRoles")
+      .leftJoinAndSelect("userRoles.departmentRole", "departmentRole")
       .leftJoinAndSelect("departmentRole.department", "department")
       .leftJoinAndSelect("departmentRole.role", "role")
       .where("user.username = :username", { username })
@@ -100,7 +102,8 @@ class UserRepository {
     // 'addSelect' is used to explicitly include fields that might be excluded by default
     return this.repository
       .createQueryBuilder("user")
-      .leftJoinAndSelect("user.departmentRole", "departmentRole")
+      .leftJoinAndSelect("user.userRoles", "userRoles")
+      .leftJoinAndSelect("userRoles.departmentRole", "departmentRole")
       .leftJoinAndSelect("departmentRole.department", "department")
       .leftJoinAndSelect("departmentRole.role", "role")
       .where("user.telegram_username = :telegramUsername", { telegramUsername })
@@ -116,7 +119,7 @@ class UserRepository {
   public async findUserByEmail(email: string): Promise<UserEntity | null> {
     return this.repository.findOne({
       where: { email },
-      relations: ['departmentRole', 'departmentRole.department', 'departmentRole.role']
+      relations: ['userRoles', 'userRoles.departmentRole', 'userRoles.departmentRole.department', 'userRoles.departmentRole.role']
     });
   }
 
@@ -174,7 +177,7 @@ class UserRepository {
    */
   public async updateUser(
     id: number,
-    updateData: Partial<Omit<UserEntity, 'id' | 'createdAt' | 'passwordHash' | 'departmentRole'>>
+    updateData: Partial<Omit<UserEntity, 'id' | 'createdAt' | 'passwordHash'>>
   ): Promise<UserEntity> {
     await this.repository.update(id, updateData);
 
@@ -213,10 +216,10 @@ class UserRepository {
     }
   }
 
- /**
- * Deletes all unverified users whose verification code has expired.
- * @returns void
- */
+  /**
+  * Deletes all unverified users whose verification code has expired.
+  * @returns void
+  */
   public async deleteUnverifiedUsers(): Promise<void> {
     await this.repository.createQueryBuilder()
       .delete()
@@ -233,9 +236,9 @@ class UserRepository {
   public async clearExpiredTelegramLinkCodes(): Promise<void> {
     await this.repository.createQueryBuilder()
       .update(UserEntity)
-      .set({ 
-        telegramLinkCode: null as any, 
-        telegramLinkCodeExpiresAt: null as any 
+      .set({
+        telegramLinkCode: null as any,
+        telegramLinkCodeExpiresAt: null as any
       })
       .where('telegramLinkCodeExpiresAt < NOW()')
       .andWhere('telegramLinkCode IS NOT NULL')
@@ -254,7 +257,7 @@ class UserRepository {
   }): Promise<UserEntity[]> {
     return this.repository.find({
       ...options,
-      relations: ['departmentRole', 'departmentRole.department', 'departmentRole.role']
+      relations: ['userRoles', 'userRoles.departmentRole', 'userRoles.departmentRole.department', 'userRoles.departmentRole.role']
     });
   }
 
@@ -266,10 +269,11 @@ class UserRepository {
   public async findUsersByDepartmentRoleIds(departmentRoleIds: number[]): Promise<UserEntity[]> {
     return this.repository
       .createQueryBuilder("user")
-      .leftJoinAndSelect("user.departmentRole", "departmentRole")
+      .leftJoinAndSelect("user.userRoles", "userRoles")
+      .leftJoinAndSelect("userRoles.departmentRole", "departmentRole")
       .leftJoinAndSelect("departmentRole.department", "department")
       .leftJoinAndSelect("departmentRole.role", "role")
-      .where("user.departmentRoleId IN (:...ids)", { ids: departmentRoleIds })
+      .where("userRoles.departmentRoleId IN (:...ids)", { ids: departmentRoleIds })
       .orderBy("user.createdAt", "DESC")
       .getMany();
   }
@@ -282,7 +286,8 @@ class UserRepository {
   public async findUsersByRoleName(roleName: string): Promise<UserEntity[]> {
     return this.repository
       .createQueryBuilder("user")
-      .leftJoinAndSelect("user.departmentRole", "departmentRole")
+      .leftJoinAndSelect("user.userRoles", "userRoles")
+      .leftJoinAndSelect("userRoles.departmentRole", "departmentRole")
       .leftJoinAndSelect("departmentRole.department", "department")
       .leftJoinAndSelect("departmentRole.role", "role")
       .where("role.name = :roleName", { roleName })
@@ -298,7 +303,8 @@ class UserRepository {
   public async findUsersExcludingRoles(excludedRoleNames: string[]): Promise<UserEntity[]> {
     return this.repository
       .createQueryBuilder("user")
-      .leftJoinAndSelect("user.departmentRole", "departmentRole")
+      .leftJoinAndSelect("user.userRoles", "userRoles")
+      .leftJoinAndSelect("userRoles.departmentRole", "departmentRole")
       .leftJoinAndSelect("departmentRole.department", "department")
       .leftJoinAndSelect("departmentRole.role", "role")
       .where("role.name NOT IN (:...excludedRoleNames)", { excludedRoleNames })
@@ -315,13 +321,15 @@ class UserRepository {
   async findAvailableStaffByRoleId(roleId: number): Promise<UserEntity | null> {
     return this.repository
       .createQueryBuilder("user")
-      .innerJoinAndSelect("user.departmentRole", "dr")
+      .innerJoinAndSelect("user.userRoles", "userRoles")
+      .innerJoinAndSelect("userRoles.departmentRole", "dr")
       .innerJoinAndSelect("dr.role", "role")
       .leftJoin("reports", "r", "r.assignee_id = user.id AND r.status IN (:...statuses)", {
         statuses: [ReportStatus.ASSIGNED, ReportStatus.IN_PROGRESS, ReportStatus.SUSPENDED]
       })
-      .where("dr.role_id = :roleId", { roleId })
+      .where("role.id = :roleId", { roleId })
       .groupBy("user.id")
+      .addGroupBy("userRoles.id")
       .addGroupBy("dr.id")
       .addGroupBy("role.id")
       .addSelect("COUNT(r.id)", "report_count")
@@ -341,7 +349,8 @@ class UserRepository {
     if (!category) {
       return await this.repository
         .createQueryBuilder('user')
-        .leftJoinAndSelect('user.departmentRole', 'departmentRole')
+        .leftJoinAndSelect('user.userRoles', 'userRoles')
+        .leftJoinAndSelect('userRoles.departmentRole', 'departmentRole')
         .leftJoinAndSelect('departmentRole.department', 'department')
         .leftJoinAndSelect('departmentRole.role', 'role')
         .innerJoin(
@@ -356,7 +365,8 @@ class UserRepository {
 
     return await this.repository
       .createQueryBuilder('user')
-      .leftJoinAndSelect('user.departmentRole', 'departmentRole')
+      .leftJoinAndSelect('user.userRoles', 'userRoles')
+      .leftJoinAndSelect('userRoles.departmentRole', 'departmentRole')
       .leftJoinAndSelect('departmentRole.department', 'department')
       .leftJoinAndSelect('departmentRole.role', 'role')
       .innerJoin(
@@ -397,10 +407,10 @@ class UserRepository {
     await this.repository
       .createQueryBuilder()
       .update(UserEntity)
-      .set({ 
-        isVerified, 
-        verificationCode: null as any, 
-        verificationCodeExpiresAt: null as any 
+      .set({
+        isVerified,
+        verificationCode: null as any,
+        verificationCodeExpiresAt: null as any
       })
       .where('email = :email', { email })
       .execute();
@@ -473,14 +483,14 @@ class UserRepository {
 
     // Generate a 6-digit code
     const code = Math.floor(100000 + Math.random() * 900000).toString();
-    
+
     // Set expiration to 10 minutes from now
     const expiresAt = new Date();
     expiresAt.setMinutes(expiresAt.getMinutes() + 10);
 
     user.telegramLinkCode = code;
     user.telegramLinkCodeExpiresAt = expiresAt;
-    
+
     await this.repository.save(user);
     return code;
   }
@@ -518,9 +528,9 @@ class UserRepository {
     user.telegramUsername = telegramUsername;
     user.telegramLinkCode = undefined;
     user.telegramLinkCodeExpiresAt = undefined;
-    
+
     await this.repository.save(user);
-    
+
     return { success: true, message: `*Account linked successfully!*\n\nYour Telegram username is now associated with the account "${user.username}".` };
   }
 
@@ -542,9 +552,9 @@ class UserRepository {
     user.telegramUsername = null as any;
     user.telegramLinkCode = null as any;
     user.telegramLinkCodeExpiresAt = null as any;
-    
+
     await this.repository.save(user);
-    
+
     return { success: true, message: 'Telegram account unlinked successfully.' };
   }
 

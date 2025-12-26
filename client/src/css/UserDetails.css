@@ -1,0 +1,374 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root {
+  /* --- Palette --- */
+  --ud-brand-red: #A12B32;
+  --ud-brand-navy: #1e293b;
+  --ud-text-main: #334155;
+  --ud-text-muted: #64748b;
+  --ud-bg-card: #ffffff;
+  --ud-border-subtle: #e2e8f0;
+
+  /* --- Design --- */
+  --ud-radius-window: 2rem; /* 32px - Curvatura molto forte per la finestra */
+  --ud-radius-inner: 1rem;  /* 16px - Curvatura elementi interni */
+}
+
+/* ==========================================================================
+   NUCLEAR FIX PER BOOTSTRAP MODAL
+   (Questo è il blocco che risolve gli spigoli della finestra)
+   ========================================================================== */
+
+/* 1. Rimuoviamo lo sfondo e i bordi dal contenitore nativo di Bootstrap */
+.modal-content {
+    background-color: transparent !important;
+    border: none !important;
+    border-radius: var(--ud-radius-window) !important; /* Forza curvatura esterna */
+    box-shadow: none !important; /* Rimuovi ombra nativa (la gestiamo noi dopo) */
+    overflow: hidden !important; /* Taglia via qualsiasi spigolo */
+}
+
+/* 2. Assicuriamo che il dialog non abbia padding che mostri spigoli */
+.modal-dialog {
+    border-radius: var(--ud-radius-window) !important;
+    overflow: hidden !important;
+}
+
+/* 3. Se c'è un body nativo, togliamo il padding per far aderire il nostro container */
+.modal-body {
+    padding: 0 !important;
+    border-radius: var(--ud-radius-window) !important;
+}
+
+/* ==========================================================================
+   IL TUO COMPONENTE (Ora agisce come l'intera finestra)
+   ========================================================================== */
+
+.user-details-container {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--ud-text-main);
+  background: var(--ud-bg-card);
+  
+  /* Riempie tutto lo spazio del modale */
+  width: 100%;
+  margin: 0;
+  
+  /* Padding interno */
+  padding: 2.5rem; 
+
+  /* Gestione Bordi Arrotondati Finestra */
+  border-radius: var(--ud-radius-window) !important; 
+  
+  /* L'ombra della finestra ora la diamo qui */
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  
+  /* Taglia il contenuto che esce */
+  overflow: hidden !important;
+  
+  /* Gestione Scrollbar */
+  max-height: 85vh; 
+  min-width: 60vh;
+  overflow-y: auto !important; 
+  
+  /* Animazione Entrata */
+  animation: modalPop 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalPop {
+  from { opacity: 0; transform: scale(0.95) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* --- Scrollbar --- */
+.user-details-container::-webkit-scrollbar {
+  width: 6px;
+}
+.user-details-container::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 20px 0; /* Margine per non toccare le curve */
+}
+.user-details-container::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 20px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+.user-details-container::-webkit-scrollbar-thumb:hover {
+  background-color: var(--ud-brand-red);
+}
+
+/* --- TITOLO --- */
+.user-details-container h3 {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 0.5rem;
+  position: relative;
+  padding-left: 1.25rem;
+  letter-spacing: -0.03em;
+}
+
+.user-details-container h3::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 15%;
+  height: 70%;
+  width: 6px;
+  background: var(--ud-brand-red);
+  border-radius: 4px;
+}
+
+/* --- FORM STYLING --- */
+.user-details-container .form-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--ud-brand-navy);
+  margin-bottom: 0.4rem;
+  text-transform: uppercase;
+  margin-left: 8px;
+  opacity: 0.8;
+}
+
+/* Gruppi Input (Arrotondati) */
+.user-details-container .input-group {
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);
+  border-radius: var(--ud-radius-inner);
+  border: 1px solid var(--ud-border-subtle);
+  transition: all 0.2s ease;
+  overflow: hidden; /* Fondamentale */
+  background: white;
+  margin-bottom: 0.5rem;
+}
+
+.user-details-container .input-group:hover {
+  border-color: #94a3b8;
+  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05);
+}
+
+.user-details-container .input-group:focus-within {
+  border-color: var(--ud-brand-red);
+  box-shadow: 0 0 0 4px rgba(161, 43, 50, 0.1);
+}
+
+.user-details-container .input-group-text {
+  background-color: #f8fafc;
+  border: none;
+  border-right: 1px solid #e2e8f0;
+  color: var(--ud-text-muted);
+  padding: 0.75rem 1.25rem;
+  font-size: 1rem;
+}
+
+.user-details-container .form-control,
+.user-details-container .form-select {
+  border: none;
+  padding: 0.75rem 1rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--ud-text-main);
+  background: transparent;
+}
+
+.user-details-container .form-control:focus,
+.user-details-container .form-select:focus {
+  box-shadow: none;
+}
+
+.user-details-container .form-control:disabled {
+  background-color: #f1f5f9;
+}
+
+/* --- BUTTONS (Pillole) --- */
+.user-details-container .btn {
+  padding: 0.6rem 1.5rem;
+  border-radius: 50rem; /* Cerchio completo */
+  font-weight: 600;
+  border: none;
+  transition: transform 0.2s, box-shadow 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.user-details-container .btn:active {
+  transform: scale(0.95);
+}
+
+.user-details-container .btn-primary {
+  background: var(--ud-brand-navy);
+  color: white;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.3);
+}
+.user-details-container .btn-primary:hover {
+  background: #0f172a;
+  transform: translateY(-2px);
+}
+
+.user-details-container .btn-success {
+  background: var(--ud-brand-red);
+  color: white;
+  box-shadow: 0 4px 12px rgba(161, 43, 50, 0.3);
+}
+.user-details-container .btn-success:hover {
+  background: #881f26;
+  transform: translateY(-2px);
+}
+
+.user-details-container .btn-secondary {
+  background: white;
+  border: 1px solid var(--ud-border-subtle);
+  color: var(--ud-text-muted);
+}
+.user-details-container .btn-secondary:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: var(--ud-brand-navy);
+}
+
+/* --- ROLES SECTION --- */
+.roles-section {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 2px dashed #e2e8f0;
+}
+
+.roles-section h5 {
+  font-size: 0.9rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--ud-brand-navy);
+  margin-bottom: 1rem;
+  letter-spacing: 0.05em;
+}
+
+.roles-table-wrapper {
+  border-radius: var(--ud-radius-inner);
+  border: 1px solid var(--ud-border-subtle);
+  overflow: hidden;
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+/* Scrollbar per la tabella dei ruoli */
+.roles-table-wrapper::-webkit-scrollbar {
+  width: 6px;
+}
+.roles-table-wrapper::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+.roles-table-wrapper::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 10px;
+}
+.roles-table-wrapper::-webkit-scrollbar-thumb:hover {
+  background-color: #94a3b8;
+}
+
+.user-details-container .table thead th {
+  background: #f1f5f9;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: var(--ud-text-muted);
+  font-weight: 700;
+  padding: 1rem;
+  border-bottom: 1px solid var(--ud-border-subtle);
+  position: sticky;
+  top: 0;
+}
+
+.user-details-container .table tbody td {
+  padding: 1rem;
+  font-size: 0.9rem;
+  color: var(--ud-text-main);
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.user-details-container .table .btn-danger {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 50%;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  background: #fff1f2;
+  color: #e11d48;
+}
+.user-details-container .table .btn-danger:hover {
+  background: #e11d48;
+  color: white;
+}
+
+/* --- ADD ROLE BOX (Arrotondato) --- */
+.add-role-form {
+  background: #f8fafc !important;
+  border: 2px solid #f1f5f9;
+  border-radius: var(--ud-radius-inner);
+  padding: 1.5rem !important;
+  margin-top: 1.5rem;
+}
+
+/* --- DROPDOWNS --- */
+.ud-dropdown-toggle {
+  background: white !important;
+  border: 1px solid var(--ud-border-subtle) !important;
+  border-radius: var(--ud-radius-inner) !important;
+  color: var(--ud-text-main) !important;
+  padding: 0.7rem 1rem;
+  width: 100%;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  text-align: left;
+  overflow: hidden;
+}
+
+.ud-dropdown-toggle span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-right: 0.5rem;
+}
+
+.ud-dropdown-menu {
+  border-radius: 1rem;
+  border: 1px solid var(--ud-border-subtle);
+  box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+  width: 100%;
+  padding: 0.5rem;
+  margin-top: 0.5rem !important;
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.ud-dropdown-menu::-webkit-scrollbar {
+  width: 6px;
+}
+.ud-dropdown-menu::-webkit-scrollbar-track {
+  background: transparent;
+}
+.ud-dropdown-menu::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 3px;
+}
+.ud-dropdown-menu::-webkit-scrollbar-thumb:hover {
+  background-color: var(--ud-brand-red);
+}
+
+.ud-dropdown-item {
+  border-radius: 0.5rem;
+  padding: 0.6rem 1rem;
+  font-size: 0.9rem;
+  margin-bottom: 2px;
+}
+
+.ud-dropdown-item:hover {
+  background-color: #fff1f2;
+  color: var(--ud-brand-red);
+}
+.ud-dropdown-item.active {
+  background-color: var(--ud-brand-red);
+  color: white;
+}
