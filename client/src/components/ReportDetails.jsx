@@ -81,7 +81,7 @@ const ReportDetails = ({
     // NUOVO STATO: Mantiene il report aggiornato all'interno della modale
     const [report, setReport] = useState(initialReport);
     const [currentUserId, setCurrentUserId] = useState(null);
-    const [currentUserRole, setCurrentUserRole] = useState(null);
+    const [currentUserRoles, setCurrentUserRoles] = useState([]);
     const [selectedImage, setSelectedImage] = useState(null);
     const [showImageModal, setShowImageModal] = useState(false);
     const [showMap, setShowMap] = useState(false);
@@ -128,26 +128,27 @@ const ReportDetails = ({
                     const userData = await getCurrentUser();
                     if (userData && userData.id) {
                         setCurrentUserId(userData.id);
-                        setCurrentUserRole(userData.role_name || userData.role || 'citizen');
+                        const roles = userData.roles ? userData.roles.map(r => r.role_name) : ['citizen'];
+                        setCurrentUserRoles(roles);
                     } else {
                         setCurrentUserId(null);
-                        setCurrentUserRole('citizen');
+                        setCurrentUserRoles(['citizen']);
                     }
                 } catch (error) {
                     console.error("Error fetching user:", error);
                     setCurrentUserId(null);
-                    setCurrentUserRole('citizen');
+                    setCurrentUserRoles(['citizen']);
                 }
             };
             fetchCurrentUser();
         } else {
             setCurrentUserId(null);
-            setCurrentUserRole(null);
+            setCurrentUserRoles([]);
         }
     }, [show, hideToast]);
 
-    const isCitizen = currentUserRole?.toLowerCase() === 'citizen';
-    const showRestrictedContent = !isCitizen && currentUserRole !== null;
+    const isCitizen = currentUserRoles.length > 0 && currentUserRoles.every(r => r.toLowerCase() === 'citizen');
+    const showRestrictedContent = currentUserRoles.some(r => r.toLowerCase() !== 'citizen');
 
     const mapCoordinates = useMemo(() => {
         if (!report || !report.location) return null;

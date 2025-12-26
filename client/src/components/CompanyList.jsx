@@ -79,7 +79,7 @@ export default function CompanyList({ refreshTrigger }) {
     }
 
     return (
-      <div className="mul-table-wrapper">
+      <div className="mul-table-wrapper mul-table-wrapper-scrollable">
         <table className="mul-table">
           <thead>
             <tr>

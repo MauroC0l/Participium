@@ -1,7 +1,8 @@
 /* MapPage.css */
 
 .mp-page {
-  min-height: 90vh;
+  min-height: calc(100vh - var(--navbar-height, 80px));
+  
   background: var(--bg-lighter);
   font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
 
@@ -107,6 +108,7 @@
 
 /* --- NOTIFICHE --- */
 .mp-notification {
+  top: calc(var(--navbar-height, 80px) + 1rem);
   position: fixed; 
   top: 5.625rem;
   right: 1.5rem;
@@ -233,3 +235,107 @@
   .mp-notification { right: 0.625rem; left: 0.625rem; max-width: none; }
   .mp-container { height: 22rem; }
 }
+/* MODAL STYLES */
+.mp-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  animation: mp-fadeIn 0.2s ease-out;
+}
+
+.mp-modal-content {
+  background: var(--card-bg);
+  padding: 2rem;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-medium);
+  max-width: 400px;
+  width: 90%;
+  text-align: center;
+  animation: mp-scaleIn 0.2s ease-out;
+}
+
+.mp-modal-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--brand-red);
+  margin-bottom: 1rem;
+}
+
+.mp-modal-text {
+  color: var(--text-muted);
+  margin-bottom: 1.5rem;
+  font-size: 1rem;
+}
+
+.mp-modal-actions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.mp-btn-primary {
+  background: var(--brand-red);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.mp-btn-primary:hover {
+  background: var(--brand-red-hover);
+}
+
+.mp-btn-secondary {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border-light);
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mp-btn-secondary:hover {
+  background: var(--bg-lighter);
+  color: var(--text-dark);
+}
+
+@keyframes mp-fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes mp-scaleIn {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.mp-modal-icon-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.mp-modal-icon {
+  font-size: 3rem;
+  color: var(--brand-red);
+}
+
+.mp-btn-sm {
+  padding: 0.5rem 1.5rem;
+  font-size: 0.9rem;
+  min-width: 120px;
+}
+

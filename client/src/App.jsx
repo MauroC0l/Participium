@@ -20,9 +20,17 @@ function App() {
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [authError, setAuthError] = useState(null);
 
+  // 1. DEFINIZIONE ROTTE
+  // Rotte dove NON mostriamo la Navbar
   const noNavbarRoutes = ["/login", "/register", "/"];
+  
+  // Rotte accessibili a TUTTI (anche sloggati)
+  // Qui aggiungiamo '/reports-map' e '*' (per il 404)
+  const publicRoutes = ["/login", "/register", "/", "/reports-map"];
+
   const hideNavbar = noNavbarRoutes.includes(location.pathname);
 
+  // Gestione classe CSS body per navbar
   useEffect(() => {
     if (hideNavbar) {
       document.body.classList.remove('has-navbar');
@@ -34,6 +42,7 @@ function App() {
     };
   }, [hideNavbar]);
 
+  // Gestione Autenticazione
   useEffect(() => {
     let isMounted = true;
     
@@ -49,7 +58,11 @@ function App() {
         if (isMounted) {
           setUser(null);
           setIsAuthLoading(false);
-          if (!noNavbarRoutes.includes(location.pathname)) {
+          
+          // MODIFICA CRUCIALE:
+          // Se l'utente non è loggato, reindirizza SOLO se la rotta NON è pubblica.
+          // In questo modo, se sei su /reports-map, non ti caccia via.
+          if (!publicRoutes.includes(location.pathname)) {
              navigate("/login", { replace: true });
           }
         }
@@ -61,6 +74,7 @@ function App() {
         if (isMounted) {
           if (userData) {
              setUser(userData);
+             // Se sei loggato e provi ad andare su login/register, vai alla home
              if (location.pathname === "/login" || location.pathname === "/register") {
                navigate("/home", { replace: true });
              }
@@ -75,7 +89,7 @@ function App() {
           setUser(null);
           setAuthError(error.message || "Error during authentication check");
           
-          if (!noNavbarRoutes.includes(location.pathname)) {
+          if (!publicRoutes.includes(location.pathname)) {
             navigate("/login", { replace: true });
           }
         }
@@ -105,20 +119,14 @@ function App() {
     }
   };
 
-  // --- Wrapper Standard per utenti loggati (qualsiasi ruolo) ---
+  // --- WRAPPERS ---
+
   const ProtectedRoute = ({ children }) => {
-    if (isAuthLoading) {
-      return <LoadingScreen message="Verifying access..." />;
-    }
-
-    if (!user) {
-      return <Navigate to="/login" replace />;
-    }
-
+    if (isAuthLoading) return <LoadingScreen message="Verifying access..." />;
+    if (!user) return <Navigate to="/login" replace />;
     return children;
   };
 
-  // --- NUOVO WRAPPER: Solo per 'Citizen' ---
   const CitizenRoute = ({ children }) => {
     // 1. Se sta ancora caricando, aspettiamo
     if (isAuthLoading) {
@@ -131,7 +139,8 @@ function App() {
     }
 
     // 3. Se l'utente c'è MA non è Citizen, rimandiamo alla Home
-    if (user.role_name !== 'Citizen') {
+    const isCitizen = user.roles && user.roles.some(r => r.role_name === 'Citizen');
+    if (!isCitizen) {
       return <Navigate to="/home" replace />;
     }
 
@@ -139,7 +148,9 @@ function App() {
     return children;
   };
 
-  if (isAuthLoading && location.pathname !== "/" && !noNavbarRoutes.includes(location.pathname)) {
+  // Mostra loading screen solo se stiamo caricando l'auth E siamo su una rotta protetta
+  // (per evitare il flash bianco su pagine pubbliche)
+  if (isAuthLoading && !publicRoutes.includes(location.pathname)) {
     return <LoadingScreen message="Loading..." />;
   }
 
@@ -149,42 +160,35 @@ function App() {
 
       <main className="main-content">
         <Routes>
+          {/* --- ROTTE PUBBLICHE (Accessibili a tutti) --- */}
+          
           <Route path="/" element={<MainPage />} />
+          
+          <Route path="/reports-map" element={<MapPage user={user} />} />
           
           <Route 
             path="/login" 
-            element={
-              user ? <Navigate to="/home" replace /> : <Login onLoginSuccess={setUser} />
-            } 
+            element={user ? <Navigate to="/home" replace /> : <Login onLoginSuccess={setUser} />} 
           />
           
           <Route 
             path="/register" 
-            element={
-              user ? <Navigate to="/home" replace /> : <Register />
-            } 
+            element={user ? <Navigate to="/home" replace /> : <Register />} 
           />
+
+          {/* --- ROTTE PROTETTE (Qualsiasi utente loggato) --- */}
           
           <Route 
             path="/home" 
             element={
               <ProtectedRoute>
-                {<Home user={user} />}
+                <Home user={user} />
               </ProtectedRoute>
             } 
           />
 
-          {/* --- QUI LA MODIFICA: Usiamo CitizenRoute --- */}
-          <Route 
-            path="/new-report" 
-            element={
-              <CitizenRoute>
-                <MapPage user={user} />
-              </CitizenRoute>
-            } 
-          />
-
-          {/* --- QUI LA MODIFICA: Usiamo CitizenRoute --- */}
+          {/* --- ROTTE CITTADINO (Solo ruolo 'Citizen') --- */}
+          
           <Route 
             path="/my-reports" 
             element={
@@ -194,12 +198,14 @@ function App() {
             } 
           />
 
-          <Route 
-            path="*" 
-            element={
+          {/* --- 404 (Pubblica) --- */}
+          <Route path="*" element={
+            <ProtectedRoute>
               <NotFoundPage />
-            } 
+            </ProtectedRoute>  
+          } 
           />
+          
         </Routes>
       </main>
     </div>

@@ -238,23 +238,15 @@ class ReportService {
     category?: ReportCategory
   ): Promise<ReportResponse[]> {
 
-    // Fetch user entity
-    if (!userId) {
-      throw new UnauthorizedError('User ID is required');
+    let hasPublicRelationsRole = false;
+
+    // Fetch user entity if userId is provided
+    if (userId) {
+      const userEntity = await userRepository.findUserById(userId);
+      if (userEntity) {
+        hasPublicRelationsRole = RoleUtils.userHasRole(userEntity, 'Municipal Public Relations Officer');
+      }
     }
-
-    const userEntity = await userRepository.findUserById(userId);
-    if (!userEntity) {
-      throw new UnauthorizedError('User not found');
-    }
-
-    const userRoles = RoleUtils.getUserRoleNames(userEntity);
-
-    if (!userRoles || userRoles.length === 0) {
-      throw new UnauthorizedError('User has no roles assigned');
-    }
-
-    const hasPublicRelationsRole = RoleUtils.userHasRole(userEntity, 'Municipal Public Relations Officer');
 
     if (status === ReportStatus.PENDING_APPROVAL) {
       if (!hasPublicRelationsRole) {

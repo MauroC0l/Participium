@@ -83,7 +83,6 @@ FeatureCard.propTypes = {
 
 // Componente Card per Azioni (Interattiva)
 const ActionCard = ({ title, description, onClick, icon: Icon }) => (
-  // Correzione S6848, S1082 (Riga 53): Aggiunta gestione tastiera per l'interazione
   <div
     className="ch-action-card clickable"
     onClick={onClick}
@@ -96,7 +95,8 @@ const ActionCard = ({ title, description, onClick, icon: Icon }) => (
       }
     }}
   >
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+    {/* Aggiungi questa classe content-wrapper per gestire il flex layout */}
+    <div className="content-wrapper">
       <div>
         <h3 className="ch-action-title">{title}</h3>
         <p className="ch-action-desc">{description}</p>
@@ -194,7 +194,7 @@ const CitizenHome = ({ user }) => {
   // Utilizzo first_name come da preferenza salvata
   const userName = user?.first_name || 'Citizen';
 
-  const handleNewReport = () => navigate('/new-report');
+  const handleNewReport = () => navigate('/reports-map');
 
   // Modificato per aprire la modale invece di navigare
   const handleMyReports = () => setShowModal(true);
