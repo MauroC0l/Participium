@@ -85,9 +85,12 @@ function App() {
         }
       } catch (error) {
         if (isMounted) {
+          // Suppress 401 errors as they are expected for unauthenticated users
+          if (error.status !== 401) {
+            setAuthError(error.message || "Error during authentication check");
+          }
           localStorage.removeItem("isLoggedIn");
           setUser(null);
-          setAuthError(error.message || "Error during authentication check");
           
           if (!publicRoutes.includes(location.pathname)) {
             navigate("/login", { replace: true });

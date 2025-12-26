@@ -34,7 +34,7 @@ import { getCurrentUser } from "../api/authApi";
 import "../css/MapPage.css";
 import ReportDetails from "../components/ReportDetails";
 import MapFiltersBar from "../components/MapFiltersBar";
-import MapReportForm from "../components/MapReportForm"; 
+import MapReportForm from "../components/MapReportForm";
 
 // --- ICON CONFIGURATION ---
 const createIcon = (colorUrl) => {
@@ -143,7 +143,7 @@ const MapPage = () => {
   const [categories, setCategories] = useState([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   const [isLoadingMap, setIsLoadingMap] = useState(true);
-  
+
   // Logic for address calculation kept here as it depends on marker
   const [isLoadingAddress, setIsLoadingAddress] = useState(false);
   const [currentAddress, setCurrentAddress] = useState("");
@@ -154,14 +154,11 @@ const MapPage = () => {
   const [showLoginModal, setShowLoginModal] = useState(false);
 
   // --- AUTO DISMISS NOTIFICATION EFFECT ---
-  // Questa logica assicura che QUALSIASI notifica scompaia dopo 4 secondi
   useEffect(() => {
     if (notification) {
       const timer = setTimeout(() => {
         setNotification(null);
-      }, 4000); // 4 secondi fissi per tutti i messaggi
-
-      // Cleanup: se la notifica cambia prima dei 4 secondi, resetta il timer
+      }, 4000);
       return () => clearTimeout(timer);
     }
   }, [notification]);
@@ -169,13 +166,21 @@ const MapPage = () => {
   // --- LOGICA COLORE MARKER ---
   const getMarkerIcon = (status) => {
     switch (status) {
-      case "Resolved": return Icons.green;
-      case "Assigned": return Icons.blue;
-      case "In Progress": return Icons.orange;
-      case "Pending Approval": return Icons.yellow;
-      case "Suspended": return Icons.grey;
-      case "Rejected": return Icons.black;
-      case "Open": default: return Icons.blue;
+      case "Resolved":
+        return Icons.green;
+      case "Assigned":
+        return Icons.blue;
+      case "In Progress":
+        return Icons.orange;
+      case "Pending Approval":
+        return Icons.yellow;
+      case "Suspended":
+        return Icons.grey;
+      case "Rejected":
+        return Icons.black;
+      case "Open":
+      default:
+        return Icons.blue;
     }
   };
 
@@ -225,7 +230,9 @@ const MapPage = () => {
         const user = await getCurrentUser();
         setCurrentUser(user);
       } catch (error) {
-        console.error("Error fetching current user:", error);
+        if (error.status !== 401) {
+          console.error("Error fetching current user:", error);
+        }
       }
     };
     fetchCurrentUser();
@@ -252,7 +259,6 @@ const MapPage = () => {
 
   const refreshReports = async () => {
     try {
-      // Se stiamo "resettando" o caricando all'inizio
       const data = await getReports();
       if (Array.isArray(data)) setExistingReports(data);
     } catch {
@@ -267,7 +273,7 @@ const MapPage = () => {
     refreshReports();
   }, []);
 
-  // --- HANDLER RICERCA INDIRIZZO ---
+  // --- HANDLER RICERCA INDIRIZZO (FIXED) ---
   const handleAddressSearch = async (searchText) => {
     // Se la barra di ricerca è vuota, ricarichiamo tutti i report
     if (!searchText || searchText.trim() === "") {
@@ -278,19 +284,42 @@ const MapPage = () => {
     try {
       setIsLoadingMap(true);
       const results = await getReportsByAddress(searchText);
-      
+
       if (Array.isArray(results)) {
+        // 1. Aggiorna lo stato dei report
         setExistingReports(results);
-        
-        // Notifica per risultati vuoti
+
         if (results.length === 0) {
           setNotification({
             message: `No reports found for "${searchText}".`,
             type: "info",
           });
         } else {
-           // Opzionale: Se volessimo centrare la mappa sul primo risultato
-           // servirebbe estrarre le coordinate e usare mapInstance.flyTo
+          // 2. Calcola i bounds DAI DATI, non dai marker renderizzati
+          const latLngs = results
+            .map((r) => getLatLngFromReport(r))
+            .filter((pos) => pos !== null);
+
+          if (mapInstance && latLngs.length > 0) {
+            // 3. Usa un timeout per separare l'update di React dal move di Leaflet
+            // Questo previene l'errore '_leaflet_pos' sui cluster
+            setTimeout(() => {
+              if (latLngs.length === 1) {
+                mapInstance.flyTo(latLngs[0], 16, { duration: 1.5 });
+              } else {
+                const bounds = L.latLngBounds(latLngs);
+                if (bounds.isValid()) {
+                  mapInstance.fitBounds(bounds, {
+                    padding: [50, 50],
+                    // A volte animare fitBounds durante il re-render dei cluster causa problemi
+                    // Se l'errore persiste, prova animate: false
+                    animate: true,
+                    duration: 1.5,
+                  });
+                }
+              }
+            }, 300); // 300ms dà tempo a React/Leaflet-Cluster di aggiornare il DOM
+          }
         }
       }
     } catch (error) {
@@ -400,7 +429,6 @@ const MapPage = () => {
         message: "You can only report issues within the boundaries of Turin.",
         type: "error",
       });
-      // Il setTimeout manuale è stato rimosso, gestito dall'useEffect
     }
   };
 
@@ -421,7 +449,6 @@ const MapPage = () => {
 
     if (showInfoNotification) {
       setNotification({ message: "Selection cleared.", type: "info" });
-      // Il setTimeout manuale è stato rimosso, gestito dall'useEffect
     }
   };
 
@@ -471,11 +498,16 @@ const MapPage = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "Resolved": return "#28a745";
-      case "Rejected": return "#dc3545";
-      case "Assigned": return "#007bff";
-      case "Pending Approval": return "#ffc107";
-      default: return "#fd7e14";
+      case "Resolved":
+        return "#28a745";
+      case "Rejected":
+        return "#dc3545";
+      case "Assigned":
+        return "#007bff";
+      case "Pending Approval":
+        return "#ffc107";
+      default:
+        return "#fd7e14";
     }
   };
 
@@ -540,7 +572,7 @@ const MapPage = () => {
             setViewMode={setViewMode}
             hideReports={hideReports}
             setHideReports={setHideReports}
-            onSearch={handleAddressSearch} // Passata la funzione di ricerca
+            onSearch={handleAddressSearch}
           />
 
           {/* --- SPLIT LAYOUT CONTAINER --- */}
@@ -761,7 +793,7 @@ const MapPage = () => {
 
             {/* RIGHT COLUMN: FORM */}
             <div className="mp-form-column" ref={formSectionRef}>
-              <MapReportForm 
+              <MapReportForm
                 marker={marker}
                 address={currentAddress}
                 isLoadingAddress={isLoadingAddress}
@@ -796,8 +828,8 @@ const MapPage = () => {
               Please sign in to contribute to the community.
             </p>
             <div className="mp-modal-actions">
-              <button 
-                className="mp-btn-primary mp-btn-sm" 
+              <button
+                className="mp-btn-primary mp-btn-sm"
                 onClick={() => navigate("/login")}
               >
                 Go to Login
