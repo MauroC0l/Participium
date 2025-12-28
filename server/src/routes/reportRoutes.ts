@@ -382,7 +382,8 @@ router.get('/', validateReportStatus, validateReportCategory, reportController.g
  *               name: "InternalServerError"
  *               message: "An unexpected error occurred while searching reports"
  */
-router.get('/search', reportController.getReportByAddress);
+// Instead of this route, use /api/proxy/coordinates (available in geocodingRoutes.ts file)
+//router.get('/search', reportController.getReportByAddress);
 
 /**
  * @swagger
