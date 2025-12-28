@@ -26,6 +26,7 @@ import {
   getAllCategories,
   getReports,
   getAddressFromCoordinates,
+  getCoordinatesFromAddress,
   getReportsByAddress,
 } from "../api/reportApi";
 import { getCurrentUser } from "../api/authApi";
@@ -120,6 +121,8 @@ const MapPage = () => {
   const navigate = useNavigate();
   // --- Refs & Map Instance ---
   const [mapInstance, setMapInstance] = useState(null);
+  const [isMapReady, setIsMapReady] = useState(false);
+  const [pendingZoom, setPendingZoom] = useState(null);
   const formSectionRef = useRef(null);
 
   // --- States ---
@@ -223,6 +226,38 @@ const MapPage = () => {
     }
   }, [showForm, mapInstance, marker]);
 
+  // Mark when map is ready
+  useEffect(() => {
+    if (mapInstance && !isMapReady) {
+      const timer = setTimeout(() => setIsMapReady(true), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [mapInstance, isMapReady]);
+
+  // Execute pending zoom when map is ready
+  useEffect(() => {
+    if (isMapReady && pendingZoom && mapInstance) {
+      const timer = setTimeout(() => {
+        try {
+          if (pendingZoom.boundingbox && pendingZoom.boundingbox.length === 4) {
+            // Zoom to bounding box to show entire street/course
+            const [south, north, west, east] = pendingZoom.boundingbox.map(parseFloat);
+            mapInstance.fitBounds(
+              [[south, west], [north, east]],
+              { padding: [50, 50], maxZoom: 17 }
+            );
+          } else {
+            // Single point zoom
+            mapInstance.setView([pendingZoom.lat, pendingZoom.lng], 17);
+          }
+        } finally {
+          setPendingZoom(null);
+        }
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isMapReady, pendingZoom, mapInstance]);
+
   // Load Initial Data
   useEffect(() => {
     const fetchCurrentUser = async () => {
@@ -273,60 +308,43 @@ const MapPage = () => {
     refreshReports();
   }, []);
 
-  // --- HANDLER RICERCA INDIRIZZO (FIXED) ---
+  // Address search handler
   const handleAddressSearch = async (searchText) => {
-    // Se la barra di ricerca è vuota, ricarichiamo tutti i report
-    if (!searchText || searchText.trim() === "") {
-      await refreshReports();
+    if (!searchText || searchText.trim() === "") return;
+
+    if (!mapInstance || !isMapReady) {
+      setNotification({
+        message: "Map is loading, please wait...",
+        type: "warning",
+      });
       return;
     }
 
     try {
       setIsLoadingMap(true);
-      const results = await getReportsByAddress(searchText);
-
-      if (Array.isArray(results)) {
-        // 1. Aggiorna lo stato dei report
-        setExistingReports(results);
-
-        if (results.length === 0) {
-          setNotification({
-            message: `No reports found for "${searchText}".`,
-            type: "info",
-          });
-        } else {
-          // 2. Calcola i bounds DAI DATI, non dai marker renderizzati
-          const latLngs = results
-            .map((r) => getLatLngFromReport(r))
-            .filter((pos) => pos !== null);
-
-          if (mapInstance && latLngs.length > 0) {
-            // 3. Usa un timeout per separare l'update di React dal move di Leaflet
-            // Questo previene l'errore '_leaflet_pos' sui cluster
-            setTimeout(() => {
-              if (latLngs.length === 1) {
-                mapInstance.flyTo(latLngs[0], 16, { duration: 1.5 });
-              } else {
-                const bounds = L.latLngBounds(latLngs);
-                if (bounds.isValid()) {
-                  mapInstance.fitBounds(bounds, {
-                    padding: [50, 50],
-                    // A volte animare fitBounds durante il re-render dei cluster causa problemi
-                    // Se l'errore persiste, prova animate: false
-                    animate: true,
-                    duration: 1.5,
-                  });
-                }
-              }
-            }, 300); // 300ms dà tempo a React/Leaflet-Cluster di aggiornare il DOM
-          }
-        }
+      const coordinates = await getCoordinatesFromAddress(searchText);
+      
+      if (coordinates && coordinates.lat && coordinates.lng) {
+        // Include bounding box only for street names (not specific addresses)
+        setPendingZoom({ 
+          lat: coordinates.lat, 
+          lng: coordinates.lng,
+          boundingbox: coordinates.isSpecificAddress ? null : coordinates.boundingbox
+        });
+        
+        const resultInfo = !coordinates.isSpecificAddress && coordinates.resultsCount > 1
+          ? ` (showing ${coordinates.resultsCount} segments)`
+          : "";
+        
+        setNotification({
+          message: `Showing location: ${searchText}`,
+          type: "info",
+        });
       }
     } catch (error) {
-      console.error("Search error:", error);
       setNotification({
-        message: "Error searching for reports.",
-        type: "error",
+        message: `Address "${searchText}" not found.`,
+        type: "warning",
       });
     } finally {
       setIsLoadingMap(false);
