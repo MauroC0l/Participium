@@ -1,3 +1,4 @@
+import { CreateMessageRequest } from '../models/dto/input/CreateMessageRequest';
 import { Request, Response, NextFunction } from 'express';
 import { reportService } from '../services/reportService';
 import { CreateReportRequest } from '../models/dto/input/CreateReportRequest';
@@ -80,11 +81,7 @@ class ReportController {
    */
   async getAllReports(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      if (!req.user) {
-        throw new UnauthorizedError('Not authenticated');
-      }
-
-      const userId = (req.user as User).id;
+      const userId = req.user ? (req.user as User).id : undefined;
       const { status, category } = req.query;
 
       const reports = await reportService.getAllReports(
@@ -262,7 +259,7 @@ class ReportController {
     }
   }
 
-  /**
+    /**
    * Retrieve reports located near a specific address
    * @param req 
    * @param res 
@@ -284,7 +281,44 @@ class ReportController {
       next(error);
     }
   }
-  
+
+    /**
+   * Send a message from technical staff to the citizen reporter
+   * POST /api/reports/:id/messages
+   */
+  async sendMessage(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const userId = (req.user as User).id;
+      const reportId = parseAndValidateId(req.params.id, 'report');
+      const { content } = req.body as CreateMessageRequest;
+
+      if (!content) {
+        throw new BadRequestError('content field is required');
+      }
+
+      const message = await reportService.sendMessage(reportId, userId, content);
+      res.status(201).json(message);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+
+      /**
+     * Get all public messages for a report
+     * GET /api/reports/:id/messages
+     */
+    async getMessages(req: Request, res: Response, next: NextFunction): Promise<void> {
+      try {
+        const userId = (req.user as any)?.id;
+        const reportId = parseAndValidateId(req.params.id, 'report');
+        const messages = await reportService.getMessages(reportId, userId);
+        res.status(200).json(messages);
+      } catch (error) {
+        next(error);
+      }
+    }
+
 }
 
 export const reportController = new ReportController();

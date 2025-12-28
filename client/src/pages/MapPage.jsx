@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   MapContainer,
   TileLayer,
@@ -17,6 +18,7 @@ import {
   FaArrowRight,
   FaExternalLinkAlt,
   FaTimes,
+  FaLock,
 } from "react-icons/fa";
 
 // IMPORT API
@@ -116,6 +118,7 @@ const FormError = ({ message }) => (
 );
 
 const MapPage = () => {
+  const navigate = useNavigate();
   // --- Refs & Map Instance ---
   const [mapInstance, setMapInstance] = useState(null);
   const [isMapReady, setIsMapReady] = useState(false);
@@ -151,6 +154,7 @@ const MapPage = () => {
 
   const [selectedReport, setSelectedReport] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
   // --- AUTO DISMISS NOTIFICATION EFFECT ---
   // Questa logica assicura che QUALSIASI notifica scompaia dopo 4 secondi
@@ -422,6 +426,10 @@ const MapPage = () => {
   };
 
   const handleStartReport = () => {
+    if (!currentUser) {
+      setShowLoginModal(true);
+      return;
+    }
     setShowForm(true);
   };
 
@@ -795,6 +803,30 @@ const MapPage = () => {
         onHide={() => setShowDetailModal(false)}
         report={selectedReport}
       />
+
+      {/* Login Required Modal */}
+      {showLoginModal && (
+        <div className="mp-modal-overlay" onClick={() => setShowLoginModal(false)}>
+          <div className="mp-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="mp-modal-icon-wrapper">
+              <FaLock className="mp-modal-icon" />
+            </div>
+            <h3 className="mp-modal-title">Authentication Required</h3>
+            <p className="mp-modal-text">
+              You must be logged in to create a new report. <br />
+              Please sign in to contribute to the community.
+            </p>
+            <div className="mp-modal-actions">
+              <button 
+                className="mp-btn-primary mp-btn-sm" 
+                onClick={() => navigate("/login")}
+              >
+                Go to Login
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

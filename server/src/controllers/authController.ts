@@ -16,6 +16,7 @@ class AuthController {
   /**
    * Login handler
    * Authenticates user with Passport LocalStrategy
+   * Note: Returns user with all assigned roles (supports multiple roles per user)
    */
   login(req: Request, res: Response, next: NextFunction): void {
     passport.authenticate('local', (err: Error | null, user: Express.User | false, info: { message: string }) => {
@@ -45,6 +46,7 @@ class AuthController {
   /**
    * Get current authenticated user
    * Returns user data from session
+   * Note: User response includes all assigned roles (supports multiple roles per user)
    */
   getCurrentUser(req: Request, res: Response, next: NextFunction): void {
     try {

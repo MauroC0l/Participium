@@ -7,9 +7,11 @@ import {
   FaBell,
   FaArrowRight,
   FaInfoCircle,
-  FaTimes
+  FaTimes,
+  FaTelegram
 } from "react-icons/fa";
 import '../css/CitizenHome.css';
+import TelegramLinkModal from './TelegramLinkModal';
 
 // Componente Modale per feature non implementata
 const NotImplementedModal = ({ onClose }) => (
@@ -81,7 +83,6 @@ FeatureCard.propTypes = {
 
 // Componente Card per Azioni (Interattiva)
 const ActionCard = ({ title, description, onClick, icon: Icon }) => (
-  // Correzione S6848, S1082 (Riga 53): Aggiunta gestione tastiera per l'interazione
   <div
     className="ch-action-card clickable"
     onClick={onClick}
@@ -94,7 +95,8 @@ const ActionCard = ({ title, description, onClick, icon: Icon }) => (
       }
     }}
   >
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+    {/* Aggiungi questa classe content-wrapper per gestire il flex layout */}
+    <div className="content-wrapper">
       <div>
         <h3 className="ch-action-title">{title}</h3>
         <p className="ch-action-desc">{description}</p>
@@ -153,7 +155,7 @@ const FeaturesSection = () => (
 );
 
 // Componente Actions Section
-const ActionsSection = ({ onNewReport, onMyReports }) => (
+const ActionsSection = ({ onNewReport, onMyReports, onTelegramLink }) => (
   <div className="ch-actions-section">
     <h2 className="ch-section-title">Quick Actions</h2>
     <ActionCard
@@ -168,26 +170,36 @@ const ActionsSection = ({ onNewReport, onMyReports }) => (
       description="View and manage all your past submissions."
       onClick={onMyReports}
     />
+    <ActionCard
+      icon={FaTelegram}
+      title="Link Telegram"
+      description="Connect your Telegram account for easy reporting."
+      onClick={onTelegramLink}
+    />
   </div>
 );
 
 ActionsSection.propTypes = {
   onNewReport: PropTypes.func.isRequired,
   onMyReports: PropTypes.func.isRequired,
+  onTelegramLink: PropTypes.func.isRequired,
 };
 
 // Main Component
 const CitizenHome = ({ user }) => {
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
+  const [showTelegramModal, setShowTelegramModal] = useState(false);
 
   // Utilizzo first_name come da preferenza salvata
   const userName = user?.first_name || 'Citizen';
 
-  const handleNewReport = () => navigate('/new-report');
+  const handleNewReport = () => navigate('/reports-map');
 
   // Modificato per aprire la modale invece di navigare
   const handleMyReports = () => setShowModal(true);
+
+  const handleTelegramLink = () => setShowTelegramModal(true);
 
   return (
     <div className="ch-wrapper">
@@ -198,10 +210,12 @@ const CitizenHome = ({ user }) => {
         <ActionsSection
           onNewReport={handleNewReport}
           onMyReports={handleMyReports}
+          onTelegramLink={handleTelegramLink}
         />
       </div>
 
       {showModal && <NotImplementedModal onClose={() => setShowModal(false)} />}
+      {showTelegramModal && <TelegramLinkModal onClose={() => setShowTelegramModal(false)} />}
     </div>
   );
 };

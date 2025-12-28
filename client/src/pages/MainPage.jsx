@@ -17,6 +17,10 @@ export default function MainPage() {
     navigate('/login');
   };
 
+  const handleNavigateToReports = () => {
+    navigate('/reports-map');
+  };
+
   return (
     <div className="main-page-wrapper">
 
@@ -33,9 +37,18 @@ export default function MainPage() {
             </p>
 
             <div className="hero-actions">
+              {/* Nuovo pulsante a sinistra: Join Participium -> Login */}
               <button
-                className="hp-btn"
+                className="hp-btn hp-btn-outline"
                 onClick={handleNavigateToLogin}
+              >
+                Join Participium
+              </button>
+
+              {/* Pulsante esistente: Start Making Reports -> Reports Map */}
+              <button
+                className="hp-btn hp-btn-primary"
+                onClick={handleNavigateToReports}
               >
                 Start Making Reports
               </button>
@@ -187,14 +200,8 @@ export default function MainPage() {
             one report at a time.
           </p>
           <button
-            className="hp-btn"
+            className="hp-btn hp-btn-white"
             onClick={handleNavigateToLogin}
-            style={{
-              backgroundColor: '#ffffff',
-              color: 'var(--brand-red)',
-              padding: '0.8rem 2rem',
-              fontSize: '1.05rem'
-            }}
           >
             Get Started Now
           </button>

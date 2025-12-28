@@ -15,12 +15,7 @@ export default function NotFoundPage() {
         <div className="nf-content">
           <div className="nf-header">
             <div className="nf-error-code">
-              <span>4</span>
-              <div className="nf-icon-container">
-                <FaExclamationTriangle className="nf-floating-icon" />
-                <div className="nf-icon-shadow"></div>
-              </div>
-              <span>4</span>
+              <span>404</span>
             </div>
             
             <h1 className="nf-title">Outside the Borders</h1>
