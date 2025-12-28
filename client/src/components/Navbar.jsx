@@ -38,7 +38,10 @@ export default function Navbar({ user, onLogout }) {
     return user?.username || 'User'; 
   }, [user?.first_name, user?.last_name, user?.username]);
 
-  const displayRole = useMemo(() => userRoles.map(r => r.role_name).join(', ') || 'User', [userRoles]);
+  const displayRole = useMemo(() => {
+    if (userRoles.length > 1) return 'Multiple roles';
+    return userRoles.map(r => r.role_name).join(', ') || 'User';
+  }, [userRoles]);
   
   const avatarInitials = useMemo(() => {
       return getInitials(user?.first_name, user?.last_name);
@@ -93,6 +96,19 @@ export default function Navbar({ user, onLogout }) {
               <span>Map</span>
             </button>
           )}
+
+          {user && isCitizen && (
+            <button className="home-btn-navbar" onClick={() => navigate("/my-reports")}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+              </svg>
+              <span>Reports</span>
+            </button>
+          )}
         </div>
 
         {/* Right Section */}
@@ -114,7 +130,15 @@ export default function Navbar({ user, onLogout }) {
                 }}
             >
               <div className="user-avatar">
-                {avatarInitials}
+                {user?.personal_photo_url ? (
+                  <img 
+                    src={user.personal_photo_url} 
+                    alt="Profile" 
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                  />
+                ) : (
+                  avatarInitials
+                )}
               </div>
               <div className="user-details">
                 <div className="user-name">{displayUsername}</div>
