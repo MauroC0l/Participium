@@ -569,7 +569,7 @@ VALUES
     ((SELECT id FROM users WHERE username = 'director_services'), get_department_role_id('General Services Department', 'Department Director'))
 ON CONFLICT (user_id, department_role_id) DO NOTHING;
 
--- Technical Staff roles (ALL staff including staff2_*)
+-- Technical Staff roles (first set: staff_*)
 INSERT INTO user_roles (user_id, department_role_id)
 VALUES
     ((SELECT id FROM users WHERE username = 'staff_water'), get_department_role_id('Water and Sewer Services Department', 'Water Network staff member')),
@@ -580,17 +580,7 @@ VALUES
     ((SELECT id FROM users WHERE username = 'staff_waste'), get_department_role_id('Waste Management Department', 'Recycling Program staff member')),
     ((SELECT id FROM users WHERE username = 'staff_traffic'), get_department_role_id('Mobility and Traffic Management Department', 'Traffic management staff member')),
     ((SELECT id FROM users WHERE username = 'staff_parks'), get_department_role_id('Parks, Green Areas and Recreation Department', 'Parks Maintenance staff member')),
-    ((SELECT id FROM users WHERE username = 'staff_support'), get_department_role_id('General Services Department', 'Support Officer')),
-    -- Secondary technical staff members
-    ((SELECT id FROM users WHERE username = 'staff2_water'), get_department_role_id('Water and Sewer Services Department', 'Water Network staff member')),
-    ((SELECT id FROM users WHERE username = 'staff2_sewer'), get_department_role_id('Water and Sewer Services Department', 'Sewer System staff member')),
-    ((SELECT id FROM users WHERE username = 'staff2_access'), get_department_role_id('Public Infrastructure and Accessibility Department', 'Accessibility staff member')),
-    ((SELECT id FROM users WHERE username = 'staff2_road'), get_department_role_id('Public Infrastructure and Accessibility Department', 'Road Maintenance staff member')),
-    ((SELECT id FROM users WHERE username = 'staff2_lighting'), get_department_role_id('Public Lighting Department', 'Electrical staff member')),
-    ((SELECT id FROM users WHERE username = 'staff2_waste'), get_department_role_id('Waste Management Department', 'Recycling Program staff member')),
-    ((SELECT id FROM users WHERE username = 'staff2_traffic'), get_department_role_id('Mobility and Traffic Management Department', 'Traffic management staff member')),
-    ((SELECT id FROM users WHERE username = 'staff2_parks'), get_department_role_id('Parks, Green Areas and Recreation Department', 'Parks Maintenance staff member')),
-    ((SELECT id FROM users WHERE username = 'staff2_support'), get_department_role_id('General Services Department', 'Support Officer'))
+    ((SELECT id FROM users WHERE username = 'staff_support'), get_department_role_id('General Services Department', 'Support Officer'))
 ON CONFLICT (user_id, department_role_id) DO NOTHING;
 
 /*
@@ -736,6 +726,20 @@ VALUES (
 )
 ON CONFLICT (username) DO NOTHING;
 
+-- Technical Staff roles (second set: staff2_*)
+INSERT INTO user_roles (user_id, department_role_id)
+VALUES
+    ((SELECT id FROM users WHERE username = 'staff2_water'), get_department_role_id('Water and Sewer Services Department', 'Water Network staff member')),
+    ((SELECT id FROM users WHERE username = 'staff2_sewer'), get_department_role_id('Water and Sewer Services Department', 'Sewer System staff member')),
+    ((SELECT id FROM users WHERE username = 'staff2_access'), get_department_role_id('Public Infrastructure and Accessibility Department', 'Accessibility staff member')),
+    ((SELECT id FROM users WHERE username = 'staff2_road'), get_department_role_id('Public Infrastructure and Accessibility Department', 'Road Maintenance staff member')),
+    ((SELECT id FROM users WHERE username = 'staff2_lighting'), get_department_role_id('Public Lighting Department', 'Electrical staff member')),
+    ((SELECT id FROM users WHERE username = 'staff2_waste'), get_department_role_id('Waste Management Department', 'Recycling Program staff member')),
+    ((SELECT id FROM users WHERE username = 'staff2_traffic'), get_department_role_id('Mobility and Traffic Management Department', 'Traffic management staff member')),
+    ((SELECT id FROM users WHERE username = 'staff2_parks'), get_department_role_id('Parks, Green Areas and Recreation Department', 'Parks Maintenance staff member')),
+    ((SELECT id FROM users WHERE username = 'staff2_support'), get_department_role_id('General Services Department', 'Support Officer'))
+ON CONFLICT (user_id, department_role_id) DO NOTHING;
+
 -- Assign multiple roles to the multi-role user
 INSERT INTO user_roles (user_id, department_role_id)
 VALUES
@@ -746,20 +750,22 @@ ON CONFLICT (user_id, department_role_id) DO NOTHING;
 -- Drop the helper function
 DROP FUNCTION IF EXISTS get_department_role_id(VARCHAR, VARCHAR);
 
+
 /*
  * ====================================
  * 9. CREATE TEST REPORTS
  * ====================================
  */
 
+-- report A
 INSERT INTO reports (reporter_id, title, description, category, location, address, is_anonymous, status, assignee_id, external_assignee_id, created_at, updated_at)
 VALUES (
     (SELECT id FROM users WHERE username = 'user'),
     'Dangerous Road Sign',
-    'I am reporting a road sign pole in dangerous conditions on Via Legnano. The pole appears tilted and unstable, representing a potential danger for pedestrians and vehicles.',
+    'I am reporting a road sign pole in dangerous conditions on Via Legnano. The pole appears tilted and unstable, representing a potential danger for pedestrians and vehicles. I request urgent intervention to secure the area.',
     'Road Signs and Traffic Lights',
     ST_SetSRID(ST_MakePoint(7.6729845, 45.0597859), 4326)::geography,
-    'Via Legnano, 1, Borgo Vittoria, Torino, Città Metropolitana di Torino, Piemonte, 10148, Italia',
+    'Via Legnano, Torino, TO, Italy',
     false,
     'Assigned',
     NULL,
@@ -769,6 +775,15 @@ VALUES (
 )
 ON CONFLICT DO NOTHING;
 
+INSERT INTO photos (report_id, storage_url, created_at)
+VALUES (
+    (SELECT id FROM reports WHERE title = 'Dangerous Road Sign' LIMIT 1),
+    '/seed-data/photos/1/1.jpg',
+    CURRENT_TIMESTAMP
+)
+ON CONFLICT DO NOTHING;
+
+-- report B
 INSERT INTO reports (reporter_id, title, description, category, location, address, is_anonymous, status, assignee_id, created_at, updated_at)
 VALUES (
     (SELECT id FROM users WHERE username = 'user2'),
@@ -776,7 +791,7 @@ VALUES (
     'I am reporting a damaged traffic light on Corso Duca degli Abbruzzi, 52. Photos attached.',
     'Road Signs and Traffic Lights',
     ST_SetSRID(ST_MakePoint(7.659568, 45.058586), 4326)::geography,
-    'Corso Duca degli Abbruzzi, 52, Centro, Torino, Città Metropolitana di Torino, Piemonte, 10129, Italia',
+    'Corso Duca degli Abbruzzi, 52, Torino, TO, Italy',
     false,
     'Assigned',
     (SELECT id FROM users WHERE username = 'staff_traffic'),
@@ -785,6 +800,23 @@ VALUES (
 )
 ON CONFLICT DO NOTHING;
 
+INSERT INTO photos (report_id, storage_url, created_at)
+VALUES (
+    (SELECT id FROM reports WHERE title = 'Damaged Traffic Light' LIMIT 1),
+    '/seed-data/photos/3/2_2.jpg',
+    CURRENT_TIMESTAMP
+)
+ON CONFLICT DO NOTHING;
+
+INSERT INTO photos (report_id, storage_url, created_at)
+VALUES (
+    (SELECT id FROM reports WHERE title = 'Damaged Traffic Light' LIMIT 1),
+    '/seed-data/photos/2/2.jpg',
+    CURRENT_TIMESTAMP
+)
+ON CONFLICT DO NOTHING;
+
+-- report C
 INSERT INTO reports (reporter_id, title, description, category, location, address, is_anonymous, status, assignee_id, external_assignee_id, created_at, updated_at)
 VALUES (
     (SELECT id FROM users WHERE username = 'user2'),
@@ -792,7 +824,7 @@ VALUES (
     'I am reporting scattered waste on the street. Photos attached.',
     'Waste',
     ST_SetSRID(ST_MakePoint(7.6663837, 45.0699145), 4326)::geography,
-    'Via Giuseppe Giusti, 3, San Salvario, Torino, Città Metropolitana di Torino, Piemonte, 10133, Italia',
+    'Via Giuseppe Giusti, 3, Torino, TO, Italy',
     false,
     'Assigned',
     NULL,
@@ -802,6 +834,15 @@ VALUES (
 )
 ON CONFLICT DO NOTHING;
 
+INSERT INTO photos (report_id, storage_url, created_at)
+VALUES (
+    (SELECT id FROM reports WHERE title = 'Scattered Waste on Street' LIMIT 1),
+    '/seed-data/photos/5/5.jpg',
+    CURRENT_TIMESTAMP
+)
+ON CONFLICT DO NOTHING;
+
+-- report D
 INSERT INTO reports (reporter_id, title, description, category, location, address, is_anonymous, status, assignee_id, external_assignee_id, created_at, updated_at)
 VALUES (
     (SELECT id FROM users WHERE username = 'user'),
@@ -809,7 +850,7 @@ VALUES (
     'I am reporting a tilting street lamp. Photos attached.',
     'Public Lighting',
     ST_SetSRID(ST_MakePoint(7.6364474, 45.0414631), 4326)::geography,
-    'Corso Orbassano, 224a, Mirafiori Sud, Torino, Città Metropolitana di Torino, Piemonte, 10137, Italia',
+    'Corso Orbassano, 224a, Torino, TO, Italy',
     false,
     'Assigned',
     NULL,
@@ -819,6 +860,22 @@ VALUES (
 )
 ON CONFLICT DO NOTHING;
 
+INSERT INTO photos (report_id, storage_url, created_at)
+VALUES (
+    (SELECT id FROM reports WHERE title = 'Tilting Street Lamp' LIMIT 1),
+    '/seed-data/photos/4/4.jpg',
+    CURRENT_TIMESTAMP
+)
+ON CONFLICT DO NOTHING;
+
+
+/*
+ * ====================================
+ * 9. CREATE ADDITIONAL TEST REPORTS
+ * ====================================
+ */
+
+-- Report 1
 INSERT INTO reports (reporter_id, title, description, category, location, address, is_anonymous, status, assignee_id, created_at, updated_at)
 VALUES (
     (SELECT id FROM users WHERE username = 'user'),
@@ -826,7 +883,7 @@ VALUES (
     'Large pothole in the middle of the road, dangerous for cyclists.',
     'Roads and Urban Furnishings',
     ST_SetSRID(ST_MakePoint(7.6791932, 45.0492381), 4326)::geography,
-    'Via Pietro Giuria, 1, Crocetta, Torino, Città Metropolitana di Torino, Piemonte, 10138, Italia',
+    'Via Pietro Giuria, Torino, TO, Italy',
     false,
     'Assigned',
     (SELECT id FROM users WHERE username = 'staff_road'),
@@ -835,6 +892,15 @@ VALUES (
 )
 ON CONFLICT DO NOTHING;
 
+INSERT INTO photos (report_id, storage_url, created_at)
+VALUES (
+    (SELECT id FROM reports WHERE title = 'Pothole on Via Pietro Giuria' LIMIT 1),
+    '/seed-data/photos/6/6.jpg',
+    CURRENT_TIMESTAMP
+)
+ON CONFLICT DO NOTHING;
+
+-- Report 2
 INSERT INTO reports (reporter_id, title, description, category, location, address, is_anonymous, status, assignee_id, external_assignee_id, created_at, updated_at)
 VALUES (
     (SELECT id FROM users WHERE username = 'user2'),
@@ -842,7 +908,7 @@ VALUES (
     'Wooden slats are missing from the bench near the playground.',
     'Public Green Areas and Playgrounds',
     ST_SetSRID(ST_MakePoint(7.6849361, 45.0523928), 4326)::geography,
-    'Parco del Valentino, 1, Parco del Valentino, Torino, Città Metropolitana di Torino, Piemonte, 10126, Italia',
+    'Parco del Valentino, Torino, TO, Italy',
     false,
     'Assigned',
     NULL,
@@ -852,6 +918,15 @@ VALUES (
 )
 ON CONFLICT DO NOTHING;
 
+INSERT INTO photos (report_id, storage_url, created_at)
+VALUES (
+    (SELECT id FROM reports WHERE title = 'Broken Bench in Park' LIMIT 1),
+    '/seed-data/photos/7/7.jpg',
+    CURRENT_TIMESTAMP
+)
+ON CONFLICT DO NOTHING;
+
+-- Report 3
 INSERT INTO reports (reporter_id, title, description, category, location, address, is_anonymous, status, assignee_id, created_at, updated_at)
 VALUES (
     (SELECT id FROM users WHERE username = 'user'),
@@ -859,7 +934,7 @@ VALUES (
     'Public trash bin is overflowing and garbage is on the sidewalk.',
     'Waste',
     ST_SetSRID(ST_MakePoint(7.671031, 45.0389857), 4326)::geography,
-    'Via Alassio, 1, Lingotto, Torino, Città Metropolitana di Torino, Piemonte, 10126, Italia',
+    'Via Alassio, Torino, TO, Italy',
     true,
     'Resolved',
     (SELECT id FROM users WHERE username = 'staff_waste'),
@@ -877,17 +952,18 @@ VALUES (
 ON CONFLICT DO NOTHING;
 
 -- Report 4
-INSERT INTO reports (reporter_id, title, description, category, location, address, is_anonymous, status, assignee_id, created_at, updated_at)
+INSERT INTO reports (reporter_id, title, description, category, location, address, is_anonymous, status, assignee_id, external_assignee_id, created_at, updated_at)
 VALUES (
     (SELECT id FROM users WHERE username = 'user2'),
     'Water Leak on Street',
     'Significant water leak coming from the pavement, creating a large puddle.',
     'Water Supply - Drinking Water',
     ST_SetSRID(ST_MakePoint(7.6682616, 45.0663784), 4326)::geography,
-    'Corso Vittorio Emanuele II, 1, Centro, Torino, Città Metropolitana di Torino, Piemonte, 10123, Italia',
+    'Corso Vittorio Emanuele II, Torino, TO, Italy',
     false,
     'In Progress',
-    (SELECT id FROM users WHERE username = 'staff_water'),
+    NULL,
+    (SELECT id FROM users WHERE username = 'acea'),
     CURRENT_TIMESTAMP,
     CURRENT_TIMESTAMP
 )
@@ -909,7 +985,7 @@ VALUES (
     'Offensive graffiti on the side of the public library.',
     'Other',
     ST_SetSRID(ST_MakePoint(7.687578, 45.0698479), 4326)::geography,
-    'Via Po, 1, Centro, Torino, Città Metropolitana di Torino, Piemonte, 10123, Italia',
+    'Via Po, Torino, TO, Italy',
     false,
     'Assigned',
     NULL,
@@ -935,7 +1011,7 @@ VALUES (
     'Traffic light at the intersection is completely out.',
     'Road Signs and Traffic Lights',
     ST_SetSRID(ST_MakePoint(7.6390878, 45.0685456), 4326)::geography,
-    'Corso Peschiera, 1, Borgo San Paolo, Torino, Città Metropolitana di Torino, Piemonte, 10139, Italia',
+    'Corso Peschiera, Torino, TO, Italy',
     false,
     'Assigned',
     (SELECT id FROM users WHERE username = 'staff_traffic'),
@@ -960,7 +1036,7 @@ VALUES (
     'Large branch fell on the path, blocking access.',
     'Public Green Areas and Playgrounds',
     ST_SetSRID(ST_MakePoint(7.665980893996415, 45.09215910802925), 4326)::geography,
-    'Parco Dora, 1, Parco Dora, Torino, Città Metropolitana di Torino, Piemonte, 10153, Italia',
+    'Parco Dora, Torino, TO, Italy',
     true,
     'Resolved',
     (SELECT id FROM users WHERE username = 'staff_parks'),
@@ -985,7 +1061,7 @@ VALUES (
     'Storm drain is blocked with leaves and causing flooding.',
     'Sewer System',
     ST_SetSRID(ST_MakePoint(7.6240407, 45.048067), 4326)::geography,
-    'Via Guido Reni, 1, Barriera di Milano, Torino, Città Metropolitana di Torino, Piemonte, 10152, Italia',
+    'Via Guido Reni, Torino, TO, Italy',
     false,
     'In Progress',
     NULL,
@@ -1011,7 +1087,7 @@ VALUES (
     'Street light in front of number 15 is not working.',
     'Public Lighting',
     ST_SetSRID(ST_MakePoint(7.6783647, 45.0598692), 4326)::geography,
-    'Via Nizza, 15, Centro, Torino, Città Metropolitana di Torino, Piemonte, 10125, Italia',
+    'Via Nizza, Torino, TO, Italy',
     false,
     'Suspended',
     (SELECT id FROM users WHERE username = 'staff_lighting'),
@@ -1036,7 +1112,7 @@ VALUES (
     'Sidewalk tiles are loose and dangerous.',
     'Architectural Barriers',
     ST_SetSRID(ST_MakePoint(7.6739043, 45.0579166), 4326)::geography,
-    'Via Sacchi, 1, Centro, Torino, Città Metropolitana di Torino, Piemonte, 10128, Italia',
+    'Via Sacchi, Torino, TO, Italy',
     false,
     'Assigned',
     NULL,
@@ -1062,7 +1138,7 @@ VALUES (
     'Pile of construction waste dumped on the roadside.',
     'Waste',
     ST_SetSRID(ST_MakePoint(7.6184544, 45.0667864), 4326)::geography,
-    'Strada della Pronda, 1, Barriera di Milano, Torino, Città Metropolitana di Torino, Piemonte, 10152, Italia',
+    'Strada della Pronda, Torino, TO, Italy',
     true,
     'Resolved',
     (SELECT id FROM users WHERE username = 'staff_waste'),
@@ -1087,7 +1163,7 @@ VALUES (
     'Water leaking from a pipe under the street.',
     'Water Supply - Drinking Water',
     ST_SetSRID(ST_MakePoint(7.6872697, 45.048575), 4326)::geography,
-    'Corso Moncalieri, 1, Crocetta, Torino, Città Metropolitana di Torino, Piemonte, 10133, Italia',
+    'Corso Moncalieri, Torino, TO, Italy',
     false,
     'In Progress',
     (SELECT id FROM users WHERE username = 'staff_water'),
@@ -1112,7 +1188,7 @@ VALUES (
     'The stop sign is bent and difficult to read.',
     'Road Signs and Traffic Lights',
     ST_SetSRID(ST_MakePoint(7.6737702, 45.071474), 4326)::geography,
-    'Via Cernaia, 1, San Salvario, Torino, Città Metropolitana di Torino, Piemonte, 10133, Italia',
+    'Via Cernaia, Torino, TO, Italy',
     false,
     'Resolved',
     (SELECT id FROM users WHERE username = 'staff_traffic'),
@@ -1137,7 +1213,7 @@ VALUES (
     'Grass in the park is too high, needs mowing.',
     'Public Green Areas and Playgrounds',
     ST_SetSRID(ST_MakePoint(7.6347541, 45.0569526), 4326)::geography,
-    'Parco Ruffini, 1, Parco Ruffini, Torino, Città Metropolitana di Torino, Piemonte, 10127, Italia',
+    'Parco Ruffini, Torino, TO, Italy',
     false,
     'Assigned',
     (SELECT id FROM users WHERE username = 'staff_parks'),
@@ -1162,7 +1238,7 @@ VALUES (
     'Street is flooded after heavy rain due to clogged drains.',
     'Sewer System',
     ST_SetSRID(ST_MakePoint(7.6376228, 45.0446553), 4326)::geography,
-    'Via Filadelfia, 1, Mirafiori Nord, Torino, Città Metropolitana di Torino, Piemonte, 10137, Italia',
+    'Via Filadelfia, Torino, TO, Italy',
     true,
     'Resolved',
     NULL,
@@ -1188,7 +1264,7 @@ VALUES (
     'Street light flickers constantly at night.',
     'Public Lighting', 
     ST_SetSRID(ST_MakePoint(7.656828, 45.100761), 4326)::geography,
-    'Via Alfredo Oriani, 1, Barriera di Milano, Torino, Città Metropolitana di Torino, Piemonte, 10152, Italia',
+    'Via Alfredo Oriani, 1, Torino, TO, Italy',
     false,
     'In Progress',
     NULL,
@@ -1214,7 +1290,7 @@ VALUES (
     'Wheelchair ramp is blocked by a plant pot.',
     'Architectural Barriers',
     ST_SetSRID(ST_MakePoint(7.6786074, 45.0734881), 4326)::geography,
-    'Via Garibaldi, 1, Centro, Torino, Città Metropolitana di Torino, Piemonte, 10122, Italia',
+    'Via Garibaldi, Torino, TO, Italy',
     false,
     'Assigned',
     NULL,
@@ -1528,9 +1604,43 @@ VALUES (
 )
 ON CONFLICT DO NOTHING;
 
-INSERT INTO reports (reporter_id, title, description, category, location, address, is_anonymous, status, created_at, updated_at)
+INSERT INTO photos (report_id, storage_url, created_at)
+VALUES (
+    (SELECT id FROM reports WHERE title = 'Damaged Bus Stop' LIMIT 1),
+    '/seed-data/photos/34/34.jpg',
+    CURRENT_TIMESTAMP
+)
+ON CONFLICT DO NOTHING;
+
+-- Report 30
+INSERT INTO reports (reporter_id, title, description, category, location, address, is_anonymous, status, assignee_id, created_at, updated_at)
 VALUES (
     (SELECT id FROM users WHERE username = 'user2'),
+    'Broken Playground Swing',
+    'One of the swings in the playground is broken and unsafe for children.',
+    'Public Green Areas and Playgrounds',
+    ST_SetSRID(ST_MakePoint(7.6843971, 45.0627891), 4326)::geography,
+    'Via Mazzini, Torino, TO, Italy',
+    false,
+    'Assigned',
+    (SELECT id FROM users WHERE username = 'staff_parks'),
+    CURRENT_TIMESTAMP,
+    CURRENT_TIMESTAMP
+)
+ON CONFLICT DO NOTHING;
+
+INSERT INTO photos (report_id, storage_url, created_at)
+VALUES (
+    (SELECT id FROM reports WHERE title = 'Broken Playground Swing' LIMIT 1),
+    '/seed-data/photos/35/35.jpg',
+    CURRENT_TIMESTAMP
+)
+ON CONFLICT DO NOTHING;
+
+-- Report 31
+INSERT INTO reports (reporter_id, title, description, category, location, address, is_anonymous, status, created_at, updated_at)
+VALUES (
+    (SELECT id FROM users WHERE username = 'user'),
     'Graffiti on Monument',
     'Defacement of the monument base with spray paint.',
     'Other',
@@ -1543,20 +1653,29 @@ VALUES (
 )
 ON CONFLICT DO NOTHING;
 
-/*
- * ====================================
- * 10. CREATE PHOTOS FOR REPORTS
- * ====================================
- */
-
 INSERT INTO photos (report_id, storage_url, created_at)
-SELECT id, '/seed-data/photos/1/1.jpg', CURRENT_TIMESTAMP
-FROM reports WHERE title = 'Dangerous Road Sign' LIMIT 1
+VALUES (
+    (SELECT id FROM reports WHERE title = 'Graffiti on Monument' LIMIT 1),
+    '/seed-data/photos/36/36.jpg',
+    CURRENT_TIMESTAMP
+)
 ON CONFLICT DO NOTHING;
 
-INSERT INTO photos (report_id, storage_url, created_at)
-SELECT id, '/seed-data/photos/2/2.jpg', CURRENT_TIMESTAMP
-FROM reports WHERE title = 'Damaged Traffic Light' LIMIT 1
+-- Report 32
+INSERT INTO reports (reporter_id, title, description, category, location, address, is_anonymous, status, assignee_id, created_at, updated_at)
+VALUES (
+    (SELECT id FROM users WHERE username = 'user2'),
+    'Broken Street Lamp',
+    'Street lamp glass is shattered on the sidewalk.',
+    'Public Lighting',
+    ST_SetSRID(ST_MakePoint(7.694858343003946, 45.08715754613007), 4326)::geography,
+    'Via Aosta, 76, Torino, TO, Italy',
+    false,
+    'Assigned',
+    (SELECT id FROM users WHERE username = 'staff_lighting'),
+    CURRENT_TIMESTAMP,
+    CURRENT_TIMESTAMP
+)
 ON CONFLICT DO NOTHING;
 
 INSERT INTO photos (report_id, storage_url, created_at)
@@ -1586,18 +1705,77 @@ VALUES (
 ON CONFLICT DO NOTHING;
 
 INSERT INTO photos (report_id, storage_url, created_at)
-SELECT id, '/seed-data/photos/4/4.jpg', CURRENT_TIMESTAMP
-FROM reports WHERE title = 'Tilting Street Lamp' LIMIT 1
+VALUES (
+    (SELECT id FROM reports WHERE title = 'Pothole near Station Porta Susa' LIMIT 1),
+    '/seed-data/photos/38/38.jpg',
+    CURRENT_TIMESTAMP
+)
+ON CONFLICT DO NOTHING;
+
+-- Report 34
+INSERT INTO reports (reporter_id, title, description, category, location, address, is_anonymous, status, assignee_id, created_at, updated_at)
+VALUES (
+    (SELECT id FROM users WHERE username = 'user2'),
+    'Overflowing Trash Bin',
+    'Trash bin overflowing, garbage scattered around.',
+    'Waste',
+    ST_SetSRID(ST_MakePoint(7.696513895651545, 45.09401064570153), 4326)::geography,
+    'Via Gaspare Spontini, 20, Torino, TO, Italy',
+    false,
+    'Resolved',
+    (SELECT id FROM users WHERE username = 'staff_waste'),
+    CURRENT_TIMESTAMP,
+    CURRENT_TIMESTAMP
+)
 ON CONFLICT DO NOTHING;
 
 INSERT INTO photos (report_id, storage_url, created_at)
-SELECT id, '/seed-data/photos/6/6.jpg', CURRENT_TIMESTAMP
-FROM reports WHERE title = 'Pothole on Via Pietro Giuria' LIMIT 1
+VALUES (
+    (SELECT id FROM reports WHERE title = 'Overflowing Trash Bin' LIMIT 1),
+    '/seed-data/photos/39/39.jpg',
+    CURRENT_TIMESTAMP
+)
+ON CONFLICT DO NOTHING;
+
+-- Report 35
+INSERT INTO reports (reporter_id, title, description, category, location, address, is_anonymous, status, assignee_id, created_at, updated_at)
+VALUES (
+    (SELECT id FROM users WHERE username = 'user'),
+    'Damaged Bench',
+    'Bench slats broken, unsafe to sit.',
+    'Public Green Areas and Playgrounds',
+    ST_SetSRID(ST_MakePoint(7.689485057197251, 45.07239827010684), 4326)::geography,
+    'Giardini Reali, Torino, TO, Italy',
+    false,
+    'Assigned',
+    (SELECT id FROM users WHERE username = 'staff_parks'),
+    CURRENT_TIMESTAMP,
+    CURRENT_TIMESTAMP
+)
 ON CONFLICT DO NOTHING;
 
 INSERT INTO photos (report_id, storage_url, created_at)
-SELECT id, '/seed-data/photos/7/7.jpg', CURRENT_TIMESTAMP
-FROM reports WHERE title = 'Broken Bench in Park' LIMIT 1
+VALUES (
+    (SELECT id FROM reports WHERE title = 'Damaged Bench' LIMIT 1),
+    '/seed-data/photos/40/40.jpg',
+    CURRENT_TIMESTAMP
+)
+ON CONFLICT DO NOTHING;
+
+-- Report 36
+INSERT INTO reports (reporter_id, title, description, category, location, address, is_anonymous, status, created_at, updated_at)
+VALUES (
+    (SELECT id FROM users WHERE username = 'user2'),
+    'Blocked Sidewalk',
+    'Construction debris blocking the sidewalk.',
+    'Architectural Barriers',
+    ST_SetSRID(ST_MakePoint(7.631283532599513, 45.10242156550158), 4326)::geography,
+    'Via dei Glicini, Torino, TO, Italy',
+    false,
+    'Pending Approval',
+    CURRENT_TIMESTAMP,
+    CURRENT_TIMESTAMP
+)
 ON CONFLICT DO NOTHING;
 
 INSERT INTO photos (report_id, storage_url, created_at)
@@ -1627,8 +1805,11 @@ VALUES (
 ON CONFLICT DO NOTHING;
 
 INSERT INTO photos (report_id, storage_url, created_at)
-SELECT id, '/seed-data/photos/9/9.jpg', CURRENT_TIMESTAMP
-FROM reports WHERE title = 'Water Leak on Street' LIMIT 1
+VALUES (
+    (SELECT id FROM reports WHERE title = 'Water Leak' LIMIT 1),
+    '/seed-data/photos/42/42.jpg',
+    CURRENT_TIMESTAMP
+)
 ON CONFLICT DO NOTHING;
 
 /*
@@ -1639,8 +1820,8 @@ ON CONFLICT DO NOTHING;
  * Default Credentials:
  * - admin/admin (Administrator)
  * - officer/officer (Municipal Public Relations Officer)
- * - director_*/director (Department Directors)
- * - staff_*/staff (Technical Staff)
+ * - director_*\/director (Department Directors)
+ * - staff_*\/staff (Technical Staff)
  * - user/password, user2/password (Citizens)
  * - enelx/password, acea/password, hera/password, atm/password (External Maintainers)
  * - multirole/password (Multi-role user demo - PT10)
