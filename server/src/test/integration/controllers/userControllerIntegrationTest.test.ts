@@ -325,6 +325,8 @@ describe('UserController Integration Tests - Notifications', () => {
   let notificationId: number;
   let createdUserIds: number[] = [];
   let createdNotificationIds: number[] = [];
+  let citizenUsername: string;
+  let otherCitizenUsername: string;
 
   beforeAll(async () => {
     if (!AppDataSource.isInitialized) {
@@ -335,10 +337,11 @@ describe('UserController Integration Tests - Notifications', () => {
     const citizenDeptRole = await departmentRoleRepository.findByDepartmentAndRole('Organization', 'Citizen');
     if (!citizenDeptRole) throw new Error('Citizen role not found');
 
+    citizenUsername = `citizen_notif_${random()}`;
     const citizenUser = await userRepository.createUserWithPassword({
-      username: `citizen_notif_${random()}`,
+      username: citizenUsername,
       password: 'Password123!',
-      email: `citizen_notif_${random()}@test.com`,
+      email: `${citizenUsername}@test.com`,
       firstName: 'Citizen',
       lastName: 'Notif',
       emailNotificationsEnabled: true,
@@ -352,10 +355,11 @@ describe('UserController Integration Tests - Notifications', () => {
     createdUserIds.push(citizenUserId);
 
     // Create other citizen user
+    otherCitizenUsername = `other_citizen_notif_${random()}`;
     const otherCitizenUser = await userRepository.createUserWithPassword({
-      username: `other_citizen_notif_${random()}`,
+      username: otherCitizenUsername,
       password: 'Password123!',
-      email: `other_citizen_notif_${random()}@test.com`,
+      email: `${otherCitizenUsername}@test.com`,
       firstName: 'Other',
       lastName: 'Citizen',
       emailNotificationsEnabled: true,
@@ -371,13 +375,13 @@ describe('UserController Integration Tests - Notifications', () => {
     // Login agents
     citizenAgent = request.agent(app);
     await citizenAgent.post('/api/sessions').send({ 
-      username: `citizen_notif_${random()}`, 
+      username: citizenUsername, 
       password: 'Password123!' 
     });
 
     otherCitizenAgent = request.agent(app);
     await otherCitizenAgent.post('/api/sessions').send({ 
-      username: `other_citizen_notif_${random()}`, 
+      username: otherCitizenUsername, 
       password: 'Password123!' 
     });
   });
@@ -513,12 +517,13 @@ describe('UserController Integration Tests - Notifications', () => {
       expect(response.status).toBe(400);
     });
 
-    it('should return 400 when is_read is missing', async () => {
+    it('should default to false when is_read is missing', async () => {
       const response = await citizenAgent
         .patch(`/api/users/notifications/${notificationId}`)
         .send({});
 
-      expect(response.status).toBe(400);
+      expect(response.status).toBe(200);
+      expect(response.body.isRead).toBe(false);
     });
 
     it('should return 401 when not authenticated', async () => {

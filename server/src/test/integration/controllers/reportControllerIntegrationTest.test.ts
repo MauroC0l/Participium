@@ -995,6 +995,9 @@ describe('ReportController Integration Tests - Status Update', () => {
   let assignedReportId: number;
   let createdUserIds: number[] = [];
   let createdReportIds: number[] = [];
+  let proUsername: string;
+  let techUsername: string;
+  let citizenUsername: string;
 
   beforeAll(async () => {
     if (!AppDataSource.isInitialized) {
@@ -1005,10 +1008,11 @@ describe('ReportController Integration Tests - Status Update', () => {
     const proDeptRole = await departmentRoleRepository.findByDepartmentAndRole('Organization', 'Municipal Public Relations Officer');
     if (!proDeptRole) throw new Error('PRO role not found');
 
+    proUsername = `pro_status_${r()}`;
     const proUser = await userRepository.createUserWithPassword({
-      username: `pro_status_${r()}`,
+      username: proUsername,
       password: 'Password123!',
-      email: `pro_status_${r()}@test.com`,
+      email: `${proUsername}@test.com`,
       firstName: 'PRO',
       lastName: 'Status',
       emailNotificationsEnabled: true,
@@ -1022,13 +1026,14 @@ describe('ReportController Integration Tests - Status Update', () => {
     createdUserIds.push(proUserId);
 
     // Create technician user
-    const techDeptRole = await departmentRoleRepository.findByDepartmentAndRole('Water Network', 'Water Network staff member');
+    const techDeptRole = await departmentRoleRepository.findByDepartmentAndRole('Water and Sewer Services Department', 'Water Network staff member');
     if (!techDeptRole) throw new Error('Technician role not found');
 
+    techUsername = `tech_status_${r()}`;
     const techUser = await userRepository.createUserWithPassword({
-      username: `tech_status_${r()}`,
+      username: techUsername,
       password: 'Password123!',
-      email: `tech_status_${r()}@test.com`,
+      email: `${techUsername}@test.com`,
       firstName: 'Tech',
       lastName: 'Status',
       emailNotificationsEnabled: true,
@@ -1045,10 +1050,11 @@ describe('ReportController Integration Tests - Status Update', () => {
     const citizenDeptRole = await departmentRoleRepository.findByDepartmentAndRole('Organization', 'Citizen');
     if (!citizenDeptRole) throw new Error('Citizen role not found');
 
+    citizenUsername = `citizen_status_${r()}`;
     const citizenUser = await userRepository.createUserWithPassword({
-      username: `citizen_status_${r()}`,
+      username: citizenUsername,
       password: 'Password123!',
-      email: `citizen_status_${r()}@test.com`,
+      email: `${citizenUsername}@test.com`,
       firstName: 'Citizen',
       lastName: 'Status',
       emailNotificationsEnabled: true,
@@ -1063,13 +1069,13 @@ describe('ReportController Integration Tests - Status Update', () => {
 
     // Login agents
     proAgent = request.agent(app);
-    await proAgent.post('/api/sessions').send({ username: `pro_status_${r()}`, password: 'Password123!' });
+    await proAgent.post('/api/sessions').send({ username: proUsername, password: 'Password123!' });
 
     technicianAgent = request.agent(app);
-    await technicianAgent.post('/api/sessions').send({ username: `tech_status_${r()}`, password: 'Password123!' });
+    await technicianAgent.post('/api/sessions').send({ username: techUsername, password: 'Password123!' });
 
     citizenAgent = request.agent(app);
-    await citizenAgent.post('/api/sessions').send({ username: `citizen_status_${r()}`, password: 'Password123!' });
+    await citizenAgent.post('/api/sessions').send({ username: citizenUsername, password: 'Password123!' });
   });
 
   afterAll(async () => {
@@ -1084,8 +1090,8 @@ describe('ReportController Integration Tests - Status Update', () => {
   beforeEach(async () => {
     // Create pending report
     const pendingReport = await AppDataSource.query(
-      `INSERT INTO reports (reporter_id, title, description, category, status, location, is_internal, created_at)
-       VALUES ($1, 'Pending Report', 'Test', 'Water and Sewer Services', 'Pending Approval', ST_GeogFromText('POINT(7.6869 45.0703)'), false, CURRENT_TIMESTAMP)
+      `INSERT INTO reports (reporter_id, title, description, category, status, location, is_anonymous, created_at)
+       VALUES ($1, 'Pending Report', 'Test', 'Sewer System', 'Pending Approval', ST_GeogFromText('POINT(7.6869 45.0703)'), false, CURRENT_TIMESTAMP)
        RETURNING id`,
       [citizenUserId]
     );
@@ -1094,8 +1100,8 @@ describe('ReportController Integration Tests - Status Update', () => {
 
     // Create assigned report
     const assignedReport = await AppDataSource.query(
-      `INSERT INTO reports (reporter_id, title, description, category, status, assignee_id, location, is_internal, created_at)
-       VALUES ($1, 'Assigned Report', 'Test', 'Water and Sewer Services', 'Assigned', $2, ST_GeogFromText('POINT(7.6869 45.0703)'), false, CURRENT_TIMESTAMP)
+      `INSERT INTO reports (reporter_id, title, description, category, status, assignee_id, location, is_anonymous, created_at)
+       VALUES ($1, 'Assigned Report', 'Test', 'Sewer System', 'Assigned', $2, ST_GeogFromText('POINT(7.6869 45.0703)'), false, CURRENT_TIMESTAMP)
        RETURNING id`,
       [citizenUserId, technicianUserId]
     );
@@ -1194,6 +1200,9 @@ describe('ReportController Integration Tests - Messages', () => {
   let assignedReportId: number;
   let createdUserIds: number[] = [];
   let createdReportIds: number[] = [];
+  let techUsername: string;
+  let citizenUsername: string;
+  let otherCitizenUsername: string;
 
   beforeAll(async () => {
     if (!AppDataSource.isInitialized) {
@@ -1201,13 +1210,14 @@ describe('ReportController Integration Tests - Messages', () => {
     }
 
     // Create technician user
-    const techDeptRole = await departmentRoleRepository.findByDepartmentAndRole('Water Network', 'Water Network staff member');
+    const techDeptRole = await departmentRoleRepository.findByDepartmentAndRole('Water and Sewer Services Department', 'Water Network staff member');
     if (!techDeptRole) throw new Error('Technician role not found');
 
+    techUsername = `tech_msg_${r()}`;
     const techUser = await userRepository.createUserWithPassword({
-      username: `tech_msg_${r()}`,
+      username: techUsername,
       password: 'Password123!',
-      email: `tech_msg_${r()}@test.com`,
+      email: `${techUsername}@test.com`,
       firstName: 'Tech',
       lastName: 'Messages',
       emailNotificationsEnabled: true,
@@ -1224,10 +1234,11 @@ describe('ReportController Integration Tests - Messages', () => {
     const citizenDeptRole = await departmentRoleRepository.findByDepartmentAndRole('Organization', 'Citizen');
     if (!citizenDeptRole) throw new Error('Citizen role not found');
 
+    citizenUsername = `citizen_msg_${r()}`;
     const citizenUser = await userRepository.createUserWithPassword({
-      username: `citizen_msg_${r()}`,
+      username: citizenUsername,
       password: 'Password123!',
-      email: `citizen_msg_${r()}@test.com`,
+      email: `${citizenUsername}@test.com`,
       firstName: 'Citizen',
       lastName: 'Messages',
       emailNotificationsEnabled: true,
@@ -1241,10 +1252,11 @@ describe('ReportController Integration Tests - Messages', () => {
     createdUserIds.push(citizenUserId);
 
     // Create other citizen user
+    otherCitizenUsername = `other_citizen_msg_${r()}`;
     const otherCitizenUser = await userRepository.createUserWithPassword({
-      username: `other_citizen_msg_${r()}`,
+      username: otherCitizenUsername,
       password: 'Password123!',
-      email: `other_citizen_msg_${r()}@test.com`,
+      email: `${otherCitizenUsername}@test.com`,
       firstName: 'Other',
       lastName: 'Citizen',
       emailNotificationsEnabled: true,
@@ -1259,13 +1271,13 @@ describe('ReportController Integration Tests - Messages', () => {
 
     // Login agents
     technicianAgent = request.agent(app);
-    await technicianAgent.post('/api/sessions').send({ username: `tech_msg_${r()}`, password: 'Password123!' });
+    await technicianAgent.post('/api/sessions').send({ username: techUsername, password: 'Password123!' });
 
     citizenAgent = request.agent(app);
-    await citizenAgent.post('/api/sessions').send({ username: `citizen_msg_${r()}`, password: 'Password123!' });
+    await citizenAgent.post('/api/sessions').send({ username: citizenUsername, password: 'Password123!' });
 
     otherCitizenAgent = request.agent(app);
-    await otherCitizenAgent.post('/api/sessions').send({ username: `other_citizen_msg_${r()}`, password: 'Password123!' });
+    await otherCitizenAgent.post('/api/sessions').send({ username: otherCitizenUsername, password: 'Password123!' });
   });
 
   afterAll(async () => {
@@ -1280,8 +1292,8 @@ describe('ReportController Integration Tests - Messages', () => {
   beforeEach(async () => {
     // Create assigned report
     const report = await AppDataSource.query(
-      `INSERT INTO reports (reporter_id, title, description, category, status, assignee_id, location, is_internal, created_at)
-       VALUES ($1, 'Report with messages', 'Test', 'Water and Sewer Services', 'Assigned', $2, ST_GeogFromText('POINT(7.6869 45.0703)'), false, CURRENT_TIMESTAMP)
+      `INSERT INTO reports (reporter_id, title, description, category, status, assignee_id, location, is_anonymous, created_at)
+       VALUES ($1, 'Report with messages', 'Test', 'Sewer System', 'Assigned', $2, ST_GeogFromText('POINT(7.6869 45.0703)'), false, CURRENT_TIMESTAMP)
        RETURNING id`,
       [citizenUserId, technicianUserId]
     );
@@ -1306,7 +1318,7 @@ describe('ReportController Integration Tests - Messages', () => {
       expect(response.body).toHaveProperty('id');
       expect(response.body.content).toBe('We will fix this issue tomorrow');
       expect(response.body.author).toBeDefined();
-      expect(response.body.author.username).toBe(`tech_msg_${r()}`);
+      expect(response.body.author.username).toBe(techUsername);
     });
 
     it('should trim whitespace from message content (201)', async () => {
@@ -1398,8 +1410,8 @@ describe('ReportController Integration Tests - Messages', () => {
     it('should return empty array when no messages exist', async () => {
       // Create new report without messages
       const newReport = await AppDataSource.query(
-        `INSERT INTO reports (reporter_id, title, description, category, status, assignee_id, location, is_internal, created_at)
-         VALUES ($1, 'No messages', 'Test', 'Water and Sewer Services', 'Assigned', $2, ST_GeogFromText('POINT(7.6869 45.0703)'), false, CURRENT_TIMESTAMP)
+        `INSERT INTO reports (reporter_id, title, description, category, status, assignee_id, location, is_anonymous, created_at)
+         VALUES ($1, 'No messages', 'Test', 'Sewer System', 'Assigned', $2, ST_GeogFromText('POINT(7.6869 45.0703)'), false, CURRENT_TIMESTAMP)
          RETURNING id`,
         [citizenUserId, technicianUserId]
       );
@@ -1415,3 +1427,4 @@ describe('ReportController Integration Tests - Messages', () => {
     });
   });
 });
+
