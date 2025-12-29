@@ -65,7 +65,7 @@ describe('MessageRepository Unit Tests', () => {
       // Assert
       expect(mockRepository.find).toHaveBeenCalledWith({
         where: { reportId },
-        relations: ['sender', 'sender.departmentRole', 'sender.departmentRole.role'],
+        relations: ['sender', 'sender.userRoles', 'sender.userRoles.departmentRole', 'sender.userRoles.departmentRole.role'],
         order: { createdAt: 'ASC' }
       });
       expect(result).toEqual(mockMessages);
@@ -126,7 +126,7 @@ describe('MessageRepository Unit Tests', () => {
       expect(mockRepository.save).toHaveBeenCalledWith(mockCreatedMessage);
       expect(mockRepository.findOne).toHaveBeenCalledWith({
         where: { id: mockSavedMessage.id },
-        relations: ['sender', 'sender.departmentRole', 'sender.departmentRole.role']
+        relations: ['sender', 'sender.userRoles', 'sender.userRoles.departmentRole', 'sender.userRoles.departmentRole.role']
       });
       expect(result).toEqual(mockCompleteMessage);
     });

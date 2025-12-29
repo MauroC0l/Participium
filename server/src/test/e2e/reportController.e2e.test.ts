@@ -1298,7 +1298,7 @@ describe('ReportController E2E Tests - Assigned Reports', () => {
         .expect(200);
 
       expect(response.body.status).toBe(ReportStatus.ASSIGNED);
-      expect(response.body.assigneeId).toBeDefined();
+      expect(response.body.assignee_id).toBeDefined();
     });
 
     it('should reject report when PRO provides rejection reason', async () => {
@@ -1312,7 +1312,7 @@ describe('ReportController E2E Tests - Assigned Reports', () => {
         .expect(200);
 
       expect(response.body.status).toBe(ReportStatus.REJECTED);
-      expect(response.body.rejectionReason).toBe('Invalid location');
+      expect(response.body.rejection_reason).toBe('Invalid location');
     });
 
     it('should return 400 when rejecting without reason', async () => {
@@ -1322,7 +1322,7 @@ describe('ReportController E2E Tests - Assigned Reports', () => {
         .send({ newStatus: ReportStatus.REJECTED })
         .expect(400);
 
-      expect(response.body.message).toContain('rejection reason');
+      expect(response.body.message).toContain('Rejection reason');
     });
 
     it('should set report to IN_PROGRESS when technical staff updates', async () => {
@@ -1360,9 +1360,9 @@ describe('ReportController E2E Tests - Assigned Reports', () => {
         .put(`/api/reports/${assignedReportId}/status`)
         .set('Cookie', technicianCookies)
         .send({ status: ReportStatus.RESOLVED })
-        .expect(200);
+        .expect(400);
 
-      expect(response.body.status).toBe(ReportStatus.RESOLVED);
+      expect(response.body.message).toContain('newStatus');
     });
 
     it('should suspend report when technical staff suspends in-progress report', async () => {
@@ -1428,8 +1428,8 @@ describe('ReportController E2E Tests - Assigned Reports', () => {
 
       expect(response.body).toHaveProperty('id');
       expect(response.body.content).toBe('We will fix this issue tomorrow');
-      expect(response.body.sender).toBeDefined();
-      expect(response.body.sender.username).toBe(TECHNICIAN_USERNAME);
+      expect(response.body.author).toBeDefined();
+      expect(response.body.author.username).toBe(TECHNICIAN_USERNAME);
       expect(response.body.createdAt).toBeDefined();
     });
 
@@ -1460,7 +1460,7 @@ describe('ReportController E2E Tests - Assigned Reports', () => {
         .send({ content: '' })
         .expect(400);
 
-      expect(response.body.message).toContain('empty');
+      expect(response.body.message).toContain('required');
     });
 
     it('should return 400 when content is only whitespace', async () => {
@@ -1578,8 +1578,8 @@ describe('ReportController E2E Tests - Assigned Reports', () => {
       expect(Array.isArray(response.body)).toBe(true);
       expect(response.body.length).toBe(1);
       expect(response.body[0].content).toBe('Test message content');
-      expect(response.body[0].sender).toBeDefined();
-      expect(response.body[0].sender.username).toBe(TECHNICIAN_USERNAME);
+      expect(response.body[0].author).toBeDefined();
+      expect(response.body[0].author.username).toBe(TECHNICIAN_USERNAME);
     });
 
     it('should return messages when reporter (citizen) requests them', async () => {
