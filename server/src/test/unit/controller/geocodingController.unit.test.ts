@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { getAddressFromProxy } from '@controllers/geocodingController';
+import { getAddressFromProxy, getCoordinatesFromAddress } from '@controllers/geocodingController';
 
 // Mock axios
 jest.mock('axios', () => ({
@@ -192,6 +192,509 @@ describe('GeocodingController Unit Tests', () => {
       // Assert
       expect(statusMock).toHaveBeenCalledWith(500);
       expect(jsonMock).toHaveBeenCalledWith({ error: 'Internal server error during geocoding' });
+    });
+  });
+
+  describe('getCoordinatesFromAddress', () => {
+    it('should return coordinates when valid address is provided', async () => {
+      // Arrange
+      const address = 'Via Roma 42';
+      mockRequest = {
+        query: { address },
+      };
+
+      const mockNominatimResponse = [
+        {
+          lat: '45.0703393',
+          lon: '7.6869005',
+          display_name: 'Via Roma 42, Turin, Italy',
+          boundingbox: ['45.0703', '45.0704', '7.6868', '7.6870'],
+          address: {
+            house_number: '42',
+            road: 'Via Roma',
+          },
+        },
+      ];
+
+      (axios.get as jest.Mock).mockResolvedValueOnce({
+        data: mockNominatimResponse,
+      });
+
+      // Act
+      await getCoordinatesFromAddress(mockRequest as Request, mockResponse as Response);
+
+      // Assert
+      expect(axios.get).toHaveBeenCalledWith(
+        'https://nominatim.openstreetmap.org/search',
+        {
+          params: {
+            street: address,
+            city: 'Torino',
+            country: 'Italia',
+            format: 'jsonv2',
+            limit: 1, // House number present, so limit is 1
+            addressdetails: 1,
+            viewbox: '7.5200,45.1500,7.8000,44.9700',
+            countrycodes: 'it',
+          },
+          headers: {
+            'User-Agent': 'Partecipium-App-Dev/1.0 (admin@tuo-dominio.com)',
+            'Referer': 'http://localhost',
+          },
+        }
+      );
+      expect(jsonMock).toHaveBeenCalledWith({
+        lat: 45.0703393,
+        lng: 7.6869005,
+        display_name: 'Via Roma 42, Turin, Italy',
+        boundingbox: ['45.0703', '45.0704', '7.6868', '7.6870'],
+        resultsCount: 1,
+        isSpecificAddress: true,
+      });
+    });
+
+    it('should return coordinates for street name without house number', async () => {
+      // Arrange
+      const address = 'Via Roma';
+      mockRequest = {
+        query: { address },
+      };
+
+      const mockNominatimResponse = [
+        {
+          lat: '45.0703393',
+          lon: '7.6869005',
+          display_name: 'Via Roma, Turin, Italy',
+          boundingbox: ['45.0703', '45.0704', '7.6868', '7.6870'],
+          address: {
+            road: 'Via Roma',
+          },
+        },
+        {
+          lat: '45.0705',
+          lon: '7.6871',
+          display_name: 'Via Roma, Turin, Italy',
+          boundingbox: ['45.0704', '45.0706', '7.6870', '7.6872'],
+        },
+      ];
+
+      (axios.get as jest.Mock).mockResolvedValueOnce({
+        data: mockNominatimResponse,
+      });
+
+      // Act
+      await getCoordinatesFromAddress(mockRequest as Request, mockResponse as Response);
+
+      // Assert
+      expect(axios.get).toHaveBeenCalledWith(
+        'https://nominatim.openstreetmap.org/search',
+        expect.objectContaining({
+          params: expect.objectContaining({
+            street: address,
+            limit: 50, // No house number, so limit is 50
+          }),
+        })
+      );
+      expect(jsonMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          lat: 45.0703393,
+          lng: 7.6869005,
+          resultsCount: 2,
+          isSpecificAddress: false,
+        })
+      );
+    });
+
+    it('should return 400 error when address is missing', async () => {
+      // Arrange
+      mockRequest = {
+        query: {},
+      };
+
+      // Act
+      await getCoordinatesFromAddress(mockRequest as Request, mockResponse as Response);
+
+      // Assert
+      expect(axios.get).not.toHaveBeenCalled();
+      expect(statusMock).toHaveBeenCalledWith(400);
+      expect(jsonMock).toHaveBeenCalledWith({ error: 'Address is required' });
+    });
+
+    it('should return 400 error when address is empty string', async () => {
+      // Arrange
+      mockRequest = {
+        query: { address: '' },
+      };
+
+      // Act
+      await getCoordinatesFromAddress(mockRequest as Request, mockResponse as Response);
+
+      // Assert
+      expect(axios.get).not.toHaveBeenCalled();
+      expect(statusMock).toHaveBeenCalledWith(400);
+      expect(jsonMock).toHaveBeenCalledWith({ error: 'Address is required' });
+    });
+
+    it('should return 400 error when address is only whitespace', async () => {
+      // Arrange
+      mockRequest = {
+        query: { address: '   ' },
+      };
+
+      // Act
+      await getCoordinatesFromAddress(mockRequest as Request, mockResponse as Response);
+
+      // Assert
+      expect(axios.get).not.toHaveBeenCalled();
+      expect(statusMock).toHaveBeenCalledWith(400);
+      expect(jsonMock).toHaveBeenCalledWith({ error: 'Address is required' });
+    });
+
+    it('should return 404 when address is not found', async () => {
+      // Arrange
+      const address = 'NonExistentStreet 999';
+      mockRequest = {
+        query: { address },
+      };
+
+      (axios.get as jest.Mock).mockResolvedValueOnce({
+        data: [], // Empty response
+      });
+
+      // Act
+      await getCoordinatesFromAddress(mockRequest as Request, mockResponse as Response);
+
+      // Assert
+      expect(statusMock).toHaveBeenCalledWith(404);
+      expect(jsonMock).toHaveBeenCalledWith({ error: 'Address not found' });
+    });
+
+    it('should return 404 when house number does not match', async () => {
+      // Arrange
+      const address = 'Via Roma 42';
+      mockRequest = {
+        query: { address },
+      };
+
+      const mockNominatimResponse = [
+        {
+          lat: '45.0703393',
+          lon: '7.6869005',
+          display_name: 'Via Roma 40, Turin, Italy',
+          boundingbox: ['45.0703', '45.0704', '7.6868', '7.6870'],
+          address: {
+            house_number: '40', // Different from requested 42
+            road: 'Via Roma',
+          },
+        },
+      ];
+
+      (axios.get as jest.Mock).mockResolvedValueOnce({
+        data: mockNominatimResponse,
+      });
+
+      // Act
+      await getCoordinatesFromAddress(mockRequest as Request, mockResponse as Response);
+
+      // Assert
+      expect(statusMock).toHaveBeenCalledWith(404);
+      expect(jsonMock).toHaveBeenCalledWith({
+        error: 'Address with specified house number not found',
+        details: 'House number 42 not found in the results',
+      });
+    });
+
+    it('should return 404 when result has no house number but one was requested', async () => {
+      // Arrange
+      const address = 'Via Roma 42';
+      mockRequest = {
+        query: { address },
+      };
+
+      const mockNominatimResponse = [
+        {
+          lat: '45.0703393',
+          lon: '7.6869005',
+          display_name: 'Via Roma, Turin, Italy',
+          boundingbox: ['45.0703', '45.0704', '7.6868', '7.6870'],
+          address: {
+            road: 'Via Roma',
+            // No house_number
+          },
+        },
+      ];
+
+      (axios.get as jest.Mock).mockResolvedValueOnce({
+        data: mockNominatimResponse,
+      });
+
+      // Act
+      await getCoordinatesFromAddress(mockRequest as Request, mockResponse as Response);
+
+      // Assert
+      expect(statusMock).toHaveBeenCalledWith(404);
+      expect(jsonMock).toHaveBeenCalledWith({
+        error: 'Address with specified house number not found',
+        details: 'House number 42 not found in the results',
+      });
+    });
+
+    it('should handle address with alphanumeric house number', async () => {
+      // Arrange
+      const address = 'Via Garibaldi 42a';
+      mockRequest = {
+        query: { address },
+      };
+
+      const mockNominatimResponse = [
+        {
+          lat: '45.0703393',
+          lon: '7.6869005',
+          display_name: 'Via Garibaldi 42a, Turin, Italy',
+          boundingbox: ['45.0703', '45.0704', '7.6868', '7.6870'],
+          address: {
+            house_number: '42a',
+            road: 'Via Garibaldi',
+          },
+        },
+      ];
+
+      (axios.get as jest.Mock).mockResolvedValueOnce({
+        data: mockNominatimResponse,
+      });
+
+      // Act
+      await getCoordinatesFromAddress(mockRequest as Request, mockResponse as Response);
+
+      // Assert
+      expect(jsonMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          lat: 45.0703393,
+          lng: 7.6869005,
+          isSpecificAddress: true,
+        })
+      );
+    });
+
+    it('should calculate overall bounding box for multiple results', async () => {
+      // Arrange
+      const address = 'Via Roma';
+      mockRequest = {
+        query: { address },
+      };
+
+      const mockNominatimResponse = [
+        {
+          lat: '45.0703',
+          lon: '7.6869',
+          display_name: 'Via Roma, Turin, Italy',
+          boundingbox: ['45.0700', '45.0705', '7.6865', '7.6870'],
+        },
+        {
+          lat: '45.0710',
+          lon: '7.6875',
+          display_name: 'Via Roma, Turin, Italy',
+          boundingbox: ['45.0708', '45.0712', '7.6873', '7.6877'],
+        },
+      ];
+
+      (axios.get as jest.Mock).mockResolvedValueOnce({
+        data: mockNominatimResponse,
+      });
+
+      // Act
+      await getCoordinatesFromAddress(mockRequest as Request, mockResponse as Response);
+
+      // Assert
+      expect(jsonMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          boundingbox: ['45.07', '45.0712', '7.6865', '7.6877'], // Overall bbox
+          resultsCount: 2,
+        })
+      );
+    });
+
+    it('should ignore 5-digit postal codes when extracting house numbers', async () => {
+      // Arrange - Address like "Via Roma, 10100 Torino" should not extract 10100 as house number
+      const address = 'Via Roma, 10100 Torino';
+      mockRequest = {
+        query: { address },
+      };
+
+      const mockNominatimResponse = [
+        {
+          lat: '45.0703393',
+          lon: '7.6869005',
+          display_name: 'Via Roma, 10100 Turin, Italy',
+          boundingbox: ['45.0703', '45.0704', '7.6868', '7.6870'],
+          address: {
+            road: 'Via Roma',
+            postcode: '10100',
+          },
+        },
+      ];
+
+      (axios.get as jest.Mock).mockResolvedValueOnce({
+        data: mockNominatimResponse,
+      });
+
+      // Act
+      await getCoordinatesFromAddress(mockRequest as Request, mockResponse as Response);
+
+      // Assert - Should be treated as street without house number (limit 50)
+      expect(axios.get).toHaveBeenCalledWith(
+        'https://nominatim.openstreetmap.org/search',
+        expect.objectContaining({
+          params: expect.objectContaining({
+            limit: 50,
+          }),
+        })
+      );
+      expect(jsonMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          isSpecificAddress: false,
+        })
+      );
+    });
+
+    it('should handle Axios error with response', async () => {
+      // Arrange
+      const address = 'Via Roma';
+      mockRequest = {
+        query: { address },
+      };
+
+      const axiosError = {
+        message: 'Request failed',
+        response: {
+          status: 503,
+          data: { error: 'Service unavailable' },
+        },
+      };
+      (axios.isAxiosError as any).mockReturnValue(true);
+      (axios.get as jest.Mock).mockRejectedValueOnce(axiosError);
+
+      // Act
+      await getCoordinatesFromAddress(mockRequest as Request, mockResponse as Response);
+
+      // Assert
+      expect(axios.isAxiosError).toHaveBeenCalledWith(axiosError);
+      expect(statusMock).toHaveBeenCalledWith(503);
+      expect(jsonMock).toHaveBeenCalledWith({
+        error: 'External map service error',
+        details: { error: 'Service unavailable' },
+      });
+    });
+
+    it('should handle Axios error without response', async () => {
+      // Arrange
+      const address = 'Via Roma';
+      mockRequest = {
+        query: { address },
+      };
+
+      const axiosError = {
+        message: 'Network timeout',
+      };
+      (axios.isAxiosError as any).mockReturnValue(true);
+      (axios.get as jest.Mock).mockRejectedValueOnce(axiosError);
+
+      // Act
+      await getCoordinatesFromAddress(mockRequest as Request, mockResponse as Response);
+
+      // Assert
+      expect(axios.isAxiosError).toHaveBeenCalledWith(axiosError);
+      expect(statusMock).toHaveBeenCalledWith(500);
+      expect(jsonMock).toHaveBeenCalledWith({ error: 'Internal server error during address search' });
+    });
+
+    it('should handle non-Axios errors', async () => {
+      // Arrange
+      const address = 'Via Roma';
+      mockRequest = {
+        query: { address },
+      };
+
+      const error = new Error('Unknown error');
+      (axios.isAxiosError as any).mockReturnValue(false);
+      (axios.get as jest.Mock).mockRejectedValueOnce(error);
+
+      // Act
+      await getCoordinatesFromAddress(mockRequest as Request, mockResponse as Response);
+
+      // Assert
+      expect(statusMock).toHaveBeenCalledWith(500);
+      expect(jsonMock).toHaveBeenCalledWith({ error: 'Internal server error during address search' });
+    });
+
+    it('should send correct headers to Nominatim API', async () => {
+      // Arrange
+      const address = 'Via Roma';
+      mockRequest = {
+        query: { address },
+      };
+
+      const mockNominatimResponse = [
+        {
+          lat: '45.0703393',
+          lon: '7.6869005',
+          display_name: 'Via Roma, Turin, Italy',
+          boundingbox: ['45.0703', '45.0704', '7.6868', '7.6870'],
+        },
+      ];
+
+      (axios.get as jest.Mock).mockResolvedValueOnce({
+        data: mockNominatimResponse,
+      });
+
+      // Act
+      await getCoordinatesFromAddress(mockRequest as Request, mockResponse as Response);
+
+      // Assert
+      expect(axios.get).toHaveBeenCalledWith(
+        'https://nominatim.openstreetmap.org/search',
+        expect.objectContaining({
+          headers: {
+            'User-Agent': 'Partecipium-App-Dev/1.0 (admin@tuo-dominio.com)',
+            'Referer': 'http://localhost',
+          },
+        })
+      );
+    });
+
+    it('should include Turin viewbox in request parameters', async () => {
+      // Arrange
+      const address = 'Via Roma';
+      mockRequest = {
+        query: { address },
+      };
+
+      const mockNominatimResponse = [
+        {
+          lat: '45.0703393',
+          lon: '7.6869005',
+          display_name: 'Via Roma, Turin, Italy',
+          boundingbox: ['45.0703', '45.0704', '7.6868', '7.6870'],
+        },
+      ];
+
+      (axios.get as jest.Mock).mockResolvedValueOnce({
+        data: mockNominatimResponse,
+      });
+
+      // Act
+      await getCoordinatesFromAddress(mockRequest as Request, mockResponse as Response);
+
+      // Assert
+      expect(axios.get).toHaveBeenCalledWith(
+        'https://nominatim.openstreetmap.org/search',
+        expect.objectContaining({
+          params: expect.objectContaining({
+            viewbox: '7.5200,45.1500,7.8000,44.9700',
+            countrycodes: 'it',
+          }),
+        })
+      );
     });
   });
 });

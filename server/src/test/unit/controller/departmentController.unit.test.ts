@@ -6,7 +6,8 @@ import { Request, Response, NextFunction } from 'express';
 jest.mock('@services/departmentService', () => ({
     departmentService: {
         getMunicipalityDepartments: jest.fn(),
-        getRolesByDepartment: jest.fn()
+        getRolesByDepartment: jest.fn(),
+        getAllMunicipalityDepartmentRoles: jest.fn()
     }
 }));
 
@@ -73,6 +74,45 @@ describe('DepartmentController', () => {
             (departmentService.getRolesByDepartment as jest.Mock).mockRejectedValue(error);
 
             await DepartmentController.getRolesByDepartment(req as Request, res as Response, next);
+
+            expect(next).toHaveBeenCalledWith(error);
+        });
+    });
+
+    describe('getDepartmentRolesMapping', () => {
+        it('should return 200 and department roles mapping', async () => {
+            const mockMapping = [
+                {
+                    departmentId: 2,
+                    departmentName: 'Water and Sewer Services Department',
+                    roles: [
+                        { id: 4, name: 'Department Director' },
+                        { id: 5, name: 'Water Network staff member' }
+                    ]
+                },
+                {
+                    departmentId: 3,
+                    departmentName: 'Public Infrastructure Department',
+                    roles: [
+                        { id: 4, name: 'Department Director' },
+                        { id: 7, name: 'Road Maintenance staff member' }
+                    ]
+                }
+            ];
+            (departmentService.getAllMunicipalityDepartmentRoles as jest.Mock).mockResolvedValue(mockMapping);
+
+            await DepartmentController.getDepartmentRolesMapping(req as Request, res as Response, next);
+
+            expect(departmentService.getAllMunicipalityDepartmentRoles).toHaveBeenCalled();
+            expect(res.status).toHaveBeenCalledWith(200);
+            expect(res.json).toHaveBeenCalledWith(mockMapping);
+        });
+
+        it('should call next with error if service fails', async () => {
+            const error = new Error('Service Error');
+            (departmentService.getAllMunicipalityDepartmentRoles as jest.Mock).mockRejectedValue(error);
+
+            await DepartmentController.getDepartmentRolesMapping(req as Request, res as Response, next);
 
             expect(next).toHaveBeenCalledWith(error);
         });
