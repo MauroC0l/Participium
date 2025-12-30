@@ -23,7 +23,7 @@ import { SystemRoles, isTechnicalStaff, isCitizen } from '@models/dto/UserRole';
 import { ReportEntity } from '@entity/reportEntity';
 import { Report } from '@models/dto/Report';
 import { RoleUtils } from '@utils/roleUtils';
-import { mapReportEntityToResponse, mapReportEntityToDTO, mapReportEntityToReportResponse, mapMessageToResponse } from './mapperService';
+import { mapReportEntityToResponse, mapReportEntityToDTO, mapReportEntityToReportResponse, mapMessageToResponse, getPhotoUrl } from './mapperService';
 import { commentRepository } from '@repositories/commentRepository';
 import { CommentResponse } from '@dto/output/CommentResponse';
 import { CommentEntity } from '@entity/commentEntity';
@@ -662,7 +662,8 @@ class ReportService {
         username: comment.author.username,
         firstName: comment.author.firstName,
         lastName: comment.author.lastName,
-        role: primaryRole
+        role: primaryRole,
+        personalPhotoUrl: comment.author.personalPhotoUrl ? getPhotoUrl(comment.author.personalPhotoUrl) : undefined
       },
       content: comment.content,
       createdAt: comment.createdAt

@@ -37,9 +37,10 @@
 }
 
 .up-profile-title {
-    font-family: var(--font-serif);
-    color: var(--brand-red);
-    font-size: clamp(2rem, 5vw, 3rem);
+    font-family: inherit;
+    font-weight: 800;
+    color: #1a1a1a;
+    font-size: clamp(1.75rem, 4vw, 2.5rem);
     margin-bottom: 0.5rem;
     line-height: 1.2;
 }

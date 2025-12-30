@@ -33,7 +33,7 @@ export function createErrorDTO(
 /**
  * Generate full URL for photo storage path
  */
-function getPhotoUrl(storageUrl: string): string {
+export function getPhotoUrl(storageUrl: string): string {
   // If the storage URL already includes the protocol (http/https), return as-is
   if (storageUrl.startsWith('http://') || storageUrl.startsWith('https://')) {
     return storageUrl;
@@ -279,6 +279,7 @@ export function mapMessageToResponse(message: MessageEntity): MessageResponse {
       firstName: message.sender.firstName,
       lastName: message.sender.lastName,
       role: message.sender.userRoles?.[0]?.departmentRole?.role?.name || 'Unknown',
+      personalPhotoUrl: message.sender.personalPhotoUrl ? getPhotoUrl(message.sender.personalPhotoUrl) : undefined
     },
     content: message.content,
     createdAt: message.createdAt,

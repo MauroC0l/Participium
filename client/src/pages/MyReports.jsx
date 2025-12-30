@@ -110,7 +110,6 @@ const MyReports = () => {
                     <div className="mr-reports-section">
                         <div className="mr-section-header">
                             <h2>Submitted Reports</h2>
-                            <span className="mr-badge-count">{filteredReports.length}</span>
                         </div>
 
                         <div className="mr-filters-container">

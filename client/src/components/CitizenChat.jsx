@@ -169,6 +169,12 @@ const CitizenChat = ({ reportId, currentUserId, isCitizen, initiallyExpanded = f
         );
     }, [messages, currentUserId]);
 
+    // If user is citizen and there are no messages, hide the component entirely
+    // (But keep it mounted so polling works)
+    if (isCitizen && messages.length === 0) {
+        return null;
+    }
+
     return (
         <div className="rdm-section mt-4">
             <div 
