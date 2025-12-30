@@ -588,5 +588,50 @@ describe('validateStatusUpdate Middleware Unit Tests', () => {
       // Assert
       expect(mockNext).toHaveBeenCalledWith(expect.any(InsufficientRightsError));
     });
+
+    it('should reject invalid status that is not in the statusRoleMap', () => {
+      // Arrange
+      mockRequest.body = { newStatus: 'INVALID_STATUS' };
+      mockRequest.user = {
+        userRoles: createMockUserRoles([{ roleName: SystemRoles.PUBLIC_RELATIONS_OFFICER }])
+      };
+
+      // Act
+      validateStatusUpdate(
+        mockRequest as Request,
+        mockResponse as Response,
+        mockNext
+      );
+
+      // Assert
+      expect(mockNext).toHaveBeenCalledWith(expect.any(BadRequestError));
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: expect.stringContaining('Invalid report status')
+        })
+      );
+    });
+
+    it('should allow status update when user has multiple roles and one is allowed', () => {
+      // Arrange
+      mockRequest.body = { newStatus: ReportStatus.ASSIGNED };
+      mockRequest.user = {
+        userRoles: createMockUserRoles([
+          { roleName: 'Citizen' },
+          { roleName: SystemRoles.PUBLIC_RELATIONS_OFFICER },
+          { roleName: 'Road Maintenance Staff Member' }
+        ])
+      };
+
+      // Act
+      validateStatusUpdate(
+        mockRequest as Request,
+        mockResponse as Response,
+        mockNext
+      );
+
+      // Assert
+      expect(mockNext).toHaveBeenCalledWith();
+    });
   });
 });

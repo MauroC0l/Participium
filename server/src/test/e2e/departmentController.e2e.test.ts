@@ -174,7 +174,7 @@ describe('DepartmentController E2E Tests', () => {
       expect(response.body.message).toContain('Access denied');
     });
 
-    it.skip('should return roles for Water and Sewer Services Department', async () => {
+    it('should return roles for Water and Sewer Services Department', async () => {
       // Arrange
       const loginResponse = await request(app)
         .post('/api/sessions')
@@ -215,7 +215,7 @@ describe('DepartmentController E2E Tests', () => {
       }
     });
 
-    it.skip('should return roles for Public Infrastructure Department', async () => {
+    it('should return roles for Public Infrastructure Department', async () => {
       // Arrange
       const loginResponse = await request(app)
         .post('/api/sessions')
@@ -353,7 +353,7 @@ describe('DepartmentController E2E Tests', () => {
       expect(response.body.message).toContain('Invalid department ID');
     });
 
-    it.skip('should return different roles for different departments', async () => {
+    it('should return different roles for different departments', async () => {
       // Arrange
       const loginResponse = await request(app)
         .post('/api/sessions')
