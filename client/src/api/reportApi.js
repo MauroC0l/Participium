@@ -36,6 +36,17 @@ export const getAllCategories = async () => {
 };
 
 /**
+ * Get a specific report by ID
+ */
+export const getReportById = async (id) => {
+  const response = await fetch(`/api/reports/${id}`, {
+    method: "GET",
+    credentials: "include",
+  });
+  return handleResponse(response);
+};
+
+/**
  * Create a new report
  */
 export const createReport = async (reportData) => {

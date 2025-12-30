@@ -55,6 +55,20 @@ class ReportController {
   }
 
   /**
+   * Get a specific report by ID
+   * GET /api/reports/:id
+   */
+  async getReportById(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const reportId = parseAndValidateId(req.params.id);
+      const report = await reportService.getReportById(reportId);
+      res.status(200).json(report);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
    * Create a new report
    * POST /api/reports
    */

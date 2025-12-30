@@ -6,51 +6,86 @@ import "../css/ReportComments.css"; // Reuse styles
 
 const DEFAULT_AVATAR = "https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png";
 
-const CitizenChat = ({ reportId, currentUserId, isCitizen }) => {
-    const [isExpanded, setIsExpanded] = useState(false);
+const CitizenChat = ({ reportId, currentUserId, isCitizen, initiallyExpanded = false }) => {
+    const [isExpanded, setIsExpanded] = useState(initiallyExpanded);
     const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(false);
     const [newMessageText, setNewMessageText] = useState("");
     const [submitting, setSubmitting] = useState(false);
-    const messagesEndRef = useRef(null);
+    const scrollContainerRef = useRef(null);
+    
+    // Ref to track messages for comparison without triggering re-renders/dependency changes
+    const messagesRef = useRef(messages);
+    useEffect(() => { messagesRef.current = messages; }, [messages]);
 
     const canSend = !isCitizen || (isCitizen && messages.length > 0);
 
     const scrollToBottom = useCallback((behavior = "smooth") => {
-        messagesEndRef.current?.scrollIntoView({ behavior: behavior });
+        if (scrollContainerRef.current) {
+            const { scrollHeight, clientHeight } = scrollContainerRef.current;
+            scrollContainerRef.current.scrollTo({
+                top: scrollHeight - clientHeight,
+                behavior: behavior
+            });
+        }
     }, []);
 
-    const fetchMessages = useCallback(async (isInitialLoad = false) => {
-        setLoading(true);
-        const oldMessagesCount = messages.length;
+    const fetchMessages = useCallback(async (isInitialLoad = false, isPolling = false) => {
+        if (!isPolling) setLoading(true);
+        
+        const currentMessages = messagesRef.current;
+        const oldMessagesCount = currentMessages.length;
         let data = [];
         try {
             data = await getMessages(reportId);
-            setMessages(data || []);
+            
+            const hasChanges = data.length !== currentMessages.length || 
+                (data.length > 0 && currentMessages.length > 0 && data[data.length-1].id !== currentMessages[currentMessages.length-1].id);
 
-            const newMessageAdded = data.length > oldMessagesCount && oldMessagesCount > 0;
-            if (newMessageAdded) {
-                setTimeout(() => scrollToBottom("smooth"), 50);
-            } else if (isInitialLoad && isExpanded) {
-                setTimeout(() => scrollToBottom("auto"), 300);
+            if (!isPolling || hasChanges) {
+                setMessages(data || []);
+
+                const newMessageAdded = data.length > oldMessagesCount && oldMessagesCount > 0;
+                if (newMessageAdded) {
+                    setTimeout(() => scrollToBottom("smooth"), 50);
+                } else if (isInitialLoad && isExpanded) {
+                    setTimeout(() => scrollToBottom("auto"), 300);
+                }
             }
         } catch (error) {
             console.error("Error fetching messages:", error);
         } finally {
-            setLoading(false);
+            if (!isPolling) setLoading(false);
         }
         return data;
-    }, [reportId, messages.length, isExpanded, scrollToBottom]);
+    }, [reportId, isExpanded, scrollToBottom]); // Removed 'messages' dependency
 
     useEffect(() => {
         if (reportId) fetchMessages(true);
     }, [reportId, fetchMessages]);
 
+    // Polling for new messages
+    useEffect(() => {
+        let interval;
+        if (isExpanded && reportId) {
+            interval = setInterval(() => {
+                fetchMessages(false, true);
+            }, 3000);
+        }
+        return () => clearInterval(interval);
+    }, [isExpanded, reportId, fetchMessages]);
+
     useEffect(() => {
         if (isExpanded && messages.length > 0) {
+            // Only scroll to bottom if we are near the bottom or it's the first open
+            // For now, let's just scroll on open.
             setTimeout(() => scrollToBottom("smooth"), 300);
         }
-    }, [isExpanded, messages.length, scrollToBottom]);
+        // Removed messages.length dependency to prevent auto-scroll on every poll if length changes but user is scrolling up
+        // Actually, if length changes, we DO want to scroll if it's a new message.
+        // But the fetchMessages logic already handles "newMessageAdded" scrolling.
+        // This useEffect is mainly for when the user expands the chat.
+    }, [isExpanded, scrollToBottom]);
 
     const handleSendMessage = async (e) => {
         e.preventDefault();
@@ -59,12 +94,18 @@ const CitizenChat = ({ reportId, currentUserId, isCitizen }) => {
 
         setSubmitting(true);
         try {
-            await sendMessage(reportId, { content });
+            const newMessage = await sendMessage(reportId, { content });
             setNewMessageText("");
-            const data = await fetchMessages();
-            if (data && data.length > 0) {
+            
+            // Optimistically update UI with the returned message
+            if (newMessage) {
+                setMessages(prev => [...prev, newMessage]);
                 setTimeout(() => scrollToBottom("smooth"), 50);
+            } else {
+                // Fallback if no message returned (shouldn't happen based on API)
+                await fetchMessages();
             }
+
             if (!isExpanded) setIsExpanded(true);
         } catch (error) {
             console.error("Error sending message:", error);
@@ -92,7 +133,7 @@ const CitizenChat = ({ reportId, currentUserId, isCitizen }) => {
         }
 
         return (
-            <div className="rdm-comments-list">
+            <div className="rdm-comments-list" ref={scrollContainerRef}>
                 {messages.map((msg) => {
                     const isOwner = currentUserId && msg.author?.id && String(msg.author.id) === String(currentUserId);
                     const containerClass = isOwner ? "my-message" : "other-message";
@@ -124,7 +165,6 @@ const CitizenChat = ({ reportId, currentUserId, isCitizen }) => {
                         </div>
                     );
                 })}
-                <div ref={messagesEndRef} />
             </div>
         );
     }, [messages, currentUserId]);
@@ -184,6 +224,7 @@ CitizenChat.propTypes = {
     reportId: PropTypes.number.isRequired,
     currentUserId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     isCitizen: PropTypes.bool,
+    initiallyExpanded: PropTypes.bool,
 };
 
 export default CitizenChat;

@@ -13,6 +13,7 @@ const MyReports = () => {
     const [loading, setLoading] = useState(true);
     const [selectedReport, setSelectedReport] = useState(null);
     const [showDetails, setShowDetails] = useState(false);
+    const [openChatDetails, setOpenChatDetails] = useState(false);
 
     // Filters State
     const [filterCategory, setFilterCategory] = useState("All");
@@ -56,8 +57,9 @@ const MyReports = () => {
         fetchData();
     }, []);
 
-    const handleReportClick = (report) => {
+    const handleReportClick = (report, openChat = false) => {
         setSelectedReport(report);
+        setOpenChatDetails(openChat);
         setShowDetails(true);
     };
 
@@ -173,7 +175,14 @@ const MyReports = () => {
                                                         </td>
                                                         <td>
                                                             {chats.some(c => c.report.id === report.id) && (
-                                                                <div className="mr-chat-indicator-table" title="Active Chat">
+                                                                <div 
+                                                                    className="mr-chat-indicator-table" 
+                                                                    title="Active Chat"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        handleReportClick(report, true);
+                                                                    }}
+                                                                >
                                                                     <FaCommentAlt />
                                                                 </div>
                                                             )}
@@ -209,7 +218,7 @@ const MyReports = () => {
                                     <div 
                                         key={chat.report.id} 
                                         className="mr-chat-item"
-                                        onClick={() => handleReportClick(chat.report)}
+                                        onClick={() => handleReportClick(chat.report, true)}
                                     >
                                         <div className="mr-chat-avatar">
                                             <FaCommentAlt />
@@ -239,6 +248,7 @@ const MyReports = () => {
                     onReject={() => {}}
                     onStatusUpdate={() => {}}
                     onReportUpdated={() => {}}
+                    openChat={openChatDetails}
                 />
             )}
         </div>

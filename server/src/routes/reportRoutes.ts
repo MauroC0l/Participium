@@ -1588,9 +1588,44 @@ router.get('/:id/messages', isLoggedIn, requireTechnicalStaffOrRole([SystemRoles
 router.post(
   '/:id/messages',
   isLoggedIn,
-  requireTechnicalStaffOrRole(),
+  requireTechnicalStaffOrRole([SystemRoles.CITIZEN]),
   validateId('id', 'report'),
   reportController.sendMessage
+);
+
+/**
+ * @swagger
+ * /api/reports/{id}:
+ *   get:
+ *     summary: Get a specific report by ID
+ *     description: Retrieve detailed information about a specific report.
+ *     tags: [Reports]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The ID of the report
+ *     responses:
+ *       200:
+ *         description: Report details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ReportResponse'
+ *       404:
+ *         description: Report not found
+ *       401:
+ *         description: Not authenticated
+ */
+router.get(
+  '/:id',
+  isLoggedIn,
+  validateId('id', 'report'),
+  reportController.getReportById.bind(reportController)
 );
 
 export default router;

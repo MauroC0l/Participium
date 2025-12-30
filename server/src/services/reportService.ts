@@ -322,10 +322,17 @@ class ReportService {
 
   /**
    * Get a specific report by ID
-   * Not yet implemented
+   * @param reportId - The ID of the report to retrieve
+   * @returns The report response
    */
-  async getReportById(): Promise<void> {
-    throw new Error('Not implemented yet');
+  async getReportById(reportId: number): Promise<ReportResponse> {
+    const report = await reportRepository.findReportById(reportId);
+    if (!report) {
+      throw new NotFoundError('Report not found');
+    }
+    
+    const mappedReports = await this.mapReportsWithCompanyNames([report]);
+    return mappedReports[0];
   }
 
   /**
@@ -379,6 +386,13 @@ class ReportService {
           }
           report.assignee = assignee;
           report.assigneeId = assignee.id;
+          
+          // Notify external assignee
+          await createNotification({
+            userId: assignee.id,
+            reportId: report.id,
+            content: "Ti è stato assegnato un nuovo report!"
+          });
         } else {
           const categoryToAssign = body.category || report.category as ReportCategory;
           const roleId = await categoryRoleRepository.findRoleIdByCategory(categoryToAssign);
@@ -391,6 +405,14 @@ class ReportService {
           }
           report.assignee = availableStaff;
           report.assigneeId = availableStaff.id;
+
+          // Notify internal staff
+          await createNotification({
+            userId: availableStaff.id,
+            reportId: report.id,
+            content: "Ti è stato assegnato un nuovo report!"
+          });
+
           if (body.category) {
             report.category = body.category;
           }
@@ -453,12 +475,12 @@ class ReportService {
 
     // Create notification for reporter about status change
     if (report.reporterId) {
-      let statusMessage = `Your report "${report.title}" has changed status: ${previousStatus} → ${newStatus}.`;
+      let statusMessage = `Il tuo report "${report.title}" è passato allo status ${newStatus}.`;
       if (body.resolutionNotes && newStatus === ReportStatus.RESOLVED) {
-        statusMessage += ` Resolution notes: ${body.resolutionNotes}`;
+        statusMessage += ` Note di risoluzione: ${body.resolutionNotes}`;
       }
       if (body.rejectionReason && newStatus === ReportStatus.REJECTED) {
-        statusMessage += ` Rejection reason: ${body.rejectionReason}`;
+        statusMessage += ` Motivo del rifiuto: ${body.rejectionReason}`;
       }
       await createNotification({
         userId: report.reporterId,
@@ -686,20 +708,26 @@ class ReportService {
       throw new NotFoundError('Report not found');
     }
 
-    // Only technical staff assigned to the report can send messages
-    if (report.assigneeId !== senderId) {
-      throw new InsufficientRightsError('Only assigned technical staff can send messages');
+    // Only technical staff assigned to the report or the reporter can send messages
+    if (report.assigneeId !== senderId && report.reporterId !== senderId) {
+      throw new InsufficientRightsError('Only assigned technical staff or the reporter can send messages');
     }
 
     // Save the message
     const message = await messageRepository.createMessage(reportId, senderId, content.trim());
 
-    // Notify the citizen (report.reporterId)
-    if (report.reporterId) {
+    // Notify the other party
+    if (report.reporterId && senderId === report.assigneeId) {
       await createNotification({
         userId: report.reporterId,
         reportId: report.id,
-        content: `You have a new message about your report: "${report.title}"`,
+        content: `Hai ricevuto un nuovo messaggio per il report "${report.title}"`,
+      });
+    } else if (report.assigneeId && senderId === report.reporterId) {
+      await createNotification({
+        userId: report.assigneeId,
+        reportId: report.id,
+        content: `Hai un nuovo messaggio per il report "${report.title}"`,
       });
     }
 
