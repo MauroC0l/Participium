@@ -1,6 +1,10 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import PropTypes from "prop-types";
+import { getNotifications, markAsRead, markAllAsRead } from "../api/notificationApi";
+import { getReportById } from "../api/reportApi";
+import ReportDetails from "./ReportDetails";
+import { FaTimes, FaCheckCircle, FaExclamationTriangle, FaInfoCircle } from "react-icons/fa";
 import "../css/Navbar.css";
 
 // --- UTILITY E HELPER ---
@@ -14,16 +18,165 @@ getInitials.propTypes = {
   lastName: PropTypes.string,
 };
 
+// --- TOAST COMPONENT (Copied from ReportDetails.jsx) ---
+const ToastMessage = ({ message, type, onClose }) => {
+  useEffect(() => {
+      const timer = setTimeout(() => {
+          onClose();
+      }, 3000); // 3 seconds as requested
+      return () => clearTimeout(timer);
+  }, [onClose]);
+
+  const getIconAndClass = (msgType) => {
+      switch (msgType) {
+          case 'error': return { icon: <FaTimes />, className: 'error' }; // Using FaTimes as error icon placeholder if needed
+          case 'warning': return { icon: <FaExclamationTriangle />, className: 'warning' };
+          case 'info': return { icon: <FaInfoCircle />, className: 'info' };
+          case 'success': default: return { icon: <FaCheckCircle />, className: 'success' };
+      }
+  };
+
+  const { icon, className } = getIconAndClass(type);
+
+  return (
+      <div className={`mp-notification ${className}`}>
+          <div className="mp-notification-content">
+              {icon && <span className="mp-notification-icon">{icon}</span>}
+              <span className="mp-notification-message">{message}</span>
+              <button
+                  onClick={onClose}
+                  aria-label="Close notification"
+                  style={{ background: 'none', border: 'none', color: 'inherit', marginLeft: '10px', cursor: 'pointer', fontSize: '1rem' }}
+              >
+                  <FaTimes />
+              </button>
+          </div>
+      </div>
+  );
+};
+
+ToastMessage.propTypes = {
+  message: PropTypes.string.isRequired,
+  type: PropTypes.oneOf(['success', 'error', 'warning', 'info']),
+  onClose: PropTypes.func.isRequired,
+};
+
 // --- COMPONENTE PRINCIPALE ---
 export default function Navbar({ user, onLogout }) {
   const navigate = useNavigate();
   const [scrolled, setScrolled] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [toast, setToast] = useState({ show: false, message: "", type: "" });
+  const [selectedReport, setSelectedReport] = useState(null);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const dropdownRef = useRef(null);
+  const lastNotificationIdRef = useRef(null);
+  const isFirstLoad = useRef(true);
+
+  const showToast = useCallback((message, type = "success") => {
+    setToast({ show: false, message: "", type: "" });
+    setTimeout(() => setToast({ show: true, message, type }), 100);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 10);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowNotifications(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Polling for notifications
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchNotifications = async () => {
+      try {
+        const data = await getNotifications();
+        // Filter only unread notifications as requested
+        const unreadData = data.filter(n => !n.isRead);
+        
+        // Sort by date descending (newest first)
+        unreadData.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+        setNotifications(unreadData);
+        setUnreadCount(unreadData.length);
+
+        // Handle Toast Logic
+        if (isFirstLoad.current) {
+          isFirstLoad.current = false;
+          if (unreadData.length > 0) {
+            lastNotificationIdRef.current = unreadData[0].id;
+          } else {
+            lastNotificationIdRef.current = 0;
+          }
+        } else {
+          if (unreadData.length > 0) {
+            const latestNotification = unreadData[0];
+            // If we have a new notification (ID > last known ID)
+            if (latestNotification.id > (lastNotificationIdRef.current || 0)) {
+              showToast("Hai una nuova notifica!", "info");
+              lastNotificationIdRef.current = latestNotification.id;
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching notifications:", error);
+      }
+    };
+
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 10000); // Poll every 10s
+    return () => clearInterval(interval);
+  }, [user, showToast]);
+
+  const handleNotificationClick = async (notification) => {
+    if (!notification.isRead) {
+      try {
+        await markAsRead(notification.id);
+        setNotifications(prev => prev.map(n => 
+          n.id === notification.id ? { ...n, isRead: true } : n
+        ));
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      } catch (error) {
+        console.error("Error marking notification as read:", error);
+      }
+    }
+    
+    if (notification.reportId) {
+      try {
+        const report = await getReportById(notification.reportId);
+        setSelectedReport(report);
+        setShowReportModal(true);
+        setShowNotifications(false);
+      } catch (error) {
+        console.error("Error fetching report details:", error);
+        showToast("Impossibile caricare i dettagli del report", "error");
+      }
+    }
+  };
+
+  const handleMarkAllRead = async (e) => {
+    e.stopPropagation();
+    try {
+      await markAllAsRead();
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+      setUnreadCount(0);
+    } catch (error) {
+      console.error("Error marking all as read:", error);
+    }
+  };
 
   // 2. Info Utente Derivate (uso useMemo per la stabilità)
   const userRoles = useMemo(() => user?.roles || [], [user]);
@@ -115,6 +268,52 @@ export default function Navbar({ user, onLogout }) {
         {user && (
           <div className="navbar-right-section">
             
+            {/* Notification Bell */}
+            <div className="notification-wrapper" ref={dropdownRef}>
+              <button 
+                className="notification-btn" 
+                onClick={() => setShowNotifications(!showNotifications)}
+                title="Notifications"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                </svg>
+                {unreadCount > 0 && <span className="notification-badge">{unreadCount}</span>}
+              </button>
+
+              {showNotifications && (
+                <div className="notification-dropdown">
+                  <div className="notification-header">
+                    <h3>Notifications</h3>
+                    {unreadCount > 0 && (
+                      <button className="mark-all-read" onClick={handleMarkAllRead}>
+                        Mark all read
+                      </button>
+                    )}
+                  </div>
+                  <div className="notification-list">
+                    {notifications.length === 0 ? (
+                      <div className="no-notifications">No notifications</div>
+                    ) : (
+                      notifications.map(notification => (
+                        <div 
+                          key={notification.id} 
+                          className={`notification-item ${!notification.isRead ? 'unread' : ''}`}
+                          onClick={() => handleNotificationClick(notification)}
+                        >
+                          <p className="notification-message">{notification.content}</p>
+                          <span className="notification-time">
+                            {new Date(notification.createdAt).toLocaleString()}
+                          </span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* MODIFIED: User Info Card is now clickable */}
             <div 
                 className="user-info-card clickable-profile" 
@@ -159,6 +358,29 @@ export default function Navbar({ user, onLogout }) {
           </div>
         )}
       </div>
+      {toast.show && (
+        <ToastMessage
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast({ ...toast, show: false })}
+        />
+      )}
+
+      {/* Report Details Modal */}
+      {selectedReport && (
+        <ReportDetails
+          show={showReportModal}
+          onHide={() => setShowReportModal(false)}
+          report={selectedReport}
+          user={user}
+          // Pass dummy handlers or implement if needed for Navbar context
+          onApprove={() => {}}
+          onReject={() => {}}
+          onStatusUpdate={() => {}}
+          onReportUpdated={(updatedReport) => setSelectedReport(updatedReport)}
+          openChat={true} // Open chat by default if coming from notification? Maybe useful.
+        />
+      )}
     </nav>
   );
 }

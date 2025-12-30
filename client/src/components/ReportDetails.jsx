@@ -77,11 +77,13 @@ const ReportDetails = ({
     onReject,
     onStatusUpdate,
     onReportUpdated,
+    openChat = false
 }) => {
     // NEW STATE: Keeps the report updated inside the modal
     const [report, setReport] = useState(initialReport);
     const [currentUserId, setCurrentUserId] = useState(null);
     const [currentUserRoles, setCurrentUserRoles] = useState([]);
+    const [fetchedUser, setFetchedUser] = useState(null);
     const [selectedImage, setSelectedImage] = useState(null);
     const [showImageModal, setShowImageModal] = useState(false);
     const [showMap, setShowMap] = useState(false);
@@ -127,15 +129,18 @@ const ReportDetails = ({
                 try {
                     const userData = await getCurrentUser();
                     if (userData && userData.id) {
+                        setFetchedUser(userData);
                         setCurrentUserId(userData.id);
                         const roles = userData.roles ? userData.roles.map(r => r.role_name) : ['citizen'];
                         setCurrentUserRoles(roles);
                     } else {
+                        setFetchedUser(null);
                         setCurrentUserId(null);
                         setCurrentUserRoles(['citizen']);
                     }
                 } catch (error) {
                     console.error("Error fetching user:", error);
+                    setFetchedUser(null);
                     setCurrentUserId(null);
                     setCurrentUserRoles(['citizen']);
                 }
@@ -192,7 +197,7 @@ const ReportDetails = ({
                         {/* --- LEFT COLUMN: GENERAL DETAILS & COMMENTS --- */}
                         <ReportMainContent
                             report={report}
-                            user={user}
+                            user={fetchedUser || user}
                             currentUserId={currentUserId}
                             onApprove={onApprove}
                             onReject={onReject}
@@ -204,6 +209,7 @@ const ReportDetails = ({
                             mapCoordinates={mapCoordinates}
                             showToast={showToast}
                             showComments={showRestrictedContent}
+                            openChat={openChat}
                         />
 
                         {/* --- RIGHT COLUMN: SIDEBAR --- */}
@@ -264,6 +270,7 @@ ReportDetails.propTypes = {
     onReject: PropTypes.func.isRequired,
     onStatusUpdate: PropTypes.func.isRequired,
     onReportUpdated: PropTypes.func, // Can be optional if not always necessary to notify the parent
+    openChat: PropTypes.bool,
 };
 
 export default ReportDetails;

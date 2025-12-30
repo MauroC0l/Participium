@@ -263,7 +263,8 @@ const getViews = (user) => {
             fetchMethod: 'getAll',
             fixedCategory: null,
             availableStatuses: ALL_STATUSES,
-            canFilterCategory: true
+            canFilterCategory: true,
+            defaultStatus: 'Pending Approval'
         });
     }
 
@@ -275,7 +276,8 @@ const getViews = (user) => {
             fetchMethod: 'none',
             fixedCategory: null,
             availableStatuses: [],
-            canFilterCategory: false
+            canFilterCategory: false,
+            defaultStatus: ''
         });
     }
 
@@ -295,7 +297,8 @@ const getViews = (user) => {
                     fetchMethod: 'getAssigned',
                     fixedCategory: category,
                     availableStatuses: STAFF_MEMBER_STATUSES_LIST,
-                    canFilterCategory: false
+                    canFilterCategory: false,
+                    defaultStatus: ''
                 });
             }
         }
@@ -320,18 +323,20 @@ export default function MunicipalityUserHome({ user }) {
     , [views, activeViewKey]);
 
     // 4. Filters State
-    const [categoryFilter, setCategoryFilter] = useState("");
-    const [statusFilter, setStatusFilter] = useState("");
+    const [categoryFilter, setCategoryFilter] = useState(() => {
+        const initialView = views.length > 0 ? views[0] : null;
+        return initialView?.fixedCategory || "";
+    });
+    const [statusFilter, setStatusFilter] = useState(() => {
+        const initialView = views.length > 0 ? views[0] : null;
+        return initialView?.defaultStatus || "";
+    });
 
     // Effect to reset/set filters when currentView changes
     useEffect(() => {
         if (currentView) {
             setCategoryFilter(currentView.fixedCategory || "");
-            if (currentView.key === 'global') {
-                 setStatusFilter("Pending Approval");
-            } else {
-                 setStatusFilter(""); // All Statuses for staff view
-            }
+            setStatusFilter(currentView.defaultStatus || "");
         }
     }, [currentView]);
 

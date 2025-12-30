@@ -22,7 +22,8 @@ const ReportMainContent = ({
     showMap,
     mapCoordinates,
     showComments,
-    showToast
+    showToast,
+    openChat = false
 }) => {
     // Stati per le azioni
     const [isRejecting, setIsRejecting] = useState(false);
@@ -169,7 +170,12 @@ const ReportMainContent = ({
 
                 {/* === CITIZEN CHAT === */}
                 {(isCitizen || isOfficer || isExternalAssignee) && (
-                    <CitizenChat reportId={report.id} currentUserId={currentUserId} isCitizen={isCitizen} />
+                    <CitizenChat 
+                        reportId={report.id} 
+                        currentUserId={currentUserId} 
+                        isCitizen={isCitizen} 
+                        initiallyExpanded={openChat}
+                    />
                 )}
 
                 {/* === COMMENTS COMPONENT === */}
@@ -273,6 +279,7 @@ ReportMainContent.propTypes = {
     showMap: PropTypes.bool.isRequired,
     mapCoordinates: PropTypes.arrayOf(PropTypes.number),
     showComments: PropTypes.bool.isRequired,
+    openChat: PropTypes.bool,
 };
 
 ReportMainContent.defaultProps = {

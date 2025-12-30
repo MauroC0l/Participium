@@ -34,6 +34,16 @@
   }
 }
 
+@media (max-width: 576px) {
+  .mp-filters-bar {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+  .mp-grid-item.search-item {
+    grid-column: span 1;
+  }
+}
+
 .mp-grid-item { 
   width: 100%; 
   min-width: 0; 
