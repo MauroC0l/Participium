@@ -284,7 +284,7 @@ class UserService {
     logInfo(`User profile updated: ${updatedUser.username} (ID: ${userId})`);
 
     // Format response (convert to snake_case for API consistency)
-    return this.formatUserProfileResponse(updatedUser);
+    return mapUserEntityToUserResponse(updatedUser);
   }
 
   /**
@@ -348,25 +348,7 @@ class UserService {
     }
   }
 
-  /**
-   * Format user response with snake_case fields
-   */
-  private formatUserProfileResponse(user: UserEntity): any {
-    // Get the primary role (first role)
-    const primaryRole = user. userRoles?.[0]?.departmentRole?. role?. name || 'Citizen';
 
-    return {
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      first_name: user.firstName,
-      last_name: user.lastName,
-      personal_photo_url: user.personalPhotoUrl,
-      telegram_username: user.telegramUsername,
-      email_notifications_enabled:  user.emailNotificationsEnabled,
-      role_name: primaryRole
-    };
-  }
   /**
    * Gets user by ID
    * @param userId User ID
