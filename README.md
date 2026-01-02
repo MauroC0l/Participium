@@ -12,7 +12,7 @@
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-org/Participium.git
+git clone [https://github.com/your-org/Participium.git](https://github.com/your-org/Participium.git)
 cd Participium
 ```
 
@@ -27,7 +27,7 @@ docker-compose up -d
 
 This will:
 - Start **PostgreSQL 15** with **PostGIS** extension on port `5433`
-- Automatically execute [`server/src/database/init.sql`](server/src/database/init.sql) to create tables and enums
+- Automatically execute [`server/src/database/init.sql`](https://www.google.com/search?q=server/src/database/init.sql) to create tables and enums
 - Create the database `participium_db` with user `user` / password `password`
 
 **Check if the database is running:**
@@ -46,17 +46,26 @@ From the server directory install dependencies:
 npm install
 ```
 
-#### Configure environment variables:
+#### Configure Environment Variables
 
-Create a `.env` file in the `server/` directory:
+For security reasons, the `.env` files containing secrets are not included in the repository. You need to create them from the provided example files.
 
-```env
-PORT=3001
-DB_HOST=localhost
-DB_PORT=5433
-DB_USER=user
-DB_PASSWORD=password
-DB_NAME=participium_db
+**1. Development Configuration:**
+
+Copy the example file to create your local `.env`:
+
+```bash
+cp .env.example .env
+```
+
+Open the newly created `.env` file and update the variables with your real credentials (especially `EMAIL_PASS` and `TELEGRAM_BOT_TOKEN`).
+
+**2. Test Configuration:**
+
+To run automated tests, you must also configure the test environment variables:
+
+```bash
+cp .env.test.example .env.test
 ```
 
 #### Start development server:
@@ -67,19 +76,18 @@ npm run dev
 
 The backend will start on **`http://localhost:3001`**
 
-**API Documentation (Swagger):** [`http://localhost:3001/api-docs`](http://localhost:3001/api-docs)
+**API Documentation (Swagger):** [`http://localhost:3001/api-docs`](https://www.google.com/search?q=http://localhost:3001/api-docs)
 
-**OpenAPI Specification:** [`server/openapi.yaml`](server/openapi.yaml)
-
+**OpenAPI Specification:** [`server/openapi.yaml`](https://www.google.com/search?q=server/openapi.yaml)
 
 #### Photo Storage
 
 **How it works:**
+
 - Every photo uploaded via the app is saved inside the backend container, in `/app/uploads/reports/{reportId}/`.
 - There is **no synchronization** with your local filesystem and **no cloud storage**: all images live only in the container.
 - The backend automatically serves images via the API endpoint:
-
-  `http://localhost:3001/uploads/reports/{reportId}/{filename}`
+`http://localhost:3001/uploads/reports/{reportId}/{filename}`
 
 **Usage:**
 - To display a photo in the frontend, use the above URL format (replace `{reportId}` and `{filename}` with actual values).
@@ -100,7 +108,7 @@ The database is pre-populated with default users for testing and development pur
 - **External Maintainers:** `enelx`, `acea`, `hera`, `atm` / `password`
 - **Citizens:** `user`, `user2` / `password`
 
-**Complete user list with roles and departments:** [`server/src/docs/default-users.md`](server/src/docs/default-users.md)
+**Complete user list with roles and departments:** [`server/src/docs/default-users.md`](https://www.google.com/search?q=server/src/docs/default-users.md)
 
 **Login via API (example):**
 ```bash
@@ -125,7 +133,6 @@ npm run dev
 ```
 
 The frontend will start on **`http://localhost:5173`**
-
 
 ## Testing
 
@@ -159,7 +166,6 @@ npm run test:coverage
 
 View coverage report: `server/coverage/index.html`
 
-
 ## Database Management
 
 ### Reset Database (deletes all data)
@@ -187,8 +193,7 @@ docker-compose logs -f db
 
 The database uses PostgreSQL with PostGIS for geolocation features.
 
-**Detailed schema documentation:** [`server/src/docs/database.md`](server/src/docs/database.md)
-
+**Detailed schema documentation:** [`server/src/docs/database.md`](https://www.google.com/search?q=server/src/docs/database.md)
 
 ## Deployment
 
@@ -209,12 +214,14 @@ This command will automatically:
 - Create an internal network connecting all services.
 
 ### Access the Application
+
 Once the containers are running, the application is accessible at:
 - **Web Interface (Frontend)**: http://localhost (Served on standard HTTP port 80)
 - **Backend API**: http://localhost:3001
-- **API Documentation**: http://localhost:3001/api-docs
+- **API Documentation**: https://www.google.com/search?q=http://localhost:3001/api-docs
 
 ### Stop the Application
+
 To stop the containers and remove the networks (data in the database volume will be preserved):
 
 ```bash

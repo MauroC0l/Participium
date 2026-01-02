@@ -16,3 +16,9 @@ uploads/
 # Others
 database-workflow-guide.md
 dockerization.md
+
+# Environment variables
+.env
+.env.test
+.env.production
+.env.local
