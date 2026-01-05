@@ -190,9 +190,9 @@ router.post('/', requireRole(SystemRoles.CITIZEN), validateCreateReport, reportC
  *       Returns the list of all reports with their geographic coordinates.
  *       Coordinates are provided in WGS84 format (OpenStreetMap standard).
  *       
+ *       **Public Access:** This endpoint does NOT require authentication and is accessible to unregistered users.
+ *       
  *     tags: [Reports]
- *     security:
- *       - cookieAuth: []
  *     parameters:
  *       - in: query
  *         name: status
@@ -215,16 +215,6 @@ router.post('/', requireRole(SystemRoles.CITIZEN), validateCreateReport, reportC
  *               type: array
  *               items:
  *                 $ref: '#/components/schemas/ReportResponse'
- *       401:
- *         description: User not authenticated
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *             example:
- *               code: 401
- *               name: "UnauthorizedError"
- *               message: "User not authenticated"
  *       500:
  *         description: Internal server error
  *         content:
@@ -236,7 +226,10 @@ router.post('/', requireRole(SystemRoles.CITIZEN), validateCreateReport, reportC
  *               name: "InternalServerError"
  *               message: "An unexpected error occurred"
  */
-router.get('/', isLoggedIn, validateReportStatus, validateReportCategory, reportController.getAllReports);
+router.get('/', validateReportStatus, validateReportCategory, reportController.getAllReports);
+
+router.get('/me', isLoggedIn, reportController.getMyReports);
+
 
 /**
  * @swagger
@@ -392,7 +385,8 @@ router.get('/', isLoggedIn, validateReportStatus, validateReportCategory, report
  *               name: "InternalServerError"
  *               message: "An unexpected error occurred while searching reports"
  */
-router.get('/search', reportController.getReportByAddress);
+// Instead of this route, use /api/proxy/coordinates (available in geocodingRoutes.ts file)
+//router.get('/search', reportController.getReportByAddress);
 
 /**
  * @swagger
@@ -1594,9 +1588,44 @@ router.get('/:id/messages', isLoggedIn, requireTechnicalStaffOrRole([SystemRoles
 router.post(
   '/:id/messages',
   isLoggedIn,
-  requireTechnicalStaffOrRole(),
+  requireTechnicalStaffOrRole([SystemRoles.CITIZEN]),
   validateId('id', 'report'),
   reportController.sendMessage
+);
+
+/**
+ * @swagger
+ * /api/reports/{id}:
+ *   get:
+ *     summary: Get a specific report by ID
+ *     description: Retrieve detailed information about a specific report.
+ *     tags: [Reports]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The ID of the report
+ *     responses:
+ *       200:
+ *         description: Report details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ReportResponse'
+ *       404:
+ *         description: Report not found
+ *       401:
+ *         description: Not authenticated
+ */
+router.get(
+  '/:id',
+  isLoggedIn,
+  validateId('id', 'report'),
+  reportController.getReportById.bind(reportController)
 );
 
 export default router;

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   MapContainer,
   TileLayer,
@@ -17,6 +18,7 @@ import {
   FaArrowRight,
   FaExternalLinkAlt,
   FaTimes,
+  FaLock,
 } from "react-icons/fa";
 
 // IMPORT API
@@ -24,6 +26,7 @@ import {
   getAllCategories,
   getReports,
   getAddressFromCoordinates,
+  getCoordinatesFromAddress,
   getReportsByAddress,
 } from "../api/reportApi";
 import { getCurrentUser } from "../api/authApi";
@@ -32,7 +35,12 @@ import { getCurrentUser } from "../api/authApi";
 import "../css/MapPage.css";
 import ReportDetails from "../components/ReportDetails";
 import MapFiltersBar from "../components/MapFiltersBar";
-import MapReportForm from "../components/MapReportForm"; 
+import MapReportForm from "../components/MapReportForm";
+import {
+  MARKER_ASSETS,
+  STATUS_LEGEND_ITEMS,
+  getStatusColor,
+} from "../utils/statusStyles";
 
 // --- ICON CONFIGURATION ---
 const createIcon = (colorUrl) => {
@@ -48,13 +56,13 @@ const createIcon = (colorUrl) => {
 };
 
 const Icons = {
-  blue: createIcon("/marker/marker_blue.png"),
-  green: createIcon("/marker/marker_green.png"),
-  orange: createIcon("/marker/marker_orange.png"),
-  yellow: createIcon("/marker/marker_yellow.png"),
-  red: createIcon("/marker/marker_red.png"),
-  grey: createIcon("/marker/marker_grey.png"),
-  black: createIcon("/marker/marker_black.png"),
+  blue: createIcon(MARKER_ASSETS.blue),
+  green: createIcon(MARKER_ASSETS.green),
+  orange: createIcon(MARKER_ASSETS.orange),
+  yellow: createIcon(MARKER_ASSETS.yellow),
+  red: createIcon(MARKER_ASSETS.red),
+  grey: createIcon(MARKER_ASSETS.grey),
+  black: createIcon(MARKER_ASSETS.black),
 };
 
 L.Marker.prototype.options.icon = Icons.blue;
@@ -115,8 +123,11 @@ const FormError = ({ message }) => (
 );
 
 const MapPage = () => {
+  const navigate = useNavigate();
   // --- Refs & Map Instance ---
   const [mapInstance, setMapInstance] = useState(null);
+  const [isMapReady, setIsMapReady] = useState(false);
+  const [pendingZoom, setPendingZoom] = useState(null);
   const formSectionRef = useRef(null);
 
   // --- States ---
@@ -140,7 +151,7 @@ const MapPage = () => {
   const [categories, setCategories] = useState([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   const [isLoadingMap, setIsLoadingMap] = useState(true);
-  
+
   // Logic for address calculation kept here as it depends on marker
   const [isLoadingAddress, setIsLoadingAddress] = useState(false);
   const [currentAddress, setCurrentAddress] = useState("");
@@ -148,16 +159,28 @@ const MapPage = () => {
 
   const [selectedReport, setSelectedReport] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showLegendPanel, setShowLegendPanel] = useState(false);
+
+  const handleLegendToggle = (event) => {
+    if (event) {
+      event.stopPropagation();
+    }
+    setShowLegendPanel((prev) => !prev);
+  };
+
+  const stopLegendPropagation = (event) => {
+    if (event) {
+      event.stopPropagation();
+    }
+  };
 
   // --- AUTO DISMISS NOTIFICATION EFFECT ---
-  // Questa logica assicura che QUALSIASI notifica scompaia dopo 4 secondi
   useEffect(() => {
     if (notification) {
       const timer = setTimeout(() => {
         setNotification(null);
-      }, 4000); // 4 secondi fissi per tutti i messaggi
-
-      // Cleanup: se la notifica cambia prima dei 4 secondi, resetta il timer
+      }, 4000);
       return () => clearTimeout(timer);
     }
   }, [notification]);
@@ -165,13 +188,21 @@ const MapPage = () => {
   // --- LOGICA COLORE MARKER ---
   const getMarkerIcon = (status) => {
     switch (status) {
-      case "Resolved": return Icons.green;
-      case "Assigned": return Icons.blue;
-      case "In Progress": return Icons.orange;
-      case "Pending Approval": return Icons.yellow;
-      case "Suspended": return Icons.grey;
-      case "Rejected": return Icons.black;
-      case "Open": default: return Icons.blue;
+      case "Resolved":
+        return Icons.green;
+      case "Assigned":
+        return Icons.blue;
+      case "In Progress":
+        return Icons.orange;
+      case "Pending Approval":
+        return Icons.yellow;
+      case "Suspended":
+        return Icons.grey;
+      case "Rejected":
+        return Icons.black;
+      case "Open":
+      default:
+        return Icons.blue;
     }
   };
 
@@ -214,6 +245,42 @@ const MapPage = () => {
     }
   }, [showForm, mapInstance, marker]);
 
+  // Mark when map is ready
+  useEffect(() => {
+    if (mapInstance && !isMapReady) {
+      const timer = setTimeout(() => setIsMapReady(true), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [mapInstance, isMapReady]);
+
+  // Execute pending zoom when map is ready
+  useEffect(() => {
+    if (isMapReady && pendingZoom && mapInstance) {
+      const timer = setTimeout(() => {
+        try {
+          if (pendingZoom.boundingbox && pendingZoom.boundingbox.length === 4) {
+            // Zoom to bounding box to show entire street/course
+            const [south, north, west, east] =
+              pendingZoom.boundingbox.map(parseFloat);
+            mapInstance.fitBounds(
+              [
+                [south, west],
+                [north, east],
+              ],
+              { padding: [30, 30], maxZoom: 19 }
+            );
+          } else {
+            // Single point zoom
+            mapInstance.setView([pendingZoom.lat, pendingZoom.lng], 19);
+          }
+        } finally {
+          setPendingZoom(null);
+        }
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isMapReady, pendingZoom, mapInstance]);
+
   // Load Initial Data
   useEffect(() => {
     const fetchCurrentUser = async () => {
@@ -221,7 +288,9 @@ const MapPage = () => {
         const user = await getCurrentUser();
         setCurrentUser(user);
       } catch (error) {
-        console.error("Error fetching current user:", error);
+        if (error.status !== 401) {
+          console.error("Error fetching current user:", error);
+        }
       }
     };
     fetchCurrentUser();
@@ -248,7 +317,6 @@ const MapPage = () => {
 
   const refreshReports = async () => {
     try {
-      // Se stiamo "resettando" o caricando all'inizio
       const data = await getReports();
       if (Array.isArray(data)) setExistingReports(data);
     } catch {
@@ -263,37 +331,68 @@ const MapPage = () => {
     refreshReports();
   }, []);
 
-  // --- HANDLER RICERCA INDIRIZZO ---
+  // Address search handler
   const handleAddressSearch = async (searchText) => {
-    // Se la barra di ricerca è vuota, ricarichiamo tutti i report
-    if (!searchText || searchText.trim() === "") {
-      await refreshReports();
+    if (!searchText || searchText.trim() === "") return;
+
+    if (!mapInstance || !isMapReady) {
+      setNotification({
+        message: "Map is loading, please wait...",
+        type: "warning",
+      });
       return;
     }
 
     try {
       setIsLoadingMap(true);
-      const results = await getReportsByAddress(searchText);
-      
-      if (Array.isArray(results)) {
-        setExistingReports(results);
-        
-        // Notifica per risultati vuoti
-        if (results.length === 0) {
-          setNotification({
-            message: `No reports found for "${searchText}".`,
-            type: "info",
-          });
+      const coordinates = await getCoordinatesFromAddress(searchText);
+
+      if (coordinates && coordinates.lat && coordinates.lng) {
+        // Include bounding box only for street names (not specific addresses)
+        setPendingZoom({
+          lat: coordinates.lat,
+          lng: coordinates.lng,
+          boundingbox: coordinates.isSpecificAddress
+            ? null
+            : coordinates.boundingbox,
+        });
+
+        // Build a concise address string (road + house number)
+        let addressText = "";
+        let notificationType = "info";
+        let notificationMessage = "";
+
+        if (coordinates.road) {
+          addressText = coordinates.road;
+          if (coordinates.house_number) {
+            addressText += `, ${coordinates.house_number}`;
+          } else if (
+            coordinates.houseNumberNotFound &&
+            coordinates.requestedHouseNumber
+          ) {
+            // House number was requested but not found in OpenStreetMap
+            notificationType = "warning";
+            notificationMessage = `House number ${coordinates.requestedHouseNumber} not found. Showing ${addressText} instead.`;
+          }
         } else {
-           // Opzionale: Se volessimo centrare la mappa sul primo risultato
-           // servirebbe estrarre le coordinate e usare mapInstance.flyTo
+          // Fallback to display_name if road is not available
+          addressText = coordinates.display_name;
         }
+
+        // Use custom message if set, otherwise build default message
+        if (!notificationMessage) {
+          notificationMessage = `Showing location: ${addressText}`;
+        }
+
+        setNotification({
+          message: notificationMessage,
+          type: notificationType,
+        });
       }
     } catch (error) {
-      console.error("Search error:", error);
       setNotification({
-        message: "Error searching for reports.",
-        type: "error",
+        message: `Address "${searchText}" not found.`,
+        type: "warning",
       });
     } finally {
       setIsLoadingMap(false);
@@ -349,7 +448,7 @@ const MapPage = () => {
     loadBoundaries();
   }, []);
 
-  // --- Effect per calcolare l'indirizzo ---
+  // --- Effect to calculate the address ---
   useEffect(() => {
     if (marker) {
       const fetchAddress = async () => {
@@ -396,11 +495,14 @@ const MapPage = () => {
         message: "You can only report issues within the boundaries of Turin.",
         type: "error",
       });
-      // Il setTimeout manuale è stato rimosso, gestito dall'useEffect
     }
   };
 
   const handleStartReport = () => {
+    if (!currentUser) {
+      setShowLoginModal(true);
+      return;
+    }
     setShowForm(true);
   };
 
@@ -413,7 +515,6 @@ const MapPage = () => {
 
     if (showInfoNotification) {
       setNotification({ message: "Selection cleared.", type: "info" });
-      // Il setTimeout manuale è stato rimosso, gestito dall'useEffect
     }
   };
 
@@ -461,16 +562,6 @@ const MapPage = () => {
     });
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "Resolved": return "#28a745";
-      case "Rejected": return "#dc3545";
-      case "Assigned": return "#007bff";
-      case "Pending Approval": return "#ffc107";
-      default: return "#fd7e14";
-    }
-  };
-
   // --- FILTER LOGIC ---
   const filteredReports = existingReports.filter((report) => {
     if (hideReports) return false;
@@ -481,10 +572,7 @@ const MapPage = () => {
       if (!currentUser) return false;
       return report.reporterId === currentUser.id;
     }
-    if (
-      report.status === "Pending Approval" ||
-      report.status === "Rejected"
-    )
+    if (report.status === "Pending Approval" || report.status === "Rejected")
       return false;
     return true;
   });
@@ -496,10 +584,10 @@ const MapPage = () => {
         <div className="mp-header-content">
           <h1 className="mp-header-title">
             <FaMap className="mp-title-icon" />
-            Turin Map - Your Reports
+            Turin Map - All Reports
           </h1>
           <p className="mp-header-subtitle">
-            View the status of your reports or create a new one by selecting on
+            View the status of all reports or create a new one by selecting on
             the map.
           </p>
         </div>
@@ -532,13 +620,11 @@ const MapPage = () => {
             setViewMode={setViewMode}
             hideReports={hideReports}
             setHideReports={setHideReports}
-            onSearch={handleAddressSearch} // Passata la funzione di ricerca
+            onSearch={handleAddressSearch}
           />
 
           {/* --- SPLIT LAYOUT CONTAINER --- */}
-          <div
-            className={`mp-content-split ${showForm ? "is-open" : ""}`}
-          >
+          <div className={`mp-content-split ${showForm ? "is-open" : ""}`}>
             {/* LEFT COLUMN: MAP */}
             <div className="mp-map-column">
               <div className="mp-container">
@@ -548,172 +634,207 @@ const MapPage = () => {
                     <p>Loading map...</p>
                   </div>
                 ) : (
-                  <MapContainer
-                    className={`mp-leaflet-map ${
-                      showForm ? "is-locked" : ""
-                    }`}
-                    center={torinoCenter}
-                    zoom={12}
-                    scrollWheelZoom={true}
-                    maxBounds={turinBounds}
-                    maxBoundsViscosity={1.0}
-                    ref={setMapInstance}
-                  >
-                    <TileLayer
-                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    />
-
-                    <MapClickHandler
-                      onMapClick={handleMapClick}
-                      turinPolygons={turinPolygons}
-                    />
-
-                    {renderPolygons()}
-
-                    <MarkerClusterGroup
-                      chunkedLoading
-                      spiderfyOnMaxZoom={true}
-                      maxClusterRadius={40}
-                      iconCreateFunction={(cluster) => {
-                        const count = cluster.getChildCount();
-                        return L.divIcon({
-                          html: `<div class="mp-cluster-icon">${count}</div>`,
-                          className: "mp-cluster-marker",
-                          iconSize: L.point(50, 50),
-                        });
-                      }}
+                  <>
+                    <MapContainer
+                      className={`mp-leaflet-map ${
+                        showForm ? "is-locked" : ""
+                      }`}
+                      center={torinoCenter}
+                      zoom={12}
+                      scrollWheelZoom={true}
+                      maxBounds={turinBounds}
+                      maxBoundsViscosity={1.0}
+                      ref={setMapInstance}
                     >
-                      {filteredReports.map((report) => {
-                        const position = getLatLngFromReport(report);
-                        if (!position) return null;
+                      <TileLayer
+                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                      />
 
-                        return (
-                          <Marker
-                            key={report.id}
-                            position={position}
-                            icon={getMarkerIcon(report.status)}
-                            eventHandlers={{
-                              click: () => {
-                                setSelectedReport(report);
-                                setShowDetailModal(true);
-                              },
-                            }}
-                          >
-                            <Tooltip
-                              direction="top"
-                              offset={[0, -28]}
-                              opacity={1}
-                            >
-                              <div
-                                className="mp-tooltip-content"
-                                style={{
-                                  textAlign: "center",
-                                  minWidth: "120px",
-                                }}
-                              >
-                                <div
-                                  style={{
-                                    fontWeight: "bold",
-                                    fontSize: "14px",
-                                    marginBottom: "2px",
-                                  }}
-                                >
-                                  {report.title}
-                                </div>
-                                <div
-                                  style={{
-                                    fontSize: "11px",
-                                    color: "#666",
-                                    marginBottom: "4px",
-                                  }}
-                                >
-                                  {report.category}
-                                </div>
-                                <div
-                                  style={{
-                                    fontSize: "11px",
-                                    fontWeight: "600",
-                                    color: getStatusColor(
-                                      report.status
-                                    ),
-                                    border: `1px solid ${getStatusColor(
-                                      report.status
-                                    )}`,
-                                    borderRadius: "4px",
-                                    padding: "2px 6px",
-                                    display: "inline-block",
-                                  }}
-                                >
-                                  {report.status}
-                                </div>
-                                <div
-                                  style={{
-                                    marginTop: "6px",
-                                    fontSize: "10px",
-                                    color: "var(--brand-red)",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    gap: "4px",
-                                  }}
-                                >
-                                  <FaExternalLinkAlt size={10} />{" "}
-                                  Click for details
-                                </div>
-                              </div>
-                            </Tooltip>
-                          </Marker>
-                        );
-                      })}
-                    </MarkerClusterGroup>
+                      <MapClickHandler
+                        onMapClick={handleMapClick}
+                        turinPolygons={turinPolygons}
+                      />
 
-                    {marker && (
-                      <Marker
-                        key={`new-${marker.id}`}
-                        position={[marker.lat, marker.lng]}
-                        icon={Icons.red}
-                        zIndexOffset={1000}
-                        eventHandlers={{
-                          click: () => {
-                            handleClear(false);
-                          },
+                      {renderPolygons()}
+
+                      <MarkerClusterGroup
+                        chunkedLoading
+                        spiderfyOnMaxZoom={true}
+                        maxClusterRadius={40}
+                        iconCreateFunction={(cluster) => {
+                          const count = cluster.getChildCount();
+                          return L.divIcon({
+                            html: `<div class="mp-cluster-icon">${count}</div>`,
+                            className: "mp-cluster-marker",
+                            iconSize: L.point(50, 50),
+                          });
                         }}
                       >
-                        <Tooltip
-                          permanent
-                          direction="top"
-                          offset={[0, -28]}
+                        {filteredReports.map((report) => {
+                          const position = getLatLngFromReport(report);
+                          if (!position) return null;
+
+                          return (
+                            <Marker
+                              key={report.id}
+                              position={position}
+                              icon={getMarkerIcon(report.status)}
+                              eventHandlers={{
+                                click: () => {
+                                  setSelectedReport(report);
+                                  setShowDetailModal(true);
+                                },
+                              }}
+                            >
+                              <Tooltip
+                                direction="top"
+                                offset={[0, -28]}
+                                opacity={1}
+                              >
+                                <div
+                                  className="mp-tooltip-content"
+                                  style={{
+                                    textAlign: "center",
+                                    minWidth: "120px",
+                                  }}
+                                >
+                                  <div
+                                    style={{
+                                      fontWeight: "bold",
+                                      fontSize: "14px",
+                                      marginBottom: "2px",
+                                    }}
+                                  >
+                                    {report.title}
+                                  </div>
+                                  <div
+                                    style={{
+                                      fontSize: "11px",
+                                      color: "#666",
+                                      marginBottom: "4px",
+                                    }}
+                                  >
+                                    {report.category}
+                                  </div>
+                                  <div
+                                    style={{
+                                      fontSize: "11px",
+                                      fontWeight: "600",
+                                      color: getStatusColor(report.status),
+                                      border: `1px solid ${getStatusColor(
+                                        report.status
+                                      )}`,
+                                      borderRadius: "4px",
+                                      padding: "2px 6px",
+                                      display: "inline-block",
+                                    }}
+                                  >
+                                    {report.status}
+                                  </div>
+                                  <div
+                                    style={{
+                                      marginTop: "6px",
+                                      fontSize: "10px",
+                                      color: "var(--brand-red)",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                      gap: "4px",
+                                    }}
+                                  >
+                                    <FaExternalLinkAlt size={10} />
+                                    Click for details
+                                  </div>
+                                </div>
+                              </Tooltip>
+                            </Marker>
+                          );
+                        })}
+                      </MarkerClusterGroup>
+
+                      {marker && (
+                        <Marker
+                          key={`new-${marker.id}`}
+                          position={[marker.lat, marker.lng]}
+                          icon={Icons.red}
+                          zIndexOffset={1000}
+                          eventHandlers={{
+                            click: () => {
+                              handleClear(false);
+                            },
+                          }}
                         >
-                          <b>
-                            {isLoadingAddress
-                              ? "Locating..."
-                              : currentAddress || "Location Selected"}
-                          </b>
-                          <br />
-                          {!showForm ? (
-                            <span
-                              style={{
-                                fontSize: "0.8em",
-                                color: "#666",
-                              }}
-                            >
-                              Click marker to remove
-                            </span>
-                          ) : (
-                            <span
-                              style={{
-                                fontSize: "0.8em",
-                                color: "var(--brand-red)",
-                              }}
-                            >
-                              Position Locked
-                            </span>
-                          )}
-                        </Tooltip>
-                      </Marker>
-                    )}
-                  </MapContainer>
+                          <Tooltip permanent direction="top" offset={[0, -28]}>
+                            <b>
+                              {isLoadingAddress
+                                ? "Locating..."
+                                : currentAddress || "Location Selected"}
+                            </b>
+                            <br />
+                            {!showForm ? (
+                              <span
+                                style={{
+                                  fontSize: "0.8em",
+                                  color: "#666",
+                                }}
+                              >
+                                Click marker to remove
+                              </span>
+                            ) : (
+                              <span
+                                style={{
+                                  fontSize: "0.8em",
+                                  color: "var(--brand-red)",
+                                }}
+                              >
+                                Position Locked
+                              </span>
+                            )}
+                          </Tooltip>
+                        </Marker>
+                      )}
+
+                      {/* Map children */}
+                    </MapContainer>
+                    {/* Info Button for Legend */}
+                    <div className="mp-map-info-button">
+                      <button
+                        type="button"
+                        className="mp-btn-info"
+                        onClick={handleLegendToggle}
+                        onMouseDown={stopLegendPropagation}
+                        onTouchStart={stopLegendPropagation}
+                        title="Show Legend"
+                        aria-label="Toggle report status legend"
+                      >
+                        <FaInfoCircle />
+                      </button>
+                      {showLegendPanel && (
+                        <div
+                          className="mp-legend-popover"
+                          onClick={stopLegendPropagation}
+                          onMouseDown={stopLegendPropagation}
+                          onTouchStart={stopLegendPropagation}
+                        >
+                          <p className="mp-legend-title">Report Status</p>
+                          <div className="mp-legend-list">
+                            {STATUS_LEGEND_ITEMS.map((item) => (
+                              <div className="mp-legend-item" key={item.label}>
+                                <img
+                                  className="mp-legend-icon"
+                                  src={item.icon}
+                                  alt={`${item.label} marker`}
+                                  style={{ borderColor: item.color }}
+                                />
+                                <span>{item.label}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </>
                 )}
 
                 {/* Floating Action Bar */}
@@ -722,9 +843,7 @@ const MapPage = () => {
                     <div className="mp-floating-content">
                       <div className="mp-floating-text">
                         <strong>Location Selected</strong>
-                        <span>
-                          Do you want to report an issue here?
-                        </span>
+                        <span>Do you want to report an issue here?</span>
                       </div>
                       <div className="mp-floating-buttons">
                         <button
@@ -753,7 +872,7 @@ const MapPage = () => {
 
             {/* RIGHT COLUMN: FORM */}
             <div className="mp-form-column" ref={formSectionRef}>
-              <MapReportForm 
+              <MapReportForm
                 marker={marker}
                 address={currentAddress}
                 isLoadingAddress={isLoadingAddress}
@@ -774,6 +893,36 @@ const MapPage = () => {
         onHide={() => setShowDetailModal(false)}
         report={selectedReport}
       />
+
+      {/* Login Required Modal */}
+      {showLoginModal && (
+        <div
+          className="mp-modal-overlay"
+          onClick={() => setShowLoginModal(false)}
+        >
+          <div
+            className="mp-modal-content"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mp-modal-icon-wrapper">
+              <FaLock className="mp-modal-icon" />
+            </div>
+            <h3 className="mp-modal-title">Authentication Required</h3>
+            <p className="mp-modal-text">
+              You must be logged in to create a new report. <br />
+              Please sign in to contribute to the community.
+            </p>
+            <div className="mp-modal-actions">
+              <button
+                className="mp-btn-primary mp-btn-sm"
+                onClick={() => navigate("/login")}
+              >
+                Go to Login
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

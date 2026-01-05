@@ -46,17 +46,28 @@ From the server directory install dependencies:
 npm install
 ```
 
-#### Configure environment variables:
+#### Configure Environment Variables
 
-Create a `.env` file in the `server/` directory:
+For security reasons, the `.env` files containing secrets are not included in the repository. You need to create them from the provided example files.
 
-```env
-PORT=3001
-DB_HOST=localhost
-DB_PORT=5433
-DB_USER=user
-DB_PASSWORD=password
-DB_NAME=participium_db
+**1. Development Configuration:**
+
+Copy the example file to create your local `.env`:
+
+```bash
+cp .env.example .env
+```
+
+Open the newly created `.env` file and update the variables with your real credentials (especially `EMAIL_PASS` and `TELEGRAM_BOT_TOKEN`).
+
+Only one environment should own the Telegram polling session at a time. Keep `TELEGRAM_BOT_ENABLED=false` for local development and set it to `true` only on the deployment (or single dev machine) that must process Telegram updates.
+
+**2. Test Configuration:**
+
+To run automated tests, you must also configure the test environment variables:
+
+```bash
+cp .env.test.example .env.test
 ```
 
 #### Start development server:
@@ -78,8 +89,7 @@ The backend will start on **`http://localhost:3001`**
 - Every photo uploaded via the app is saved inside the backend container, in `/app/uploads/reports/{reportId}/`.
 - There is **no synchronization** with your local filesystem and **no cloud storage**: all images live only in the container.
 - The backend automatically serves images via the API endpoint:
-
-  `http://localhost:3001/uploads/reports/{reportId}/{filename}`
+`http://localhost:3001/uploads/reports/{reportId}/{filename}`
 
 **Usage:**
 - To display a photo in the frontend, use the above URL format (replace `{reportId}` and `{filename}` with actual values).
@@ -126,7 +136,6 @@ npm run dev
 
 The frontend will start on **`http://localhost:5173`**
 
-
 ## Testing
 
 The backend includes unit and E2E tests with a separate test database.
@@ -159,7 +168,6 @@ npm run test:coverage
 
 View coverage report: `server/coverage/index.html`
 
-
 ## Database Management
 
 ### Reset Database (deletes all data)
@@ -188,7 +196,8 @@ docker-compose logs -f db
 The database uses PostgreSQL with PostGIS for geolocation features.
 
 **Detailed schema documentation:** [`server/src/docs/database.md`](server/src/docs/database.md)
-
+ 
+ **Telegram linking:** The `users` table now includes `telegram_link_confirmed` to ensure Telegram accounts are usable for reports only after the user confirms linking from the web app.
 
 ## Deployment
 

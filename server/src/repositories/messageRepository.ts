@@ -2,7 +2,6 @@
 import { AppDataSource } from '../database/connection';
 import { MessageEntity } from '@entity/messageEntity';
 import { Repository } from 'typeorm';
-import { NotFoundError } from '@models/errors/NotFoundError';
 
 /**
  * Message Repository
@@ -23,7 +22,7 @@ class MessageRepository {
 	async getMessagesByReportId(reportId: number): Promise<MessageEntity[]> {
 		return this.repository.find({
 			where: { reportId },
-			relations: ['sender', 'sender.departmentRole', 'sender.departmentRole.role'],
+			relations: ['sender', 'sender.userRoles', 'sender.userRoles.departmentRole', 'sender.userRoles.departmentRole.role'],
 			order: { createdAt: 'ASC' }
 		});
 	}
@@ -45,7 +44,7 @@ class MessageRepository {
 		// Fetch the complete message with relations
 		const completeMessage = await this.repository.findOne({
 			where: { id: savedMessage.id },
-			relations: ['sender', 'sender.departmentRole', 'sender.departmentRole.role']
+			relations: ['sender', 'sender.userRoles', 'sender.userRoles.departmentRole', 'sender.userRoles.departmentRole.role']
 		});
 		if (!completeMessage) {
 			throw new Error('Failed to retrieve created message');

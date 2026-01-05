@@ -10,6 +10,7 @@ export interface MessageResponse {
     firstName: string;
     lastName: string;
     role: string;
+    personalPhotoUrl?: string;
   };
   content: string;
   createdAt: Date;

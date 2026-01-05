@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import PropTypes from "prop-types"; // Importato per la validazione delle props
+import PropTypes from "prop-types"; // Imported for props validation
 import { Modal } from "react-bootstrap";
 import { FaTag, FaTimes, FaCheckCircle, FaExclamationTriangle, FaTimesCircle, FaInfoCircle } from "react-icons/fa";
 import { getCurrentUser } from "../api/authApi";
@@ -24,7 +24,7 @@ import "../css/ReportDetails.css";
 // -------------------------------------------------------------------------
 const ToastMessage = ({ message, type, onClose }) => {
     useEffect(() => {
-        // MODIFICA QUI: 2000 ms = 2 secondi
+        // CHANGE HERE: 2000 ms = 2 seconds
         const timer = setTimeout(() => {
             onClose();
         }, 2000);
@@ -77,11 +77,13 @@ const ReportDetails = ({
     onReject,
     onStatusUpdate,
     onReportUpdated,
+    openChat = false
 }) => {
-    // NUOVO STATO: Mantiene il report aggiornato all'interno della modale
+    // NEW STATE: Keeps the report updated inside the modal
     const [report, setReport] = useState(initialReport);
     const [currentUserId, setCurrentUserId] = useState(null);
-    const [currentUserRole, setCurrentUserRole] = useState(null);
+    const [currentUserRoles, setCurrentUserRoles] = useState([]);
+    const [fetchedUser, setFetchedUser] = useState(null);
     const [selectedImage, setSelectedImage] = useState(null);
     const [showImageModal, setShowImageModal] = useState(false);
     const [showMap, setShowMap] = useState(false);
@@ -95,7 +97,7 @@ const ReportDetails = ({
      * @param {'success'|'error'|'warning'|'info'} type - Il tipo di notifica.
      */
     const showToast = useCallback((message, type = "success") => {
-        // Nascondi il precedente prima di mostrarne uno nuovo per evitare sovrapposizioni
+        // Hide the previous one before showing a new one to avoid overlaps
         setToast({ show: false, message: "", type: "" });
         // Un piccolo ritardo per permettere l'animazione di chiusura (opzionale)
         setTimeout(() => setToast({ show: true, message, type }), 100);
@@ -105,7 +107,7 @@ const ReportDetails = ({
         setToast({ show: false, message: "", type: "" });
     }, []);
 
-    // Sync dello stato locale quando la prop esterna cambia (necessario per l'aggiornamento)
+    // Sync local state when external prop changes (necessary for update)
     useEffect(() => {
         setReport(initialReport);
     }, [initialReport]);
@@ -127,27 +129,31 @@ const ReportDetails = ({
                 try {
                     const userData = await getCurrentUser();
                     if (userData && userData.id) {
+                        setFetchedUser(userData);
                         setCurrentUserId(userData.id);
-                        setCurrentUserRole(userData.role_name || userData.role || 'citizen');
+                        const roles = userData.roles ? userData.roles.map(r => r.role_name) : ['citizen'];
+                        setCurrentUserRoles(roles);
                     } else {
+                        setFetchedUser(null);
                         setCurrentUserId(null);
-                        setCurrentUserRole('citizen');
+                        setCurrentUserRoles(['citizen']);
                     }
                 } catch (error) {
                     console.error("Error fetching user:", error);
+                    setFetchedUser(null);
                     setCurrentUserId(null);
-                    setCurrentUserRole('citizen');
+                    setCurrentUserRoles(['citizen']);
                 }
             };
             fetchCurrentUser();
         } else {
             setCurrentUserId(null);
-            setCurrentUserRole(null);
+            setCurrentUserRoles([]);
         }
     }, [show, hideToast]);
 
-    const isCitizen = currentUserRole?.toLowerCase() === 'citizen';
-    const showRestrictedContent = !isCitizen && currentUserRole !== null;
+    const isCitizen = currentUserRoles.length > 0 && currentUserRoles.every(r => r.toLowerCase() === 'citizen');
+    const showRestrictedContent = currentUserRoles.some(r => r.toLowerCase() !== 'citizen');
 
     const mapCoordinates = useMemo(() => {
         if (!report || !report.location) return null;
@@ -191,7 +197,7 @@ const ReportDetails = ({
                         {/* --- LEFT COLUMN: GENERAL DETAILS & COMMENTS --- */}
                         <ReportMainContent
                             report={report}
-                            user={user}
+                            user={fetchedUser || user}
                             currentUserId={currentUserId}
                             onApprove={onApprove}
                             onReject={onReject}
@@ -203,6 +209,7 @@ const ReportDetails = ({
                             mapCoordinates={mapCoordinates}
                             showToast={showToast}
                             showComments={showRestrictedContent}
+                            openChat={openChat}
                         />
 
                         {/* --- RIGHT COLUMN: SIDEBAR --- */}
@@ -249,7 +256,7 @@ const ReportDetails = ({
 ReportDetails.propTypes = {
     show: PropTypes.bool.isRequired,
     onHide: PropTypes.func.isRequired,
-    // La prop 'report' è cruciale e deve essere un oggetto
+    // The 'report' prop is crucial and must be an object
     report: PropTypes.shape({
         id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
         title: PropTypes.string.isRequired,
@@ -262,7 +269,8 @@ ReportDetails.propTypes = {
     onApprove: PropTypes.func.isRequired,
     onReject: PropTypes.func.isRequired,
     onStatusUpdate: PropTypes.func.isRequired,
-    onReportUpdated: PropTypes.func, // Può essere opzionale se non è sempre necessario notificare il genitore
+    onReportUpdated: PropTypes.func, // Can be optional if not always necessary to notify the parent
+    openChat: PropTypes.bool,
 };
 
 export default ReportDetails;

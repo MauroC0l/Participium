@@ -33,7 +33,11 @@ const router = express.Router();
  *               email: "m.rossi@comune.torino.it"
  *               first_name: "Mario"
  *               last_name: "Rossi"
- *               role: "Citizen"
+ *               roles:
+ *                 -  department_role_id: 1
+ *                    department_name: "Organization"
+ *                    role_name: "Citizen"
+ *               company_name: null
  *       400:
  *         description: Validation error
  *         content:
@@ -202,7 +206,42 @@ router.post('/', validateRegisterInput, UserController.register);
  *               name: "InternalServerError"
  *               message: "An unexpected error occurred while updating profile"
  */
-//router.patch('/me', isLoggedIn, UserController.updateProfile);
+router.patch('/me', isLoggedIn, UserController.updateProfile);
+
+/**
+ * @swagger
+ * /api/users/me/password:
+ *   patch:
+ *     summary: Update password
+ *     description: Update the current user's password
+ *     tags: [Citizens]
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - currentPassword
+ *               - newPassword
+ *             properties:
+ *               currentPassword:
+ *                 type: string
+ *                 description: The current password
+ *               newPassword:
+ *                 type: string
+ *                 description: The new password (min 6 chars)
+ *     responses:
+ *       200:
+ *         description: Password updated successfully
+ *       400:
+ *         description: Invalid input or weak password
+ *       401:
+ *         description: Incorrect current password or not authenticated
+ */
+router.patch('/me/password', isLoggedIn, UserController.updatePassword);
 
 /**
  * @swagger
@@ -308,9 +347,14 @@ router.get(
   (req, res, next) => {
 
     const user = req.user as any;
-    const roleName = user?.departmentRole?.role?.name;
-    
-    if (!roleName || (!isTechnicalStaff(roleName) && !isAdmin(roleName))) {
+    // V5.0 multi-role support: check all user roles
+    const userRoleNames = user?.userRoles?.map((ur: any) => ur.departmentRole?.role?.name) || [];
+
+    const hasAccess = userRoleNames.some((roleName: string) =>
+      isTechnicalStaff(roleName) || isAdmin(roleName)
+    );
+
+    if (!hasAccess) {
       return res.status(403).json({
         code: 403,
         name: 'ForbiddenError',
@@ -588,5 +632,138 @@ router.patch('/notifications/:id', isLoggedIn, validateId('id', 'notification'),
  *               message: Failed to find user by username
  */
 router.get("/username/:username", UserController.findUserByUsername);
+
+/**
+ * @swagger
+ * /api/users/telegram-link-code:
+ *   post:
+ *     summary: Generate Telegram link code
+ *     description: Generate a verification code to link the user's Telegram account
+ *     tags: [Users]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Code generated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 code:
+ *                   type: string
+ *                   example: "123456"
+ *                 expiresAt:
+ *                   type: string
+ *                   format: date-time
+ *                   example: "2023-12-20T10:15:00Z"
+ *       401:
+ *         description: User not authenticated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.post('/telegram-link-code', isLoggedIn, UserController.generateTelegramLinkCode);
+
+/**
+ * @swagger
+ * /api/users/telegram-status:
+ *   get:
+ *     summary: Get Telegram link status
+ *     description: Check if the user's account is linked to Telegram
+ *     tags: [Users]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Status retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 isLinked:
+ *                   type: boolean
+ *                   example: true
+ *                 telegramUsername:
+ *                   type: string
+ *                   nullable: true
+ *                   example: "@username"
+ *       401:
+ *         description: User not authenticated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.get('/telegram-status', isLoggedIn, UserController.getTelegramStatus);
+
+/**
+ * @swagger
+ * /api/users/telegram-confirm:
+ *   post:
+ *     summary: Confirm Telegram link
+ *     description: Confirms the Telegram link after the user acknowledges in the web app.
+ *     tags: [Users]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Link confirmed successfully
+ *       400:
+ *         description: Bad request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.post('/telegram-confirm', isLoggedIn, UserController.confirmTelegramLink);
+
+/**
+ * @swagger
+ * /api/users/telegram-unlink:
+ *   delete:
+ *     summary: Unlink Telegram account
+ *     description: Remove the Telegram link from the user account
+ *     tags: [Users]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Account unlinked successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       400:
+ *         description: Bad request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       401:
+ *         description: User not authenticated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.delete('/telegram-unlink', isLoggedIn, UserController.unlinkTelegramAccount);
 
 export default router;

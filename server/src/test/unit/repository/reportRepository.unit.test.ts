@@ -629,4 +629,269 @@ describe('ReportRepository', () => {
       );
     });
   });
+
+  describe('findReportsByAddress', () => {
+    it('should find reports matching address pattern', async () => {
+      const mockReports: Partial<ReportEntity>[] = [
+        {
+          id: 1,
+          title: 'Report 1',
+          address: 'Via Roma 10, Turin',
+          reporter: { id: 100 } as any,
+          assignee: { id: 50 } as any,
+          photos: []
+        },
+        {
+          id: 2,
+          title: 'Report 2',
+          address: 'Via Roma 20, Turin',
+          reporter: { id: 101 } as any,
+          assignee: null,
+          photos: []
+        }
+      ];
+
+      jest.spyOn(reportRepository, 'findReportsByAddress').mockResolvedValue(mockReports as ReportEntity[]);
+
+      const result = await reportRepository.findReportsByAddress('Via Roma');
+
+      expect(reportRepository.findReportsByAddress).toHaveBeenCalledWith('Via Roma');
+      expect(result).toEqual(mockReports);
+      expect(result.length).toBe(2);
+      expect(result[0].address).toContain('Via Roma');
+    });
+
+    it('should return empty array when no matching addresses found', async () => {
+      jest.spyOn(reportRepository, 'findReportsByAddress').mockResolvedValue([]);
+
+      const result = await reportRepository.findReportsByAddress('NonExistent Street');
+
+      expect(result).toEqual([]);
+      expect(result.length).toBe(0);
+    });
+
+    it('should include all related entities in results', async () => {
+      const mockReports: Partial<ReportEntity>[] = [
+        {
+          id: 1,
+          address: 'Corso Francia 100',
+          reporter: {
+            id: 100,
+            email: 'reporter@example.com',
+            firstName: 'John',
+            lastName: 'Doe'
+          } as any,
+          assignee: {
+            id: 50,
+            email: 'assignee@example.com',
+            firstName: 'Jane',
+            lastName: 'Smith'
+          } as any,
+          externalAssignee: {
+            id: 10,
+            name: 'External Company'
+          } as any,
+          photos: [
+            { id: 1, photoUrl: 'photo1.jpg' } as any,
+            { id: 2, photoUrl: 'photo2.jpg' } as any
+          ]
+        }
+      ];
+
+      jest.spyOn(reportRepository, 'findReportsByAddress').mockResolvedValue(mockReports as ReportEntity[]);
+
+      const result = await reportRepository.findReportsByAddress('Corso Francia');
+
+      expect(result[0].reporter).toBeDefined();
+      expect(result[0].assignee).toBeDefined();
+      expect(result[0].externalAssignee).toBeDefined();
+      expect(result[0].photos.length).toBe(2);
+    });
+
+    it('should order results by createdAt DESC', async () => {
+      const mockReports: Partial<ReportEntity>[] = [
+        {
+          id: 3,
+          address: 'Via Test 1',
+          createdAt: new Date('2024-01-03')
+        } as any,
+        {
+          id: 2,
+          address: 'Via Test 2',
+          createdAt: new Date('2024-01-02')
+        } as any,
+        {
+          id: 1,
+          address: 'Via Test 3',
+          createdAt: new Date('2024-01-01')
+        } as any
+      ];
+
+      jest.spyOn(reportRepository, 'findReportsByAddress').mockResolvedValue(mockReports as ReportEntity[]);
+
+      const result = await reportRepository.findReportsByAddress('Via Test');
+
+      // Should be ordered by most recent first
+      expect(result[0].id).toBe(3);
+      expect(result[1].id).toBe(2);
+      expect(result[2].id).toBe(1);
+    });
+  });
+
+  describe('findByReporterId', () => {
+    it('should find reports by reporter id without filters', async () => {
+      const mockReports: Partial<ReportEntity>[] = [
+        {
+          id: 1,
+          title: 'Report 1',
+          reporterId: 100,
+          status: ReportStatus.PENDING_APPROVAL,
+          category: ReportCategory.ROADS
+        } as any,
+        {
+          id: 2,
+          title: 'Report 2',
+          reporterId: 100,
+          status: ReportStatus.ASSIGNED,
+          category: ReportCategory.WATER_SUPPLY
+        } as any
+      ];
+
+      jest.spyOn(reportRepository, 'findByReporterId').mockResolvedValue(mockReports as ReportEntity[]);
+
+      const result = await reportRepository.findByReporterId(100);
+
+      expect(reportRepository.findByReporterId).toHaveBeenCalledWith(100);
+      expect(result).toEqual(mockReports);
+      expect(result.length).toBe(2);
+    });
+
+    it('should filter by status when provided', async () => {
+      const mockReports: Partial<ReportEntity>[] = [
+        {
+          id: 1,
+          reporterId: 100,
+          status: ReportStatus.RESOLVED,
+          category: ReportCategory.ROADS
+        } as any
+      ];
+
+      jest.spyOn(reportRepository, 'findByReporterId').mockResolvedValue(mockReports as ReportEntity[]);
+
+      const result = await reportRepository.findByReporterId(100, ReportStatus.RESOLVED);
+
+      expect(reportRepository.findByReporterId).toHaveBeenCalledWith(100, ReportStatus.RESOLVED);
+      expect(result.length).toBe(1);
+      expect(result[0].status).toBe(ReportStatus.RESOLVED);
+    });
+
+    it('should filter by category when provided', async () => {
+      const mockReports: Partial<ReportEntity>[] = [
+        {
+          id: 1,
+          reporterId: 100,
+          status: ReportStatus.PENDING_APPROVAL,
+          category: ReportCategory.PUBLIC_LIGHTING
+        } as any
+      ];
+
+      jest.spyOn(reportRepository, 'findByReporterId').mockResolvedValue(mockReports as ReportEntity[]);
+
+      const result = await reportRepository.findByReporterId(100, undefined, ReportCategory.PUBLIC_LIGHTING);
+
+      expect(reportRepository.findByReporterId).toHaveBeenCalledWith(100, undefined, ReportCategory.PUBLIC_LIGHTING);
+      expect(result.length).toBe(1);
+      expect(result[0].category).toBe(ReportCategory.PUBLIC_LIGHTING);
+    });
+
+    it('should filter by both status and category when provided', async () => {
+      const mockReports: Partial<ReportEntity>[] = [
+        {
+          id: 1,
+          reporterId: 100,
+          status: ReportStatus.IN_PROGRESS,
+          category: ReportCategory.WASTE
+        } as any
+      ];
+
+      jest.spyOn(reportRepository, 'findByReporterId').mockResolvedValue(mockReports as ReportEntity[]);
+
+      const result = await reportRepository.findByReporterId(100, ReportStatus.IN_PROGRESS, ReportCategory.WASTE);
+
+      expect(reportRepository.findByReporterId).toHaveBeenCalledWith(100, ReportStatus.IN_PROGRESS, ReportCategory.WASTE);
+      expect(result.length).toBe(1);
+      expect(result[0].status).toBe(ReportStatus.IN_PROGRESS);
+      expect(result[0].category).toBe(ReportCategory.WASTE);
+    });
+
+    it('should return empty array when reporter has no reports', async () => {
+      jest.spyOn(reportRepository, 'findByReporterId').mockResolvedValue([]);
+
+      const result = await reportRepository.findByReporterId(999);
+
+      expect(result).toEqual([]);
+      expect(result.length).toBe(0);
+    });
+
+    it('should include all related entities', async () => {
+      const mockReports: Partial<ReportEntity>[] = [
+        {
+          id: 1,
+          reporterId: 100,
+          reporter: {
+            id: 100,
+            email: 'reporter@example.com'
+          } as any,
+          assignee: {
+            id: 50,
+            email: 'assignee@example.com'
+          } as any,
+          externalAssignee: {
+            id: 10,
+            name: 'External Company'
+          } as any,
+          photos: [
+            { id: 1, photoUrl: 'photo1.jpg' } as any
+          ]
+        } as any
+      ];
+
+      jest.spyOn(reportRepository, 'findByReporterId').mockResolvedValue(mockReports as ReportEntity[]);
+
+      const result = await reportRepository.findByReporterId(100);
+
+      expect(result[0].reporter).toBeDefined();
+      expect(result[0].assignee).toBeDefined();
+      expect(result[0].externalAssignee).toBeDefined();
+      expect(result[0].photos).toBeDefined();
+    });
+
+    it('should order results by createdAt DESC', async () => {
+      const mockReports: Partial<ReportEntity>[] = [
+        {
+          id: 3,
+          reporterId: 100,
+          createdAt: new Date('2024-01-03')
+        } as any,
+        {
+          id: 2,
+          reporterId: 100,
+          createdAt: new Date('2024-01-02')
+        } as any,
+        {
+          id: 1,
+          reporterId: 100,
+          createdAt: new Date('2024-01-01')
+        } as any
+      ];
+
+      jest.spyOn(reportRepository, 'findByReporterId').mockResolvedValue(mockReports as ReportEntity[]);
+
+      const result = await reportRepository.findByReporterId(100);
+
+      expect(result[0].id).toBe(3);
+      expect(result[1].id).toBe(2);
+      expect(result[2].id).toBe(1);
+    });
+  });
 });

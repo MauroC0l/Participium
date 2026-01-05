@@ -46,7 +46,7 @@ const MapReportForm = ({
     photos: "",
   });
 
-  // Funzione helper per mostrare notifiche che spariscono dopo 3 secondi
+  // Helper function to show notifications that disappear after 3 seconds
   const handleNotification = (message, type) => {
     setNotification({ message, type });
     setTimeout(() => {
@@ -175,8 +175,8 @@ const MapReportForm = ({
         description: formData.description.trim(),
         category: formData.category,
         location: {
-          latitude: parseFloat(formData.latitude),
-          longitude: parseFloat(formData.longitude),
+          latitude: Number.parseFloat(formData.latitude),
+          longitude: Number.parseFloat(formData.longitude),
           address: formData.address,
         },
         photos: base64Photos,

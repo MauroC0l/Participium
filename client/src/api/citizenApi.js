@@ -3,12 +3,11 @@
  */
 const handleResponse = async (response) => {
   if (!response.ok) {
-    // Correzione S7722: Inizializza Error con un messaggio
     const error = new Error(` `);
     try {
       const data = await response.json();
 
-      // Aggiorna il messaggio con il dettaglio API
+      // Update message with API detail
       error.message = data.message || data.error || `Request failed with status ${response.status}`;
 
       error.status = response.status;

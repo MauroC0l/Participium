@@ -30,13 +30,12 @@ describe('Passport Configuration Unit Tests', () => {
         id: 1,
         username: 'testuser',
         email: 'test@example.com',
-        departmentRoleId: 1,
-      } as UserEntity;
+      } as any as UserEntity;
 
       mockedUserRepository.verifyCredentials.mockResolvedValue(mockUser);
 
       configurePassport();
-      
+
       // The strategy is configured, verify it was called
       expect(mockedUserRepository.verifyCredentials).not.toHaveBeenCalled();
     });
@@ -45,7 +44,7 @@ describe('Passport Configuration Unit Tests', () => {
       mockedUserRepository.verifyCredentials.mockResolvedValue(null);
 
       configurePassport();
-      
+
       // Configuration should complete without errors
       expect(true).toBe(true);
     });
@@ -54,7 +53,7 @@ describe('Passport Configuration Unit Tests', () => {
       mockedUserRepository.verifyCredentials.mockRejectedValue(new Error('Database error'));
 
       configurePassport();
-      
+
       // Configuration should complete without throwing
       expect(true).toBe(true);
     });
@@ -73,15 +72,14 @@ describe('Passport Configuration Unit Tests', () => {
       const mockUser: UserEntity = {
         id: 1,
         username: 'testuser',
-        departmentRoleId: 2,
-      } as UserEntity;
+      } as any as UserEntity;
 
       passport.serializeUser(mockUser as Express.User, (err, user) => {
         expect(err).toBeNull();
         expect(user).toEqual({
           id: 1,
           username: 'testuser',
-          departmentRoleId: 2,
+          departmentRoleIds: [],
         });
         done();
       });
@@ -99,14 +97,13 @@ describe('Passport Configuration Unit Tests', () => {
       const mockUser: UserEntity = {
         id: 1,
         username: 'testuser',
-        departmentRoleId: 1,
-      } as UserEntity;
+      } as any as UserEntity;
 
       mockedUserRepository.findUserById.mockResolvedValue(mockUser);
 
       configurePassport();
 
-      const sessionUser = { id: 1, username: 'testuser', departmentRoleId: 1 };
+      const sessionUser = { id: 1, username: 'testuser' };
 
       passport.deserializeUser(sessionUser, (err, user) => {
         if (!err) {
@@ -120,7 +117,7 @@ describe('Passport Configuration Unit Tests', () => {
 
       configurePassport();
 
-      const sessionUser = { id: 999, username: 'nonexistent', departmentRoleId: 1 };
+      const sessionUser = { id: 999, username: 'nonexistent' };
 
       passport.deserializeUser(sessionUser, (err, user) => {
         expect(err).toBeDefined();
@@ -132,7 +129,7 @@ describe('Passport Configuration Unit Tests', () => {
 
       configurePassport();
 
-      const sessionUser = { id: 1, username: 'testuser', departmentRoleId: 1 };
+      const sessionUser = { id: 1, username: 'testuser' };
 
       passport.deserializeUser(sessionUser, (err) => {
         expect(err).toBeDefined();

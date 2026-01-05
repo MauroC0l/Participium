@@ -55,6 +55,20 @@ class ReportController {
   }
 
   /**
+   * Get a specific report by ID
+   * GET /api/reports/:id
+   */
+  async getReportById(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const reportId = parseAndValidateId(req.params.id);
+      const report = await reportService.getReportById(reportId);
+      res.status(200).json(report);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
    * Create a new report
    * POST /api/reports
    */
@@ -81,14 +95,34 @@ class ReportController {
    */
   async getAllReports(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      if (!req.user) {
-        throw new UnauthorizedError('Not authenticated');
-      }
-
-      const userId = (req.user as User).id;
+      const userId = req.user ? (req.user as User).id : undefined;
       const { status, category } = req.query;
 
       const reports = await reportService.getAllReports(
+        userId,
+        status as ReportStatus | undefined,
+        category as ReportCategory | undefined
+      );
+      
+      res.status(200).json(reports);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Get reports created by the current user
+   * GET /api/reports/me
+   */
+  async getMyReports(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.user) {
+        throw new UnauthorizedError('Not authenticated');
+      }
+      const userId = (req.user as User).id;
+      const { status, category } = req.query;
+
+      const reports = await reportService.getMyReports(
         userId,
         status as ReportStatus | undefined,
         category as ReportCategory | undefined
