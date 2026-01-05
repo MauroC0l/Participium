@@ -590,6 +590,7 @@ export default function UserProfile({ user, onUpdateUser }) {
                     readOnly
                     disabled
                     placeholder="Not linked"
+                    title="Please link/unlink your Telegram account from the home page."
                   />
                 </div>
               </div>

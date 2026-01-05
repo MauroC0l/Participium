@@ -587,7 +587,7 @@ const MapPage = () => {
             Turin Map - All Reports
           </h1>
           <p className="mp-header-subtitle">
-            View the status of your reports or create a new one by selecting on
+            View the status of all reports or create a new one by selecting on
             the map.
           </p>
         </div>
