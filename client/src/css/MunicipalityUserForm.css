@@ -71,6 +71,11 @@
   transition: all 0.2s;
   padding: 0.5rem;
   border-radius: 50%;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .muf-close-btn:hover {
@@ -107,10 +112,10 @@
 }
 
 .muf-input-wrapper label {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--muf-dark);
-  margin-bottom: 0.35rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--muf-text);
+  margin-bottom: 0.5rem;
   display: block;
 }
 
@@ -301,6 +306,7 @@
   border: none;
   color: white;
   width: 36px;
+  height: 38px; /* Match dropdown toggle height */
   border-radius: 6px;
   display: flex;
   align-items: center;
