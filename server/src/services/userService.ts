@@ -214,7 +214,7 @@ class UserService {
       emailNotificationsEnabled?: boolean;
     }
   ): Promise<any> {
-    // ✅ FIXED: Handle empty/no updates - return current user gracefully
+
     const hasAnyUpdate = Object.keys(updateData || {}).some(key => {
       const value = updateData[key as keyof typeof updateData];
       return value !== undefined;

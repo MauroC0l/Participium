@@ -253,7 +253,7 @@ describe('geoValidationUtils', () => {
       spy.mockRestore();
     });
 
-    it('should handle invalid GeoJSON structure gracefully', () => {
+    it('should handle invalid GeoJSON structure', () => {
       // This test would require mocking the fs.readFileSync to return invalid JSON
       // or mocking the turinBoundaries to have invalid structure
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
@@ -393,7 +393,7 @@ describe('geoValidationUtils', () => {
       await expect(geocodeAddress('Turin, Italy')).rejects.toThrow('Address not found');
     });
 
-    it('should handle axios errors gracefully', async () => {
+    it('should handle axios errors', async () => {
       const axiosError = new Error('Request failed');
       mockedAxios.get.mockRejectedValue(axiosError);
       

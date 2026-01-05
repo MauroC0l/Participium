@@ -159,7 +159,7 @@ describe('AuthService Integration Tests', () => {
       expect(normalizedResult).toEqual(expectedCitizenResponse);
     });
 
-    it('should handle null user input gracefully', () => {
+    it('should handle null user input', () => {
       // Arrange
       const expressUser = (null as unknown) as Express.User;
 

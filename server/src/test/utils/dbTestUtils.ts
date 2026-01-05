@@ -3,7 +3,7 @@ import * as dotenv from 'dotenv';
 import * as path from 'node:path';
 
 /**
- * Carica configurazione ambiente di test
+ * Loads test environment configuration from .env.test
  */
 export function loadTestEnvironment(): void {
   if (process.env.NODE_ENV === 'test') {
@@ -13,8 +13,8 @@ export function loadTestEnvironment(): void {
 }
 
 /**
- * Pulisce tutte le tabelle del database di test
- * Mantiene i dati iniziali inseriti da test-data.sql
+ * Cleans only tables that can be modified by tests
+ * Keeps base test data added from test-data.sql
  */
 export async function cleanDatabase(): Promise<void> {
   const queryRunner = AppDataSource.createQueryRunner();
@@ -23,11 +23,8 @@ export async function cleanDatabase(): Promise<void> {
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
-    // Disabilita constraints temporaneamente
     await queryRunner.query('SET session_replication_role = replica;');
 
-    // Clean only tables that can be modified by tests
-    // DO NOT clean tables with base test data
     await queryRunner.query('TRUNCATE TABLE reports CASCADE;');
     await queryRunner.query('TRUNCATE TABLE comments CASCADE;');
     await queryRunner.query('TRUNCATE TABLE photos CASCADE;');
@@ -53,7 +50,6 @@ export async function cleanDatabase(): Promise<void> {
       ]
     );
 
-    // Riabilita constraints
     await queryRunner.query('SET session_replication_role = DEFAULT;');
 
     await queryRunner.commitTransaction();
@@ -66,7 +62,7 @@ export async function cleanDatabase(): Promise<void> {
 }
 
 /**
- * Pulisce completamente il database (inclusi dati di test base)
+ * Completely cleans the database (including base test data)
  */
 export async function cleanDatabaseCompletely(): Promise<void> {
   const queryRunner = AppDataSource.createQueryRunner();
@@ -77,7 +73,6 @@ export async function cleanDatabaseCompletely(): Promise<void> {
 
     await queryRunner.query('SET session_replication_role = replica;');
 
-    // Pulisci TUTTE le tabelle
     const tables = [
       'notifications',
       'messages',
@@ -103,7 +98,7 @@ export async function cleanDatabaseCompletely(): Promise<void> {
 }
 
 /**
- * Resetta le sequence AUTO_INCREMENT
+ * Reset the AUTO_INCREMENT sequences
  */
 export async function resetSequences(): Promise<void> {
   const entities = AppDataSource.entityMetadatas;
@@ -118,7 +113,7 @@ export async function resetSequences(): Promise<void> {
 }
 
 /**
- * Carica i dati di test da test-data.sql
+ * Loads test data from test-data.sql
  */
 export async function loadTestData(): Promise<void> {
   console.log('Loading test data from test-data.sql...');
@@ -137,7 +132,7 @@ export async function loadTestData(): Promise<void> {
 }
 
 /**
- * Setup completo database di test
+ * Complete setup of the test database
  */
 export async function setupTestDatabase(): Promise<void> {
   loadTestEnvironment();
@@ -177,7 +172,7 @@ export async function setupTestDatabase(): Promise<void> {
 }
 
 /**
- * Teardown database di test
+ * Teardown test database
  */
 export async function teardownTestDatabase(): Promise<void> {
   if (AppDataSource.isInitialized) {
@@ -187,7 +182,7 @@ export async function teardownTestDatabase(): Promise<void> {
 }
 
 /**
- * Verifica che siamo connessi al database di test
+ * Verifies that we are connected to the test database
  */
 export async function ensureTestDatabase(): Promise<void> {
   const dbName = process.env.DB_NAME;

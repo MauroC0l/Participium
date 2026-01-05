@@ -1,6 +1,5 @@
 import { AppDataSource } from '../../../database/connection';
 import * as dotenv from 'dotenv';
-import * as path from 'node:path';
 import {
   loadTestEnvironment,
   cleanDatabase,

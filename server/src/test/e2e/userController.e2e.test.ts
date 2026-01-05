@@ -1193,7 +1193,7 @@ describe('UserController E2E Tests', () => {
       expect(response.body.every((n: any) => n.userId === citizenId)).toBe(true);
     });
 
-    it('should handle invalid is_read query parameter gracefully', async () => {
+    it('should handle invalid is_read query parameter', async () => {
       const response = await request(app)
         .get('/api/users/notifications?is_read=invalid')
         .set('Cookie', citizenCookies)

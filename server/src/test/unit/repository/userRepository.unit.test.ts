@@ -1272,7 +1272,7 @@ describe('UserRepository Unit Tests', () => {
       expect(mockQueryBuilder.execute).toHaveBeenCalled();
     });
 
-    it('should handle database errors gracefully', async () => {
+    it('should handle database errors', async () => {
       // Arrange
       mockQueryBuilder.delete = jest.fn().mockReturnThis();
       mockQueryBuilder.from = jest.fn().mockReturnThis();

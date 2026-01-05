@@ -423,7 +423,7 @@ describe('AuthController Integration Tests', () => {
       });
     });
 
-    it('should handle internal server error gracefully (500)', async () => {
+    it('should handle internal server error (500)', async () => {
       const mockError = new Error('Database connection failed');
       jest.spyOn(userRepository, 'verifyEmailCode').mockRejectedValue(mockError);
 

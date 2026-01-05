@@ -169,7 +169,7 @@ describe('UserRepository Integration Tests', () => {
       expect(savedUser).toBeNull();
     });
 
-    it('should handle invalid ID type gracefully', async () => {
+    it('should handle invalid ID type', async () => {
       await expect(userRepository.findUserById("invalid" as unknown as number)).rejects.toThrow();
     });
   });

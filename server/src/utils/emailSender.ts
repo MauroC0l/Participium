@@ -1,6 +1,6 @@
 import nodemailer from 'nodemailer';
 
-// Configura il transporter (il "postino")
+// Configures the transporter (the "postman")
 // Better to create it outside the function to avoid reconnecting for each email
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",

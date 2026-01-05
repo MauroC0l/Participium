@@ -60,7 +60,7 @@ For security reasons, the `.env` files containing secrets are not included in th
 
 **1. Development Configuration:**
 
-Create a `.env` file in the project root with the following content, and update the variables with your real credentials:
+Create a `.env` file in the *server folder* with the following content, and update the variables with your real credentials:
 
 ```dotenv
 # Database Configuration

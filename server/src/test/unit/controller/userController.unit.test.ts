@@ -296,7 +296,7 @@ describe('UserController Unit Tests', () => {
       expect(statusMock).not.toHaveBeenCalled();
     });
 
-    it('should handle service errors gracefully', async () => {
+    it('should handle service errors', async () => {
       // Arrange
       mockRequest.body = validRegistrationData;
       const serviceError = new Error('Service error');
@@ -553,7 +553,7 @@ describe('UserController Unit Tests', () => {
       expect(statusMock).not.toHaveBeenCalled();
     });
 
-    it('should handle service errors gracefully', async () => {
+    it('should handle service errors', async () => {
       // Arrange
       mockRequest.user = { id: 1 };
       mockRequest.body = validUpdateData;
@@ -689,7 +689,7 @@ describe('UserController Unit Tests', () => {
       expect(statusMock).not.toHaveBeenCalled();
     });
 
-    it('should handle service errors gracefully', async () => {
+    it('should handle service errors', async () => {
       // Arrange
       mockRequest.user = { id: 1 };
       mockRequest.body = validPasswordData;

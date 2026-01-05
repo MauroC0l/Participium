@@ -340,7 +340,7 @@ describe('AuthController E2E Tests', () => {
       expect(response.body).toHaveProperty('message');
     });
 
-    it('should handle logout with invalid session gracefully', async () => {
+    it('should handle logout with invalid session', async () => {
       // Act
       const response = await request(app)
         .delete('/api/sessions/current')

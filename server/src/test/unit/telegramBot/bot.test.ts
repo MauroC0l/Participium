@@ -268,7 +268,7 @@ describe('Telegram Bot', () => {
       // This is tested in the ReportHandler tests
     });
 
-    it('should handle bot launch error gracefully', async () => {
+    it('should handle bot launch error', async () => {
       jest.clearAllMocks();
       mockBot.launch = jest.fn().mockRejectedValue(new Error('Launch failed'));
       (Telegraf as jest.MockedClass<typeof Telegraf>).mockImplementation(() => mockBot);

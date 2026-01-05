@@ -163,7 +163,7 @@ describe('FileUploadUtils Unit Tests', () => {
       await expect(saveBase64Image(validJpegBase64, userId)).rejects.toThrow('Failed to save image');
     });
 
-    it('should handle write errors gracefully with console.error', async () => {
+    it('should handle write errors with console.error', async () => {
       const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
       mockedFs.writeFileSync.mockImplementation(() => {
         throw new Error('Write error');
@@ -225,7 +225,7 @@ describe('FileUploadUtils Unit Tests', () => {
       expect(mockedFs.unlinkSync).not.toHaveBeenCalled();
     });
 
-    it('should handle deletion errors gracefully without throwing', () => {
+    it('should handle deletion errors without throwing', () => {
       const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
       mockedFs.unlinkSync.mockImplementation(() => {
         throw new Error('Permission denied');

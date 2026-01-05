@@ -111,7 +111,7 @@ describe('ValidateId Middleware Integration Tests', () => {
   });
 
   describe('Edge Cases', () => {
-    it('should handle very large numbers gracefully', async () => {
+    it('should handle very large numbers', async () => {
       const res = await request(app).get('/api/users/999999999999999');
       
       // Should not crash, either validates or causes overflow
