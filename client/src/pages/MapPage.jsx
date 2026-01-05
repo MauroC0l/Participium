@@ -584,7 +584,7 @@ const MapPage = () => {
         <div className="mp-header-content">
           <h1 className="mp-header-title">
             <FaMap className="mp-title-icon" />
-            Turin Map - Your Reports
+            Turin Map - All Reports
           </h1>
           <p className="mp-header-subtitle">
             View the status of your reports or create a new one by selecting on
