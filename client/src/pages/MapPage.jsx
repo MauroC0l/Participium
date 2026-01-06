@@ -462,7 +462,6 @@ const MapPage = () => {
           );
           setCurrentAddress(addressFound);
         } catch (error) {
-          console.error("Failed to retrieve address", error);
           setCurrentAddress("Address not found");
         } finally {
           setIsLoadingAddress(false);

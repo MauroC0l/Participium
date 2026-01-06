@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import PropTypes from "prop-types";
 import { useBlocker } from "react-router-dom";
 import {
   FaUser,
@@ -352,7 +353,6 @@ export default function UserProfile({ user, onUpdateUser }) {
       });
 
       setNotification({ type: "success", message: "Profile updated successfully!" });
-      // setMessage({ type: "success", text: "Profile updated successfully!" }); // Removed old message
     } catch (error) {
       console.error("Update error:", error);
       const errorMessage =
@@ -802,3 +802,8 @@ export default function UserProfile({ user, onUpdateUser }) {
     </div>
   );
 }
+
+UserProfile.propTypes = {
+  user: PropTypes.object,
+  onUpdateUser: PropTypes.func,
+};

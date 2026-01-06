@@ -184,8 +184,8 @@ const ReportComments = ({ reportId, currentUserId, showToast }) => {
                 }
             }
             
-        } catch (error) {
-            console.error("Failed to load comments", error);
+        } catch {
+            // Keep silent in production or delegate to global error handler
         } finally {
             if (!isPolling) setLoadingComments(false);
         }
@@ -242,8 +242,7 @@ const ReportComments = ({ reportId, currentUserId, showToast }) => {
             showToast("Comment added successfully!", "success");
             if (!isExpanded) setIsExpanded(true);
             
-        } catch (error) { 
-            console.error("Error posting comment:", error); 
+        } catch { 
             showToast("Failed to post comment. Please try again.", "error");
         }
         finally { setSubmittingComment(false); }
@@ -274,7 +273,6 @@ const ReportComments = ({ reportId, currentUserId, showToast }) => {
             hideDeleteModal();
 
         } catch (error) {
-            console.error("Error deleting comment:", error);
              // Explicit success handling even if response is not JSON (common in DELETE APIs)
             if (error.message && error.message.includes("JSON")) {
                  setComments((prev) => prev.filter((c) => c.id !== commentToDelete));
@@ -298,9 +296,6 @@ const ReportComments = ({ reportId, currentUserId, showToast }) => {
     
     // Lista di commenti o stato vuoto/caricamento
     const renderCommentList = useMemo(() => {
-        if (loadingComments) {
-            //return <div className="text-center py-4 text-muted small"><Spinner animation="border" size="sm" className="me-2" /> Loading conversation...</div>;
-        } 
         if (comments.length === 0) {
             return (
                 <div className="rdm-empty-comments">
