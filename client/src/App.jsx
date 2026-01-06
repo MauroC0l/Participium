@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import PropTypes from "prop-types";
 import {
   Routes,
   Route,
@@ -28,6 +29,12 @@ const ProtectedRoute = ({ children, isAuthLoading, user }) => {
   return children;
 };
 
+ProtectedRoute.propTypes = {
+  children: PropTypes.node.isRequired,
+  isAuthLoading: PropTypes.bool.isRequired,
+  user: PropTypes.object,
+};
+
 const CitizenRoute = ({ children, isAuthLoading, user }) => {
   if (isAuthLoading)
     return <LoadingScreen message="Checking permissions..." />;
@@ -36,11 +43,24 @@ const CitizenRoute = ({ children, isAuthLoading, user }) => {
   return children;
 };
 
+CitizenRoute.propTypes = {
+  children: PropTypes.node.isRequired,
+  isAuthLoading: PropTypes.bool.isRequired,
+  user: PropTypes.object,
+};
+
+
 const UserRoute = ({ children, isAuthLoading, user }) => {
   if (isAuthLoading)
     return <LoadingScreen message="Checking permissions..." />;
   if (user && user.role_name !== "Citizen") return <Navigate to="/home" replace />;
   return children;
+};
+
+UserRoute.propTypes = {
+  children: PropTypes.node.isRequired,
+  isAuthLoading: PropTypes.bool.isRequired,
+  user: PropTypes.object,
 };
 
 function App() {

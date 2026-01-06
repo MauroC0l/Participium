@@ -12,7 +12,7 @@ const handleResponse = async (response) => {
     try {
       const data = await response.json();
       parsedMessage = data.message || data.error;
-    } catch (e) {
+    } catch  {
       // ignore json parse error
     }
 

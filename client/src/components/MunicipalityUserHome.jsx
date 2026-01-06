@@ -56,24 +56,6 @@ const ROLE_DEPARTMENT_MAPPING = {
     "parks maintenance staff member": "Public Green Areas and Playgrounds",
 };
 
-const getStatusBadgeVariant = (status) => {
-    // Correzione S7781: Uso replaceAll() per sostituire tutte le occorrenze di underscore.
-    const normalizedStatus = status?.replaceAll("_", " ").toLowerCase();
-
-    if (normalizedStatus === "pending approval") return "warning";
-    if (normalizedStatus === "assigned") return "info";
-    if (normalizedStatus === "in progress") return "primary";
-    if (normalizedStatus === "resolved") return "success";
-    if (normalizedStatus === "rejected") return "danger";
-    if (normalizedStatus === "suspended") return "warning";
-    return "secondary";
-};
-
-const getDepartmentCategory = (roleName) => {
-    if (!roleName) return null;
-    return ROLE_DEPARTMENT_MAPPING[roleName.toLowerCase()] || null;
-};
-
 // Helper per convertire lo stato UI (es. "Pending Approval") in stato API (es. "PENDING_APPROVAL")
 const formatStatusForApi = (uiStatus) => {
     if (!uiStatus || uiStatus === "All Statuses") return null;

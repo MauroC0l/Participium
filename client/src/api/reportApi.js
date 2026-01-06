@@ -169,14 +169,10 @@ export const getCoordinatesFromAddress = async (address) => {
  * @param {string} externalMaintainerId - ID of the external maintainer
  * @param {Object} externalUserData - Data for the external maintainer assignment
  */
-export const assignedToExternalUser = async (externalMaintainerId, externalUserData) => {
+export const assignedToExternalUser = async (externalMaintainerId) => {
   const response = await fetch(`/api/reports/assigned/external/${externalMaintainerId}`, {
     method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-    },
     credentials: "include",
-    body: JSON.stringify(externalUserData),
   });
 
   return handleResponse(response);
