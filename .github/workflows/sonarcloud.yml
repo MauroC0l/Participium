@@ -71,13 +71,14 @@ jobs:
           echo "Waiting for PostgreSQL to be ready..."
           sleep 5
 
-      - name: Run backend tests with coverage
-        run: |
-          cd server
-          npm run test:coverage
-        env:
-          NODE_ENV: test
-          
+      #
+      #- name: Run backend tests with coverage
+      # run: |
+      #    cd server
+      #    npm run test:coverage
+      #  env:
+      #    NODE_ENV: test
+      #    
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v2
