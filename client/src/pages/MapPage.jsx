@@ -843,8 +843,7 @@ const MapPage = () => {
                         <FaInfoCircle />
                       </button>
                       {showLegendPanel && (
-                        <dialog
-                          open
+                        <div
                           className="mp-legend-popover"
                           aria-label="Report Status Legend"
                           onClick={stopLegendPropagation}
@@ -865,7 +864,7 @@ const MapPage = () => {
                               </div>
                             ))}
                           </div>
-                        </dialog>
+                        </div>
                       )}
                     </div>
                   </>
