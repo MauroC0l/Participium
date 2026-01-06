@@ -63,7 +63,7 @@ const TelegramLinkModal = ({ onClose, onUpdate }) => {
       const result = await generateTelegramLinkCode();
       setCode(result.code);
       setExpiresAt(result.expiresAt);
-    } catch (err) {
+    } catch {
       setError('Error generating code.');
     } finally {
       setGenerating(false);

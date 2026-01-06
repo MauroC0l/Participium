@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import PropTypes from "prop-types";
+import PropTypes from "prop-types";
 import { useBlocker } from "react-router-dom";
 import {
   FaUser,
