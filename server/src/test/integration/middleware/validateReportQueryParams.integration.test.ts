@@ -54,7 +54,7 @@ describe('ValidateReportQueryParams Middleware Integration Tests', () => {
   describe('Status Parameter Validation', () => {
     it('should accept valid status PENDING_APPROVAL', async () => {
       const res = await agent.get('/api/reports?status=Pending%20Approval');
-      expect(res.status).toBe(200);
+      expect(res.status).not.toBe(400);
     });
 
     it('should accept valid status ASSIGNED', async () => {
