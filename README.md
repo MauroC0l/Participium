@@ -92,7 +92,7 @@ Only one environment should own the Telegram polling session at a time. Keep `TE
 
 **2. Test Configuration:**
 
-Create a `.env.test` file in the project root with the following content:
+Create a `.env.test` file in the *server folder* with the following content:
 
 ```dotenv
 # Database Configuration (Test)
