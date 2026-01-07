@@ -6,7 +6,7 @@ import { getAllExternals, deleteMunicipalityUser, updateMunicipalityUser } from 
 import { getAllCompanies } from "../api/companyApi";
 import { getAllDepartmentRolesMapping } from "../api/departmentAPI";
 import UserDetails from "./UserDetails";
-import "../css/MunicipalityUserList.css"; // Import for modal styles
+import "../css/MunicipalityUserList.css";
 
 export default function ExternalMaintainerList({ refreshTrigger }) {
   const [users, setUsers] = useState([]);
