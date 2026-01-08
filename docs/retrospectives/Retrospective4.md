@@ -10,8 +10,8 @@ RETROSPECTIVE SPRINT 4 PARTICIPIUM (Team 10)
 
 ### Macro statistics
 
-- Number of Stories committed vs done : 7 vs 7 
-- Total Points committed vs done : 27pts vs 27pts
+- Number of Stories committed vs done : 7 vs 7
+- Total Points committed vs done : 27pts vs 27pts   (Sprint3: 18pts)
 - Nr of hours planned vs spent (as a team) : 96h vs 96h20m
 
 Our Definition of Done:
@@ -52,11 +52,11 @@ $$\text{Sample standard deviation }(s)=\sqrt{\frac{1}{n-1}\sum_{i=1}^n (x_i-\mu)
 
 - Total estimation error ratio:
 
-    $$\frac{\sum_i spent_{task_i}}{\sum_i estimation_{task_i}} - 1 = 0.0032  (0.32\%)$$
+    $$\frac{\sum_i spent_{task_i}}{\sum_i estimation_{task_i}} - 1 = 0.0032  (Sprint3 : -0.0077)$$
     
 - Absolute relative task estimation error:
 
-    $$\frac{1}{n}\sum_i^n \left| \frac{spent_{task_i}}{estimation_{task_i}}-1 \right| = 0.0491  (4.91\%)$$
+    $$\frac{1}{n}\sum_i^n \left| \frac{spent_{task_i}}{estimation_{task_i}}-1 \right| = 0.0491  (Sprint3 : 0.0525)$$
 
   
 ## QUALITY MEASURES 
@@ -76,8 +76,8 @@ $$\text{Sample standard deviation }(s)=\sqrt{\frac{1}{n-1}\sum_{i=1}^n (x_i-\mu)
   - Total hours spent : 5h
   - Nr of Test Cases : 386
 
-- Total Test Cases: 2463
-- Total Test Coverage : 94.34%
+- Total Test Cases: 2463   (Sprint3 : 1385 Tests)
+- Total Test Coverage : 94.34%   (Sprint3 : 89.72%)
 
 - Code Review: 
   - Total hours estimated : 9h
@@ -99,7 +99,7 @@ $$\text{Sample standard deviation }(s)=\sqrt{\frac{1}{n-1}\sum_{i=1}^n (x_i-\mu)
 - Results obtained:
   - Maintainability rate: A
   - Security: A
-  - Reliability: A (before that it was B and we have managed to improve until level A)
+  - Reliability: A
   - Code duplication: 0.7%
   - Test coverage: 94.34% (on vscode) 91.20% (on sonarqube)
 
