@@ -259,7 +259,7 @@ describe('DepartmentRoleRepository Integration Tests', () => {
 
     // --- Tests for findMunicipalityDepartmentRoles() ---
     describe('findMunicipalityDepartmentRoles', () => {
-        it('should return department roles excluding Citizen and Administrator', async () => {
+        it('should return department roles excluding Citizen, Administrator, and Organization department', async () => {
             const municipalityDR = await departmentRoleRepository.findMunicipalityDepartmentRoles();
 
             expect(municipalityDR).toBeDefined();
@@ -283,6 +283,13 @@ describe('DepartmentRoleRepository Integration Tests', () => {
 
             // Should include Department Director (from seed)
             expect(roleNames).toContain('Department Director');
+        });
+
+        it('should exclude Organization department roles', async () => {
+            const municipalityDR = await departmentRoleRepository.findMunicipalityDepartmentRoles();
+            const departmentNames = municipalityDR.map(dr => dr.department?.name);
+
+            expect(departmentNames).not.toContain('Organization');
         });
 
         it('should be ordered by department name then role name ASC', async () => {

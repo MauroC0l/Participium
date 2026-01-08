@@ -74,6 +74,15 @@ class ReportService {
   }
 
   /**
+   * Get all available report statuses
+   * @returns Array of status strings
+   */
+  async getAllStatuses(): Promise<string[]> {
+    // Return all enum values as an array of strings
+    return Object.values(ReportStatus);
+  }
+
+  /**
    * Get reports for interactive map visualization
    * Returns individual reports when zoomed in (zoom > 12) or clustered reports when zoomed out (zoom ≤ 12)
    * Only returns approved reports (excludes "Pending Approval" and "Rejected")

@@ -22,28 +22,12 @@ import ReportDetails from "./ReportDetails";
 import {
     getReports,
     getAllCategories,
+    getAllStatuses,
     updateReportStatus,
     getReportsAssignedToMe,
 } from "../api/reportApi";
 
 // --- CONSTANTS & CONFIGURATION ---
-const ALL_STATUSES = [
-    "Pending Approval",
-    "Assigned",
-    "In Progress",
-    "Suspended",
-    "Rejected",
-    "Resolved",
-];
-
-// FIX: Removed "All Statuses" from here to avoid duplication in the Dropdown
-const STAFF_MEMBER_STATUSES_LIST = [
-    "Assigned",
-    "In Progress",
-    "Suspended",
-    "Resolved",
-];
-
 const ROLE_DEPARTMENT_MAPPING = {
     "water network staff member": "Water Supply - Drinking Water",
     "sewer system staff member": "Sewer System",
@@ -241,7 +225,7 @@ ReportsFilters.propTypes = {
 
 
 // --- HELPER: Get Views based on Roles ---
-const getViews = (user) => {
+const getViews = (user, allStatuses) => {
     const views = [];
     const roles = user?.roles || [];
 
@@ -257,7 +241,7 @@ const getViews = (user) => {
             icon: <FaUserTie className="me-2" />,
             fetchMethod: 'getAll',
             fixedCategory: null,
-            availableStatuses: ALL_STATUSES,
+            availableStatuses: allStatuses,
             canFilterCategory: true,
             defaultStatus: 'Pending Approval'
         });
@@ -284,7 +268,7 @@ const getViews = (user) => {
             icon: <FaHardHat className="me-2" />,
             fetchMethod: 'getAssigned',
             fixedCategory: null,
-            availableStatuses: STAFF_MEMBER_STATUSES_LIST,
+            availableStatuses: allStatuses.filter(s => !['Pending Approval', 'Rejected'].includes(s)),
             canFilterCategory: true,
             defaultStatus: ''
         });
@@ -305,7 +289,7 @@ const getViews = (user) => {
                     icon: <FaHardHat className="me-2" />,
                     fetchMethod: 'getAssigned',
                     fixedCategory: null, // Removed fixed category filter so staff can see all their assigned reports
-                    availableStatuses: STAFF_MEMBER_STATUSES_LIST,
+                    availableStatuses: allStatuses.filter(s => !['Pending Approval', 'Rejected'].includes(s)),
                     canFilterCategory: true, // Allow manual category filtering
                     defaultStatus: ''
                 });
@@ -321,7 +305,7 @@ const getViews = (user) => {
 export default function MunicipalityUserHome({ user }) {
 
     // 1. Calculate Views
-    const views = useMemo(() => getViews(user), [user]);
+    const views = useMemo(() => getViews(user, allStatuses), [user, allStatuses]);
     
     // 2. State for Active View
     const [activeViewKey, setActiveViewKey] = useState(() => views.length > 0 ? views[0].key : 'default');
@@ -351,6 +335,7 @@ export default function MunicipalityUserHome({ user }) {
 
     const [reports, setReports] = useState([]);
     const [allCategories, setAllCategories] = useState([]);
+    const [allStatuses, setAllStatuses] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [apiError, setApiError] = useState(null);
 
@@ -358,7 +343,7 @@ export default function MunicipalityUserHome({ user }) {
     const [showModal, setShowModal] = useState(false);
     const [selectedReport, setSelectedReport] = useState(null);
 
-    // 1. Fetch Categories
+    // 1. Fetch Categories and Statuses
     useEffect(() => {
         const fetchCategories = async () => {
             try {
@@ -368,7 +353,18 @@ export default function MunicipalityUserHome({ user }) {
                 console.error("Error fetching categories:", err);
             }
         };
+
+        const fetchStatuses = async () => {
+            try {
+                const statusesData = await getAllStatuses();
+                setAllStatuses(statusesData || []);
+            } catch (err) {
+                console.error("Error fetching statuses:", err);
+            }
+        };
+
         fetchCategories();
+        fetchStatuses();
     }, []);
 
     // 2. Fetch Reports
@@ -517,7 +513,7 @@ export default function MunicipalityUserHome({ user }) {
                         categoryFilter={categoryFilter}
                         statusFilter={statusFilter}
                         allCategories={allCategories}
-                        availableStatuses={currentView?.availableStatuses || ALL_STATUSES}
+                        availableStatuses={currentView?.availableStatuses || allStatuses}
                         setCategoryFilter={setCategoryFilter}
                         setStatusFilter={setStatusFilter}
                     />

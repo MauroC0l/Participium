@@ -36,6 +36,17 @@ export const getAllCategories = async () => {
 };
 
 /**
+ * Get all Statuses
+ */
+export const getAllStatuses = async () => {
+  const response = await fetch(`/api/reports/statuses`, {
+    method: "GET",
+    credentials: "include",
+  });
+  return handleResponse(response);
+};
+
+/**
  * Get a specific report by ID
  */
 export const getReportById = async (id) => {

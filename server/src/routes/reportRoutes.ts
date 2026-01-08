@@ -416,6 +416,32 @@ router.get('/categories', reportController.getCategories);
 
 /**
  * @swagger
+ * /api/reports/statuses:
+ *   get:
+ *     summary: Get all available report statuses
+ *     description: |
+ *       Returns the list of all valid report statuses.
+ *     tags: [Reports]
+ *     responses:
+ *       200:
+ *         description: List of available report statuses
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: string
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.get('/statuses', reportController.getStatuses);
+
+/**
+ * @swagger
  * /api/reports/assigned/me:
  *   get:
  *     summary: Get reports assigned to the current user
