@@ -91,6 +91,7 @@ jest.mock('@controllers/reportController', () => ({
     createReport: jest.fn((req, res) => res.status(201).json({})),
     getAllReports: jest.fn((req, res) => res.status(200).json([])),
     getCategories: jest.fn((req, res) => res.status(200).json([])),
+    getStatuses: jest.fn((req, res) => res.status(200).json([])),
     getMapReports: jest.fn((req, res) => res.status(200).json([])),
     getMyReports: jest.fn((req, res) => res.status(200).json([])),
     getMyAssignedReports: jest.fn((req, res) => res.status(200).json([])),
@@ -155,7 +156,6 @@ const mockIsLoggedIn = isLoggedIn as jest.Mock;
 const mockRequireRole = requireRole as jest.Mock;
 const mockRequireTechnicalStaffOrRole = requireTechnicalStaffOrRole as jest.Mock;
 const mockValidateCreateReport = validateCreateReport as jest.Mock;
-
 const mockGetAllReports = reportController.getAllReports as jest.Mock;
 const mockUpdateReportStatus = reportController.updateReportStatus as jest.Mock;
 const mockCreateReport = reportController.createReport as jest.Mock;

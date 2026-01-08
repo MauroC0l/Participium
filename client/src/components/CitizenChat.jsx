@@ -215,21 +215,23 @@ const CitizenChat = ({ reportId, currentUserId, isCitizen, initiallyExpanded = f
                         
                         {renderMessageList}
 
-                        <form className="rdm-comment-input-area" onSubmit={handleSendMessage}>
-                            <input
-                                type="text"
-                                className="rdm-comment-input"
-                                placeholder={canSend ? "Type a message..." : messages.length === 0 ? "Waiting for officer to start the chat..." : "Chat disabled after officer response"}
-                                value={newMessageText}
-                                onChange={(e) => setNewMessageText(e.target.value)}
-                                disabled={submitting || !canSend}
-                            />
-                            <button type="submit" className="rdm-comment-submit" disabled={submitting || !newMessageText.trim() || !canSend}>
-                                {submitting ? 
-                                    <span className="spinner-border spinner-border-sm" aria-hidden="true" /> 
-                                    : <FaPaperPlane />}
-                            </button>
-                        </form>
+                        {canSend && (
+                            <form className="rdm-comment-input-area" onSubmit={handleSendMessage}>
+                                <input
+                                    type="text"
+                                    className="rdm-comment-input"
+                                    placeholder="Type a message..."
+                                    value={newMessageText}
+                                    onChange={(e) => setNewMessageText(e.target.value)}
+                                    disabled={submitting}
+                                />
+                                <button type="submit" className="rdm-comment-submit" disabled={submitting || !newMessageText.trim()}>
+                                    {submitting ? 
+                                        <span className="spinner-border spinner-border-sm" aria-hidden="true" /> 
+                                        : <FaPaperPlane />}
+                                </button>
+                            </form>
+                        )}
                     </div>
                 </div>
             </div>
