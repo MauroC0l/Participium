@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import { Dropdown } from "react-bootstrap";
-import { FaUserShield, FaTrash, FaPlus, FaEdit, FaSave, FaTimes } from "react-icons/fa";
+import { FaUserShield, FaTrash, FaPlus, FaSave, FaTimes } from "react-icons/fa";
 import "../css/UserDetails.css";
 
 export default function UserDetails({ user, departmentRolesMapping, onSave, onCancel, loading, onDirtyChange }) {

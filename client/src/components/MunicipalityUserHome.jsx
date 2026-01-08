@@ -14,58 +14,27 @@ import { BsEye } from "react-icons/bs";
 import { FaFilter, FaList, FaChevronDown, FaUserTie, FaHardHat, FaInfoCircle } from "react-icons/fa";
 import "../css/MunicipalityUserHome.css";
 import "../css/MunicipalityUserList.css";
-
-// Componenti
 import ReportDetails from "./ReportDetails";
 
 // IMPORT API 
 import {
     getReports,
     getAllCategories,
+    getAllStatuses,
     updateReportStatus,
     getReportsAssignedToMe,
 } from "../api/reportApi";
+import { getRoleDepartmentMapping } from "../utils/roleMapping";
 
 // --- CONSTANTS & CONFIGURATION ---
-const ALL_STATUSES = [
-    "Pending Approval",
-    "Assigned",
-    "In Progress",
-    "Suspended",
-    "Rejected",
-    "Resolved",
-];
 
-// FIX: Removed "All Statuses" from here to avoid duplication in the Dropdown
-const STAFF_MEMBER_STATUSES_LIST = [
-    "Assigned",
-    "In Progress",
-    "Suspended",
-    "Resolved",
-];
-
-const ROLE_DEPARTMENT_MAPPING = {
-    "water network staff member": "Water Supply - Drinking Water",
-    "sewer system staff member": "Sewer System",
-    "road maintenance staff member": "Roads and Urban Furnishings",
-    "traffic management staff member": "Road Signs and Traffic Lights",
-    "electrical staff member": "Public Lighting",
-    "building maintenance staff member": "Architectural Barriers",
-    "accessibility staff member": "Architectural Barriers",
-    "recycling program staff member": "Waste",
-    "parks maintenance staff member": "Public Green Areas and Playgrounds",
-};
-
-// Helper per convertire lo stato UI (es. "Pending Approval") in stato API (es. "PENDING_APPROVAL")
 const formatStatusForApi = (uiStatus) => {
     if (!uiStatus || uiStatus === "All Statuses") return null;
     return uiStatus;
 };
 
-// --- SUB-COMPONENTI ESTRATTI PER RIDURRE LA COMPLESSITÀ ---
-
 // 1. Component for table body
-const ReportsTableBody = React.memo(({ reports, handleShow }) => {
+const ReportsTableBody = React.memo(({ reports, handleShow, allStatuses }) => {
     if (reports.length === 0) {
         return (
             <tr>
@@ -80,10 +49,15 @@ const ReportsTableBody = React.memo(({ reports, handleShow }) => {
     }
 
     const getStatusClass = (status) => {
+        const statusClasses = ["mul-status-pending", "mul-status-assigned", "mul-status-resolved", "mul-status-rejected", "mul-status-suspended", "mul-status-open"];
+        const index = allStatuses.indexOf(status);
+        if (index >= 0) {
+            return statusClasses[index % statusClasses.length];
+        }
+        // Fallback for unknown statuses
         const s = status?.toLowerCase().replaceAll("_", " ");
         if (s === "pending approval") return "mul-status-pending";
-        if (s === "assigned") return "mul-status-assigned";
-        if (s === "in progress") return "mul-status-assigned"; // Using same blue for progress
+        if (s === "assigned" || s === "in progress") return "mul-status-assigned";
         if (s === "resolved") return "mul-status-resolved";
         if (s === "rejected") return "mul-status-rejected";
         if (s === "suspended") return "mul-status-suspended";
@@ -142,6 +116,7 @@ ReportsTableBody.propTypes = {
         ]),
     })).isRequired,
     handleShow: PropTypes.func.isRequired,
+    allStatuses: PropTypes.array.isRequired,
 };
 
 // 2. Componente per i filtri
@@ -241,7 +216,8 @@ ReportsFilters.propTypes = {
 
 
 // --- HELPER: Get Views based on Roles ---
-const getViews = (user) => {
+const getViews = (user, allStatuses, allCategories) => {
+    const ROLE_DEPARTMENT_MAPPING = getRoleDepartmentMapping(allCategories);
     const views = [];
     const roles = user?.roles || [];
 
@@ -250,6 +226,8 @@ const getViews = (user) => {
     const isDirector = roles.some(r => (r.role_name || "").includes('Director'));
     const isExternalMaintainer = roles.some(r => (r.role_name || "").toLowerCase() === 'external maintainer');
 
+    const staffAvailableStatuses = allStatuses.filter(s => s !== 'Pending Approval');
+
     if (isAdmin || isPR) {
         views.push({
             key: 'global',
@@ -257,7 +235,7 @@ const getViews = (user) => {
             icon: <FaUserTie className="me-2" />,
             fetchMethod: 'getAll',
             fixedCategory: null,
-            availableStatuses: ALL_STATUSES,
+            availableStatuses: allStatuses,
             canFilterCategory: true,
             defaultStatus: 'Pending Approval'
         });
@@ -284,7 +262,7 @@ const getViews = (user) => {
             icon: <FaHardHat className="me-2" />,
             fetchMethod: 'getAssigned',
             fixedCategory: null,
-            availableStatuses: STAFF_MEMBER_STATUSES_LIST,
+            availableStatuses: staffAvailableStatuses,
             canFilterCategory: true,
             defaultStatus: ''
         });
@@ -304,9 +282,9 @@ const getViews = (user) => {
                     label: category,
                     icon: <FaHardHat className="me-2" />,
                     fetchMethod: 'getAssigned',
-                    fixedCategory: null, // Removed fixed category filter so staff can see all their assigned reports
-                    availableStatuses: STAFF_MEMBER_STATUSES_LIST,
-                    canFilterCategory: true, // Allow manual category filtering
+                    fixedCategory: category, // Fixed to their department category
+                    availableStatuses: staffAvailableStatuses,
+                    canFilterCategory: false, // No manual category filtering
                     defaultStatus: ''
                 });
             }
@@ -316,19 +294,28 @@ const getViews = (user) => {
     return views;
 };
 
-// --- COMPONENTE PRINCIPALE ---
-
 export default function MunicipalityUserHome({ user }) {
 
+    // State declarations
+    const [reports, setReports] = useState([]);
+    const [allCategories, setAllCategories] = useState([]);
+    const [allStatuses, setAllStatuses] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [apiError, setApiError] = useState(null);
+
+    // Modal State
+    const [showModal, setShowModal] = useState(false);
+    const [selectedReport, setSelectedReport] = useState(null);
+
     // 1. Calculate Views
-    const views = useMemo(() => getViews(user), [user]);
+    const views = useMemo(() => getViews(user, allStatuses, allCategories), [user, allStatuses, allCategories]);
     
     // 2. State for Active View
-    const [activeViewKey, setActiveViewKey] = useState(() => views.length > 0 ? views[0].key : 'default');
+    const [activeViewKey, setActiveViewKey] = useState(() => views.length > 0 ? views[0].key : null);
 
     // 3. Get Current View Config
     const currentView = useMemo(() => 
-        views.find(v => v.key === activeViewKey) || views[0]
+        views.find(v => v.key === activeViewKey) || (views.length > 0 ? views[0] : null)
     , [views, activeViewKey]);
 
     // 4. Filters State
@@ -349,16 +336,7 @@ export default function MunicipalityUserHome({ user }) {
         }
     }, [currentView]);
 
-    const [reports, setReports] = useState([]);
-    const [allCategories, setAllCategories] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [apiError, setApiError] = useState(null);
-
-    // Modal State
-    const [showModal, setShowModal] = useState(false);
-    const [selectedReport, setSelectedReport] = useState(null);
-
-    // 1. Fetch Categories
+    // 1. Fetch Categories and Statuses
     useEffect(() => {
         const fetchCategories = async () => {
             try {
@@ -368,7 +346,18 @@ export default function MunicipalityUserHome({ user }) {
                 console.error("Error fetching categories:", err);
             }
         };
+
+        const fetchStatuses = async () => {
+            try {
+                const statusesData = await getAllStatuses();
+                setAllStatuses(statusesData || []);
+            } catch (err) {
+                console.error("Error fetching statuses:", err);
+            }
+        };
+
         fetchCategories();
+        fetchStatuses();
     }, []);
 
     // 2. Fetch Reports
@@ -470,7 +459,7 @@ export default function MunicipalityUserHome({ user }) {
                         </tr>
                     </thead>
                     <tbody>
-                        <ReportsTableBody reports={tableReports} handleShow={handleView} />
+                        <ReportsTableBody reports={tableReports} handleShow={handleView} allStatuses={allStatuses} />
                     </tbody>
                 </Table>
             </div>
@@ -517,7 +506,7 @@ export default function MunicipalityUserHome({ user }) {
                         categoryFilter={categoryFilter}
                         statusFilter={statusFilter}
                         allCategories={allCategories}
-                        availableStatuses={currentView?.availableStatuses || ALL_STATUSES}
+                        availableStatuses={currentView?.availableStatuses || allStatuses}
                         setCategoryFilter={setCategoryFilter}
                         setStatusFilter={setStatusFilter}
                     />

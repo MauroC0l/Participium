@@ -29,6 +29,18 @@ class ReportController {
   }
 
   /**
+   * GET /api/reports/statuses
+   */
+  async getStatuses(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const statuses = await reportService.getAllStatuses();
+      res.status(200).json(statuses);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
    * Get reports for interactive map
    * GET /api/reports/map
    */

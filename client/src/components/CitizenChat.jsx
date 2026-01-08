@@ -18,7 +18,18 @@ const CitizenChat = ({ reportId, currentUserId, isCitizen, initiallyExpanded = f
     const messagesRef = useRef(messages);
     useEffect(() => { messagesRef.current = messages; }, [messages]);
 
-    const canSend = !isCitizen || (isCitizen && messages.length > 0);
+    const canSend = useMemo(() => {
+        if (!isCitizen) return true; // Officers can always send
+        
+        if (messages.length === 0) return false; // Citizens can't start the conversation
+        
+        // Check if the last message is from an officer
+        const lastMessage = messages[messages.length - 1];
+        const isLastMessageFromOfficer = lastMessage && lastMessage.author?.id && String(lastMessage.author.id) !== String(currentUserId);
+        
+        // Citizens can send only if the last message is not from an officer
+        return !isLastMessageFromOfficer;
+    }, [isCitizen, messages, currentUserId]);
 
     const scrollToBottom = useCallback((behavior = "smooth") => {
         if (scrollContainerRef.current) {
@@ -204,21 +215,23 @@ const CitizenChat = ({ reportId, currentUserId, isCitizen, initiallyExpanded = f
                         
                         {renderMessageList}
 
-                        <form className="rdm-comment-input-area" onSubmit={handleSendMessage}>
-                            <input
-                                type="text"
-                                className="rdm-comment-input"
-                                placeholder={canSend ? "Type a message..." : "Waiting for officer to start the chat..."}
-                                value={newMessageText}
-                                onChange={(e) => setNewMessageText(e.target.value)}
-                                disabled={submitting || !canSend}
-                            />
-                            <button type="submit" className="rdm-comment-submit" disabled={submitting || !newMessageText.trim() || !canSend}>
-                                {submitting ? 
-                                    <span className="spinner-border spinner-border-sm" aria-hidden="true" /> 
-                                    : <FaPaperPlane />}
-                            </button>
-                        </form>
+                        {canSend && (
+                            <form className="rdm-comment-input-area" onSubmit={handleSendMessage}>
+                                <input
+                                    type="text"
+                                    className="rdm-comment-input"
+                                    placeholder="Type a message..."
+                                    value={newMessageText}
+                                    onChange={(e) => setNewMessageText(e.target.value)}
+                                    disabled={submitting}
+                                />
+                                <button type="submit" className="rdm-comment-submit" disabled={submitting || !newMessageText.trim()}>
+                                    {submitting ? 
+                                        <span className="spinner-border spinner-border-sm" aria-hidden="true" /> 
+                                        : <FaPaperPlane />}
+                                </button>
+                            </form>
+                        )}
                     </div>
                 </div>
             </div>

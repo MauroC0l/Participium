@@ -20,7 +20,7 @@ const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/jpg', 'image/png', 'ima
  */
 export async function saveBase64Image(base64Image: string, userId: number): Promise<string> {
   // Extract MIME type and base64 data
-  const matches = base64Image.match(/^data:(.+);base64,(.+)$/);
+  const matches = base64Image.match(/^data:([^;]+);base64,([A-Za-z0-9+/=]+)$/);
   if (matches?.length !== 3) {
     throw new BadRequestError('Invalid base64 image format');
   }

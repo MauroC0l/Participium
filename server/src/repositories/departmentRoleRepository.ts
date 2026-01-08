@@ -82,7 +82,7 @@ class DepartmentRoleRepository {
   }
 
   /**
-   * Finds all department roles excluding Citizen and Administrator.
+   * Finds all department roles excluding Citizen, Administrator, and Organization department.
    * @returns Array of department role entities.
    */
   public async findMunicipalityDepartmentRoles(): Promise<DepartmentRoleEntity[]> {
@@ -92,6 +92,9 @@ class DepartmentRoleRepository {
       .innerJoinAndSelect("dr.role", "role")
       .where("role.name NOT IN (:...excludedRoles)", {
         excludedRoles: ["Citizen", "Administrator"]
+      })
+      .andWhere("department.name != :excludedDepartment", {
+        excludedDepartment: "Organization"
       })
       .orderBy("department.name", "ASC")
       .addOrderBy("role.name", "ASC")
