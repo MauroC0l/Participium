@@ -153,6 +153,7 @@ ON CONFLICT (name) DO NOTHING;
  */
 
 -- Administrator
+--password: admin
 INSERT INTO users (username, first_name, last_name, password_hash, email, email_notifications_enabled, is_verified)
 VALUES (
     'admin',
@@ -213,7 +214,7 @@ ON CONFLICT (name) DO NOTHING;
  * 6. Create users for external maintainers
  * External maintainers are now users with 'External Maintainer' role
  * At least 2 maintainers per category for redundancy
- * Default password for all: 'maintainer123'
+ * Default password for all: 'password'
  * Bcrypt hash: $2b$10$
  * company_id is assigned directly during user creation
  */
@@ -392,6 +393,7 @@ VALUES
 ON CONFLICT (username) DO NOTHING;
 
 -- Test Citizens
+-- password: password
 INSERT INTO users (username, first_name, last_name, password_hash, email, email_notifications_enabled, is_verified)
 VALUES
     ('user', 'Giulio', 'Coppi',
@@ -465,6 +467,7 @@ VALUES
 ON CONFLICT (username) DO NOTHING;
 
 -- Technical Staff Members
+--password: staff
 INSERT INTO users (username, first_name, last_name, password_hash, email, email_notifications_enabled, is_verified)
 VALUES
     ('staff_water', 'Pietro', 'Verdi',

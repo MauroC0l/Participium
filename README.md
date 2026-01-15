@@ -156,7 +156,7 @@ The database is pre-populated with default users for testing and development pur
 - **External Maintainers:** `enelx`, `acea`, `hera`, `atm` / `password`
 - **Citizens:** `user`, `user2` / `password`
 
-**Complete user list with roles and departments:** [`server/src/docs/default-users.md`](server/src/docs/default-users.md)
+These are only some of the implemented users, a **complete user list with roles and departments** is available in the file [`server/src/docs/default-users.md`](server/src/docs/default-users.md)
 
 **Login via API (example):**
 ```bash
